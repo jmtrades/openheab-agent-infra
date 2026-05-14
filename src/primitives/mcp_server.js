@@ -450,6 +450,24 @@ const TOOLS = [
     method: 'GET', path: '/v1/agents/:did/secrets/:handle'
   },
   // ==========================================================================
+  // Bank — unified account view, statements, deposits, reconciliation, sweep
+  // ==========================================================================
+  { name: 'openheab.bank.account', description: 'Unified bank account view for an agent: wallet, ledger, savings, lending, escrow, cards, net worth.',
+    inputSchema: { type: 'object', properties: { did: { type: 'string' }, chain: { type: 'string' }, fast: { type: 'string' } }, required: ['did'] },
+    method: 'GET', path: '/v1/agents/:did/bank' },
+  { name: 'openheab.bank.statement', description: 'Generate a bank statement (JSON or CSV) for a date range.',
+    inputSchema: { type: 'object', properties: { did: { type: 'string' }, from: { type: 'string' }, to: { type: 'string' }, format: { type: 'string', enum: ['json', 'csv'] } }, required: ['did'] },
+    method: 'GET', path: '/v1/agents/:did/bank/statement' },
+  { name: 'openheab.bank.deposits', description: 'List incoming USDC deposits credited to the agent.',
+    inputSchema: { type: 'object', properties: { did: { type: 'string' }, limit: { type: 'integer' } }, required: ['did'] },
+    method: 'GET', path: '/v1/agents/:did/bank/deposits' },
+  { name: 'openheab.bank.reconcile', description: 'Compare on-chain USDC balance to internal cents ledger; reports drift.',
+    inputSchema: { type: 'object', properties: { did: { type: 'string' } }, required: ['did'] },
+    method: 'POST', path: '/v1/agents/:did/bank/reconcile' },
+  { name: 'openheab.bank.sweep', description: 'Atomic transfer between bank surfaces: ledger ↔ savings ↔ lending_repay.',
+    inputSchema: { type: 'object', properties: { did: { type: 'string' }, from: { type: 'string', enum: ['wallet', 'ledger', 'savings'] }, to: { type: 'string', enum: ['wallet', 'ledger', 'savings', 'lending_repay'] }, amount_cents: { type: 'integer' }, savings_account_id: { type: 'string' }, loan_id: { type: 'string' } }, required: ['did', 'from', 'to', 'amount_cents'] },
+    method: 'POST', path: '/v1/agents/:did/bank/sweep' },
+  // ==========================================================================
   // Sandbox / browser / perception
   // ==========================================================================
   { name: 'openheab.sandbox.create', description: 'Spawn an isolated code execution sandbox session.',

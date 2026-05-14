@@ -9,7 +9,7 @@ const PRIMITIVE_NAMES = [
   // Layer 2 — Runtime
   'memory', 'tools', 'workflows', 'scheduler', 'inbox', 'inference', 'eval', 'continuity',
   // Layer 3 — Commerce
-  'bank', 'bank_chain', 'bank_extensions', 'bank_config', 'crypto', 'commerce', 'payouts', 'x402', 'escrow',
+  'bank', 'bank_chain', 'bank_extensions', 'bank_config', 'bank_account', 'crypto', 'commerce', 'payouts', 'x402', 'escrow',
   'cards', 'savings',
   // Layer 4 — Trust
   'reputation', 'kyc', 'kyc_extensions', 'security', 'insurance', 'biometrics', 'aml', 'fraud',
@@ -58,6 +58,7 @@ const REGISTER_OVERRIDES = {
   bank: 'registerBankRoutes',
   bank_chain: 'registerBankChainRoutes',
   bank_extensions: 'registerBankExtensionRoutes',
+  bank_account: 'registerBankAccountRoutes',
   crypto: 'registerCryptoRoutes',
   identity: 'registerIdentityRotationRoutes',
   reputation: 'registerReputationRoutes',

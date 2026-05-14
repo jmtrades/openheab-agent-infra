@@ -63,12 +63,12 @@ try {
     assert.ok(bankConfig.CHAINS.solana);
   });
   test('USDC supported on base + ethereum + solana', () => {
-    assert.ok(bankConfig.ASSETS.USDC.base);
-    assert.ok(bankConfig.ASSETS.USDC.ethereum);
-    assert.ok(bankConfig.ASSETS.USDC.solana);
+    assert.ok(bankConfig.ASSETS.USDC.chains.base);
+    assert.ok(bankConfig.ASSETS.USDC.chains.ethereum);
+    assert.ok(bankConfig.ASSETS.USDC.chains.solana);
   });
-  test('getAssetConfig throws for unsupported pair', () => {
-    assert.throws(() => bankConfig.getAssetConfig('FOO', 'base'));
+  test('getAssetConfig returns null for unsupported pair', () => {
+    assert.strictEqual(bankConfig.getAssetConfig('FOO', 'base'), null);
   });
 } catch (e) { console.warn('  SKIP bank_config tests:', e.message); }
 

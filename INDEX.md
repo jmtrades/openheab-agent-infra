@@ -2,8 +2,8 @@
 
 ## Master facts
 
-- **135 primitive modules** in `src/primitives/` (the agent super-hub)
-- **800+ HTTP routes** registered
+- **137 primitive modules** in `src/primitives/` (the agent super-hub)
+- **1000+ HTTP routes** registered
 - **18 cron jobs** in `vercel.json`
 - **14 revenue layers** all coded — see `BILLION_DOLLAR_PATH.md`
 - **115+ MCP tools** exposed at `/mcp`
@@ -39,7 +39,7 @@
 
 **Layer 2 — Runtime (8):** memory, tools, workflows, scheduler, inbox, inference, eval, continuity
 
-**Layer 3 — Commerce (10):** bank (legacy), bank_chain (USDC), bank_extensions, bank_config, crypto, commerce, payouts, x402, escrow, cards, savings
+**Layer 3 — Commerce (11):** bank (legacy fiat ledger), bank_chain (USDC on-chain), bank_extensions, bank_config, bank_account (unified view + JIT funding + reconciliation), crypto, commerce, payouts, x402, escrow, cards, savings
 
 **Layer 4 — Trust (11):** reputation, kyc, kyc_extensions, security, insurance, biometrics, aml, fraud, notary, tripwires, reversibility
 

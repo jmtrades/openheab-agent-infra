@@ -12,8 +12,8 @@ Repo: `github.com/jmtrades/openheab-agent-infra`
 
 | Metric | Value |
 |---|---|
-| Primitive modules | **135** in `src/primitives/` |
-| HTTP routes | **800+** registered |
+| Primitive modules | **137** in `src/primitives/` |
+| HTTP routes | **1000+** registered |
 | Cron jobs | 18 scheduled |
 | MCP tools | 115+ at `/mcp` |
 | Revenue layers | 14 (see `BILLION_DOLLAR_PATH.md`) |
@@ -22,7 +22,7 @@ Repo: `github.com/jmtrades/openheab-agent-infra`
 
 **L1 Kernel (8):** identity, secrets, aliases, storage, cost, analytics, portability, intelligence
 **L2 Runtime (8):** memory, tools, workflows, scheduler, inbox, inference, eval, continuity
-**L3 Commerce (10):** bank, bank_chain, bank_extensions, crypto, commerce, payouts, x402, escrow, cards, savings
+**L3 Commerce (11):** bank, bank_chain, bank_extensions, bank_account, crypto, commerce, payouts, x402, escrow, cards, savings
 **L4 Trust (11):** reputation, kyc, kyc_extensions, security, insurance, biometrics, aml, fraud, notary, tripwires, reversibility
 **L5 Marketplace (5):** marketplace, extensions, prompts, datasets, mcp_server
 **L6 Operations (8):** governance, publishing, email, phone, deployment, oauth_bridge, entities, tax

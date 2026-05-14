@@ -251,7 +251,9 @@ async function handleListTransactions(req, res, pool, verifyAgentAuth) {
 }
 
 // Stripe Issuing webhook — called when card transaction authorization is requested.
-// We decide approve/decline based on per-card and per-agent policy.
+// We decide approve/decline based on per-card and per-agent policy, AND debit
+// the agent's internal ledger atomically (JIT funding).  If the agent has no
+// ledger balance and no wallet float, the auth is declined.
 async function handleAuthWebhook(req, res, pool, auditChain) {
   // In production verify Stripe signature here.
   const event = req.body || {};
@@ -293,6 +295,20 @@ async function handleAuthWebhook(req, res, pool, auditChain) {
     return res.json({ approved: false, reason: 'merchant_category_not_allowed' });
   }
 
+  // JIT funding: atomically debit the internal ledger and place a hold so the
+  // funds can't be double-spent before settlement.
+  const fundingDid = c.funding_wallet_did || c.agent_did;
+  const fund = await pool.query(`
+    UPDATE bank_accounts SET
+      held_cents = held_cents + $1, updated_at = NOW()
+    WHERE agent_did = $2 AND (balance_cents - held_cents) >= $1
+    RETURNING balance_cents, held_cents
+  `, [amount, fundingDid]).catch(() => ({ rows: [] }));
+  if (!fund.rows[0]) {
+    await recordDecline(pool, c, auth, 'insufficient_ledger_balance');
+    return res.json({ approved: false, reason: 'insufficient_ledger_balance' });
+  }
+
   // Approve + record + bump spent
   const txId = 'cardtx_' + crypto.randomBytes(8).toString('hex');
   await pool.query(`
@@ -311,11 +327,70 @@ async function handleAuthWebhook(req, res, pool, auditChain) {
     await auditChain.append({
       event_type: 'card.authorized',
       agent_did: c.agent_did, card_id: c.card_id, tx_id: txId,
-      amount_cents: amount, merchant: merchantData.name
+      amount_cents: amount, merchant: merchantData.name,
+      funding_did: fundingDid, jit_funded: true
     });
   }
 
   return res.json({ approved: true });
+}
+
+// Capture (settle) — convert authorization hold into a real ledger debit.
+async function handleCaptureWebhook(req, res, pool, auditChain) {
+  const event = req.body || {};
+  if (event.type !== 'issuing_transaction.created') {
+    return res.json({ received: true });
+  }
+  const tx = event.data?.object || {};
+  const providerTxId = tx.authorization || tx.id;
+  const amount = Math.abs(tx.amount || 0);
+
+  const cardTx = await pool.query(
+    `SELECT t.tx_id, t.card_id, t.agent_did, c.funding_wallet_did
+     FROM card_transactions t
+     JOIN agent_cards c ON c.card_id = t.card_id
+     WHERE t.provider_tx_id = $1 AND t.status = 'authorized' LIMIT 1`,
+    [providerTxId]
+  ).catch(() => ({ rows: [] }));
+  if (!cardTx.rows[0]) return res.json({ received: true });
+
+  const t = cardTx.rows[0];
+  const fundingDid = t.funding_wallet_did || t.agent_did;
+
+  // Release hold + debit balance
+  await pool.query(`
+    UPDATE bank_accounts SET
+      held_cents = GREATEST(0, held_cents - $1),
+      balance_cents = balance_cents - $1,
+      lifetime_out_cents = lifetime_out_cents + $1,
+      updated_at = NOW()
+    WHERE agent_did = $2
+  `, [amount, fundingDid]).catch(() => {});
+
+  await pool.query(`
+    UPDATE card_transactions SET status = 'captured', captured_at = NOW()
+    WHERE tx_id = $1
+  `, [t.tx_id]).catch(() => {});
+
+  // Bookkeeping txn on the cents ledger
+  const txnId = 'btxn_' + crypto.randomBytes(12).toString('hex');
+  await pool.query(`
+    INSERT INTO bank_transactions
+      (txn_id, agent_did, type, amount_cents, currency, counterparty_ext,
+       external_ref, created_at)
+    VALUES ($1, $2, 'card_capture', $3, 'usd', $4, $5, NOW())
+    ON CONFLICT (txn_id) DO NOTHING
+  `, [txnId, fundingDid, -amount, 'card:' + t.card_id, providerTxId]).catch(() => {});
+
+  if (auditChain) {
+    await auditChain.append({
+      event_type: 'card.captured',
+      agent_did: t.agent_did,
+      card_id: t.card_id, tx_id: t.tx_id,
+      amount_cents: amount, funding_did: fundingDid
+    });
+  }
+  return res.json({ ok: true });
 }
 
 async function recordDecline(pool, card, auth, reason) {
@@ -353,6 +428,8 @@ function registerCardRoutes(app, pool, verifyAgentAuth, auditChain) {
     (req, res) => handleListTransactions(req, res, pool, verifyAgentAuth));
   app.post('/v1/_webhooks/stripe-issuing',
     (req, res) => handleAuthWebhook(req, res, pool, auditChain));
+  app.post('/v1/_webhooks/stripe-issuing-capture',
+    (req, res) => handleCaptureWebhook(req, res, pool, auditChain));
   registerCron(app, '/v1/_jobs/card-monthly-reset',
     async (req, res) => res.json(await resetMonthlySpent(pool)));
 }
