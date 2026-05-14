@@ -2,11 +2,11 @@
 
 ## Master facts
 
-- **42 primitive modules** in `src/primitives/`
-- **334+ HTTP routes** registered
+- **135 primitive modules** in `src/primitives/` (the agent super-hub)
+- **800+ HTTP routes** registered
 - **18 cron jobs** in `vercel.json`
-- **8 revenue streams** all coded
-- **34 MCP tools** exposed at `/mcp`
+- **14 revenue layers** all coded — see `BILLION_DOLLAR_PATH.md`
+- **115+ MCP tools** exposed at `/mcp`
 - **Apache 2.0** license, **CommonJS**, no build step
 
 ## Root docs
@@ -33,19 +33,45 @@
 - `src/discovery.js` — `/sitemap.xml`, `/robots.txt`, `/llms.txt`, `/.well-known/*`
 - `src/chain_crypto.js` — Pure-stdlib Solana + Bitcoin keypairs
 
-### 42 Primitives (`src/primitives/`)
+### 135 Primitives (`src/primitives/`) — the agent super-hub
 
 **Layer 1 — Kernel (8):** identity, secrets, aliases, storage, cost, analytics, portability, intelligence
 
 **Layer 2 — Runtime (8):** memory, tools, workflows, scheduler, inbox, inference, eval, continuity
 
-**Layer 3 — Commerce (8):** bank (legacy), bank_chain (USDC), bank_extensions, bank_config, crypto, commerce, payouts, x402, escrow
+**Layer 3 — Commerce (10):** bank (legacy), bank_chain (USDC), bank_extensions, bank_config, crypto, commerce, payouts, x402, escrow, cards, savings
 
-**Layer 4 — Trust (5):** reputation, kyc, kyc_extensions, security, insurance
+**Layer 4 — Trust (11):** reputation, kyc, kyc_extensions, security, insurance, biometrics, aml, fraud, notary, tripwires, reversibility
 
 **Layer 5 — Marketplace (5):** marketplace, extensions, prompts, datasets, mcp_server
 
 **Layer 6 — Operations (8):** governance, publishing, email, phone, deployment, oauth_bridge, entities, tax
+
+**Layer 7 — Perception (6):** sandbox, browser, voice, vision, video, search
+
+**Layer 8 — Knowledge (6):** documents, maps, knowledge, translate, moderation, fact_check
+
+**Layer 9 — Web3 finance (6):** multisig, lending, defi, tokens, nft, bridges
+
+**Layer 10 — Infrastructure (6):** dns, hosting, database, ipfs, cache, cdn
+
+**Layer 11 — AGI cognition (6):** planning, simulation, beliefs, goals, skills, causal
+
+**Layer 12 — AGI ops (3):** interpretability, fine_tuning, federated_learning
+
+**Layer 13 — Org / business (6):** crm, projects, leads, outreach, forms, dao_factory
+
+**Layer 14 — Business essentials (8):** chat, invoicing, compute, news, calendar, billing, contracts, courts
+
+**Layer 15 — Domain (6):** health, passport, logistics, property, robotics, api_management
+
+**Layer 16 — Revenue commerce (8):** brokerage, prediction_markets, shopping, travel, advertising, media, ratings, booking
+
+**Layer 17 — Developer infra (8):** github, ci_cd, monitoring, error_tracking, feature_flags, experiments, webhooks, events
+
+**Layer 18 — AGI learning + gov/legal (8):** learning, voice_agents, labs, gov_filing, legal_research, court_records, ip_registry, climate
+
+**Layer 19 — Customer service + community (8):** support, referrals, loyalty, surveys, recruiting, supply_chain, licensing, benchmarks
 
 ## API entrypoint
 - `api/index.js` — Vercel serverless function

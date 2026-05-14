@@ -35,8 +35,8 @@ for (const layer of app._router?.stack || []) {
 }
 
 const primitiveCount = Object.keys(primitives).length;
-const expectedMinPrimitives = 80;  // we have 100+; this is a floor
-const expectedMinRoutes = 400;
+const expectedMinPrimitives = 120;  // we have 135+; this is a floor
+const expectedMinRoutes = 600;
 
 console.log(`primitive_count=${primitiveCount}`);
 console.log(`route_count=${routeCount}`);
@@ -61,7 +61,7 @@ const expectedFamilies = [
   '/v1/agents/:did/voice/tts', '/v1/agents/:did/vision/generate',
   '/v1/search', '/v1/translate',
   '/v1/multisig/wallets', '/v1/lending/pools',
-  '/v1/dao/create', '/v1/agents/:did/planning/plans',
+  '/v1/dao/create', '/v1/agents/:did/plans',
   '/v1/agents/:did/beliefs', '/v1/agents/:did/goals',
   '/v1/agents/:did/health/records', '/v1/agents/:did/passport/documents',
   '/v1/agents/:did/property', '/v1/agents/:did/logistics/shipments',
@@ -69,7 +69,15 @@ const expectedFamilies = [
   '/v1/agents/:did/chat/rooms', '/v1/agents/:did/invoicing/invoices',
   '/v1/agents/:did/compute/instances', '/v1/agents/:did/calendars',
   '/v1/agents/:did/apis', '/v1/agents/:did/robotics/robots',
-  '/mcp', '/mcp/manifest'
+  '/mcp', '/mcp/manifest',
+  '/v1/agents/:did/brokerage/orders', '/v1/agents/:did/shopping/cart',
+  '/v1/agents/:did/travel/bookings', '/v1/agents/:did/advertising/campaigns',
+  '/v1/agents/:did/support/tickets', '/v1/agents/:did/referrals',
+  '/v1/agents/:did/loyalty', '/v1/agents/:did/surveys',
+  '/v1/agents/:did/github/repos', '/v1/agents/:did/learning/bandits',
+  '/v1/agents/:did/voice-agents', '/v1/agents/:did/climate/offsets',
+  '/v1/agents/:did/ip/filings', '/v1/agents/:did/webhooks',
+  '/v1/events/topics/:id/publish'
 ];
 
 let familyMisses = 0;

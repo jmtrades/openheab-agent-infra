@@ -9,7 +9,7 @@ const PRIMITIVE_NAMES = [
   // Layer 2 — Runtime
   'memory', 'tools', 'workflows', 'scheduler', 'inbox', 'inference', 'eval', 'continuity',
   // Layer 3 — Commerce
-  'bank', 'bank_chain', 'bank_extensions', 'crypto', 'commerce', 'payouts', 'x402', 'escrow',
+  'bank', 'bank_chain', 'bank_extensions', 'bank_config', 'crypto', 'commerce', 'payouts', 'x402', 'escrow',
   'cards', 'savings',
   // Layer 4 — Trust
   'reputation', 'kyc', 'kyc_extensions', 'security', 'insurance', 'biometrics', 'aml', 'fraud',
@@ -35,7 +35,15 @@ const PRIMITIVE_NAMES = [
   // Layer 14 — Business essentials (new)
   'chat', 'invoicing', 'compute', 'news', 'calendar', 'billing', 'contracts', 'courts',
   // Layer 15 — Domain primitives (new)
-  'health', 'passport', 'logistics', 'property', 'robotics', 'api_management'
+  'health', 'passport', 'logistics', 'property', 'robotics', 'api_management',
+  // Layer 16 — Revenue commerce (new)
+  'brokerage', 'prediction_markets', 'shopping', 'travel', 'advertising', 'media', 'ratings', 'booking',
+  // Layer 17 — Developer infrastructure (new)
+  'github', 'ci_cd', 'monitoring', 'error_tracking', 'feature_flags', 'experiments', 'webhooks', 'events',
+  // Layer 18 — AGI learning + gov/legal (new)
+  'learning', 'voice_agents', 'labs', 'gov_filing', 'legal_research', 'court_records', 'ip_registry', 'climate',
+  // Layer 19 — Customer service + community (new)
+  'support', 'referrals', 'loyalty', 'surveys', 'recruiting', 'supply_chain', 'licensing', 'benchmarks'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -150,7 +158,43 @@ const REGISTER_OVERRIDES = {
   calendar: 'registerCalendarRoutes',
   billing: 'registerBillingRoutes',
   contracts: 'registerContractsRoutes',
-  courts: 'registerCourtsRoutes'
+  courts: 'registerCourtsRoutes',
+  // Layer 16 — Revenue commerce
+  brokerage: 'registerBrokerageRoutes',
+  prediction_markets: 'registerPredictionMarketsRoutes',
+  shopping: 'registerShoppingRoutes',
+  travel: 'registerTravelRoutes',
+  advertising: 'registerAdvertisingRoutes',
+  media: 'registerMediaRoutes',
+  ratings: 'registerRatingsRoutes',
+  booking: 'registerBookingRoutes',
+  // Layer 17 — Developer infrastructure
+  github: 'registerGithubRoutes',
+  ci_cd: 'registerCiCdRoutes',
+  monitoring: 'registerMonitoringRoutes',
+  error_tracking: 'registerErrorTrackingRoutes',
+  feature_flags: 'registerFeatureFlagsRoutes',
+  experiments: 'registerExperimentsRoutes',
+  webhooks: 'registerWebhooksRoutes',
+  events: 'registerEventsRoutes',
+  // Layer 18 — AGI learning + gov/legal
+  learning: 'registerLearningRoutes',
+  voice_agents: 'registerVoiceAgentsRoutes',
+  labs: 'registerLabsRoutes',
+  gov_filing: 'registerGovFilingRoutes',
+  legal_research: 'registerLegalResearchRoutes',
+  court_records: 'registerCourtRecordsRoutes',
+  ip_registry: 'registerIpRegistryRoutes',
+  climate: 'registerClimateRoutes',
+  // Layer 19 — Customer service + community
+  support: 'registerSupportRoutes',
+  referrals: 'registerReferralsRoutes',
+  loyalty: 'registerLoyaltyRoutes',
+  surveys: 'registerSurveysRoutes',
+  recruiting: 'registerRecruitingRoutes',
+  supply_chain: 'registerSupplyChainRoutes',
+  licensing: 'registerLicensingRoutes',
+  benchmarks: 'registerBenchmarksRoutes'
 };
 
 async function migrateAll(pool) {

@@ -8,27 +8,37 @@ Repo: `github.com/jmtrades/openheab-agent-infra`
 
 ## What this is
 
-**OpenHeab** is the open agent-native infrastructure layer. Every AI agent that uses it gets a signed DID identity, a non-custodial USDC wallet on Base, KYC against 5 sanctions sources, signed A2A messaging, structured memory, marketplaces, insurance pools, escrow, multi-provider LLM inference, and 34 MCP tools — all behind a Merkle-style audit chain.
+**OpenHeab** is the open agent-native infrastructure super-hub for AI agents and AGI. Every agent that uses it gets: a signed Ed25519 DID identity, a non-custodial USDC wallet on Base, virtual + physical debit cards, interest-bearing savings, lending, KYC against 5 sanctions sources, biometric liveness, AML monitoring, signed A2A messaging, structured + episodic + vector memory, marketplaces, insurance, escrow, multi-provider LLM inference, sandboxed code execution, headless browsers, voice (TTS/STT) + vision + video, search + translate + moderation, planning + simulation + beliefs + goals + skills, fine-tuning + federated learning, DAOs, legal entities, contracts, courts, government filings, IP registry, real estate, robotics, brokerage, prediction markets, shopping, travel, advertising, support tickets, referrals, loyalty, surveys, and 115+ MCP tools — all behind a Merkle-style SHA-256 audit chain signed with Ed25519.
 
 | Metric | Value |
 |---|---|
-| Primitive modules | **42** in `src/primitives/` |
-| HTTP routes | **334** registered |
+| Primitive modules | **135** in `src/primitives/` |
+| HTTP routes | **800+** registered |
 | Cron jobs | 18 scheduled |
+| MCP tools | 115+ at `/mcp` |
+| Revenue layers | 14 (see `BILLION_DOLLAR_PATH.md`) |
 
-## The 42 primitives
+## The 135 primitives (19 layers)
 
-**Layer 1 — Kernel (8):** identity, secrets, aliases, storage, cost, analytics, portability, intelligence
-
-**Layer 2 — Runtime (8):** memory, tools, workflows, scheduler, inbox, inference, eval, continuity
-
-**Layer 3 — Commerce (8):** bank (legacy Stripe), bank_chain (USDC), bank_extensions, crypto, commerce, payouts, x402, escrow
-
-**Layer 4 — Trust (5):** reputation, kyc, kyc_extensions, security, insurance
-
-**Layer 5 — Marketplace (5):** marketplace, extensions, prompts, datasets, mcp_server
-
-**Layer 6 — Operations (8):** governance, publishing, email, phone, deployment, oauth_bridge, entities, tax
+**L1 Kernel (8):** identity, secrets, aliases, storage, cost, analytics, portability, intelligence
+**L2 Runtime (8):** memory, tools, workflows, scheduler, inbox, inference, eval, continuity
+**L3 Commerce (10):** bank, bank_chain, bank_extensions, crypto, commerce, payouts, x402, escrow, cards, savings
+**L4 Trust (11):** reputation, kyc, kyc_extensions, security, insurance, biometrics, aml, fraud, notary, tripwires, reversibility
+**L5 Marketplace (5):** marketplace, extensions, prompts, datasets, mcp_server
+**L6 Operations (8):** governance, publishing, email, phone, deployment, oauth_bridge, entities, tax
+**L7 Perception (6):** sandbox, browser, voice, vision, video, search
+**L8 Knowledge (6):** documents, maps, knowledge, translate, moderation, fact_check
+**L9 Web3 finance (6):** multisig, lending, defi, tokens, nft, bridges
+**L10 Infrastructure (6):** dns, hosting, database, ipfs, cache, cdn
+**L11 AGI cognition (6):** planning, simulation, beliefs, goals, skills, causal
+**L12 AGI ops (3):** interpretability, fine_tuning, federated_learning
+**L13 Org / business (6):** crm, projects, leads, outreach, forms, dao_factory
+**L14 Business essentials (8):** chat, invoicing, compute, news, calendar, billing, contracts, courts
+**L15 Domain (6):** health, passport, logistics, property, robotics, api_management
+**L16 Revenue commerce (8):** brokerage, prediction_markets, shopping, travel, advertising, media, ratings, booking
+**L17 Developer infra (8):** github, ci_cd, monitoring, error_tracking, feature_flags, experiments, webhooks, events
+**L18 AGI learning + gov/legal (8):** learning, voice_agents, labs, gov_filing, legal_research, court_records, ip_registry, climate
+**L19 Customer service + community (8):** support, referrals, loyalty, surveys, recruiting, supply_chain, licensing, benchmarks
 
 ## Critical infrastructure files
 
