@@ -1,0 +1,143 @@
+// ============================================================================
+// Observability — request IDs, structured JSON logs, Prometheus metrics
+// ============================================================================
+const crypto = require('crypto');
+
+const metrics = {
+  request_total: new Map(),
+  request_duration_ms_bucket: new Map(),
+  in_flight: 0,
+  primitive_family_total: new Map()
+};
+
+const BUCKETS_MS = [5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000];
+
+function incCounter(map, key) { map.set(key, (map.get(key) || 0) + 1); }
+function observeDuration(method, ms) {
+  for (const b of BUCKETS_MS) {
+    if (ms <= b) {
+      const k = `${method} le="${b}"`;
+      metrics.request_duration_ms_bucket.set(k, (metrics.request_duration_ms_bucket.get(k) || 0) + 1);
+    }
+  }
+  const k = `${method} le="+Inf"`;
+  metrics.request_duration_ms_bucket.set(k, (metrics.request_duration_ms_bucket.get(k) || 0) + 1);
+}
+
+function familyFromPath(path) {
+  if (path.startsWith('/v1/agents/')) {
+    const parts = path.split('/').filter(Boolean);
+    return parts[3] || 'agents';
+  }
+  if (path.startsWith('/v1/')) {
+    const parts = path.split('/').filter(Boolean);
+    return parts[1] || 'v1';
+  }
+  if (path.startsWith('/.well-known/')) return 'well-known';
+  return 'root';
+}
+
+function requestId(req, res, next) {
+  const incoming = req.headers['x-request-id'];
+  req.id = (typeof incoming === 'string' && /^[a-zA-Z0-9_-]{1,128}$/.test(incoming))
+    ? incoming : 'req_' + crypto.randomBytes(10).toString('hex');
+  res.setHeader('X-Request-Id', req.id);
+  next();
+}
+
+function jsonLogger(req, res, next) {
+  const start = Date.now();
+  metrics.in_flight++;
+  const origEnd = res.end.bind(res);
+  res.end = function (...args) {
+    metrics.in_flight--;
+    const ms = Date.now() - start;
+    const statusClass = `${Math.floor(res.statusCode / 100)}xx`;
+    incCounter(metrics.request_total, `${req.method} ${statusClass}`);
+    incCounter(metrics.primitive_family_total, familyFromPath(req.path));
+    observeDuration(req.method, ms);
+    const isHealth = req.path === '/healthz' || req.path === '/readyz';
+    if (!isHealth || res.statusCode >= 400) {
+      const line = {
+        ts: new Date().toISOString(),
+        level: res.statusCode >= 500 ? 'error' : res.statusCode >= 400 ? 'warn' : 'info',
+        request_id: req.id, method: req.method, path: req.path,
+        status: res.statusCode, latency_ms: ms,
+        agent_did: req.headers['x-agent-did'] || undefined,
+        ua: (req.headers['user-agent'] || '').slice(0, 100) || undefined
+      };
+      const out = res.statusCode >= 500 ? console.error : console.log;
+      out(JSON.stringify(line));
+    }
+    return origEnd(...args);
+  };
+  next();
+}
+
+function renderPrometheus() {
+  const lines = [];
+  lines.push('# HELP openheab_request_total Total HTTP requests by method and status class');
+  lines.push('# TYPE openheab_request_total counter');
+  for (const [k, v] of metrics.request_total.entries()) {
+    const [method, statusClass] = k.split(' ');
+    lines.push(`openheab_request_total{method="${method}",status="${statusClass}"} ${v}`);
+  }
+  lines.push('# HELP openheab_request_duration_ms HTTP request latency histogram');
+  lines.push('# TYPE openheab_request_duration_ms histogram');
+  for (const [k, v] of metrics.request_duration_ms_bucket.entries()) {
+    const [method, le] = k.split(' ');
+    lines.push(`openheab_request_duration_ms_bucket{method="${method}",${le}} ${v}`);
+  }
+  lines.push('# HELP openheab_in_flight Currently in-flight requests');
+  lines.push('# TYPE openheab_in_flight gauge');
+  lines.push(`openheab_in_flight ${metrics.in_flight}`);
+  lines.push('# HELP openheab_primitive_family_total Requests per primitive family');
+  lines.push('# TYPE openheab_primitive_family_total counter');
+  for (const [family, count] of metrics.primitive_family_total.entries()) {
+    lines.push(`openheab_primitive_family_total{family="${family}"} ${count}`);
+  }
+  return lines.join('\n') + '\n';
+}
+
+function metricsHandler(req, res) {
+  res.setHeader('content-type', 'text/plain; version=0.0.4');
+  res.send(renderPrometheus());
+}
+
+const PUBLIC_PATH_RE = /^(\/$|\/healthz$|\/readyz$|\/metrics$|\/openapi\.json$|\/sitemap\.xml$|\/robots\.txt$|\/llms\.txt$|\/\.well-known\/|\/v1\/audit\/|\/v1\/bank\/(info|assets)$|\/v1\/analytics\/global$|\/v1\/extensions(\/categories)?$|\/v1\/extensions\/[a-z0-9-]+$|\/v1\/identities$|\/v1\/marketplace\/listings$|\/mcp|\/mcp\/manifest)/;
+
+function corsMiddleware(req, res, next) {
+  const origin = req.headers.origin;
+  const isPublic = PUBLIC_PATH_RE.test(req.path);
+  if (isPublic && origin) {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'content-type, authorization, x-agent-did, x-agent-sig, x-idempotency-key');
+    res.setHeader('Access-Control-Max-Age', '3600');
+    if (req.method === 'OPTIONS') return res.status(204).end();
+  }
+  next();
+}
+
+function notFoundHandler(req, res) {
+  res.status(404).json({
+    error: 'not_found', method: req.method, path: req.path,
+    request_id: req.id,
+    hint: 'See /openapi.json or /llms.txt for the route catalog.'
+  });
+}
+
+function faviconHandler(req, res) {
+  res.setHeader('content-type', 'image/svg+xml');
+  res.setHeader('cache-control', 'public, max-age=86400');
+  res.send(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+<rect width="64" height="64" rx="12" fill="#0a0a0a"/>
+<text x="32" y="44" font-family="ui-monospace,Menlo,monospace" font-size="34"
+      font-weight="700" fill="#6cf" text-anchor="middle">OH</text>
+</svg>`);
+}
+
+module.exports = {
+  requestId, jsonLogger, corsMiddleware, metricsHandler,
+  notFoundHandler, faviconHandler, metrics, renderPrometheus
+};

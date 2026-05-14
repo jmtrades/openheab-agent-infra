@@ -1,0 +1,34 @@
+{
+  "version": 2,
+  "buildCommand": null,
+  "framework": null,
+  "functions": {
+    "api/index.js": {
+      "maxDuration": 60,
+      "memory": 1024
+    }
+  },
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/api/index.js" }
+  ],
+  "crons": [
+    { "path": "/v1/_jobs/refresh-sanctions?cron=true", "schedule": "30 4 * * *" },
+    { "path": "/v1/_jobs/refresh-uk-hmt?cron=true", "schedule": "0 5 * * *" },
+    { "path": "/v1/_jobs/refresh-pep?cron=true", "schedule": "30 5 * * *" },
+    { "path": "/v1/_jobs/refresh-eu?cron=true", "schedule": "0 5 * * *" },
+    { "path": "/v1/_jobs/rescreen-agents?cron=true", "schedule": "0 6 * * *" },
+    { "path": "/v1/_jobs/expire-kv?cron=true", "schedule": "*/15 * * * *" },
+    { "path": "/v1/_jobs/expire-inbox?cron=true", "schedule": "0 */2 * * *" },
+    { "path": "/v1/_jobs/expire-holds?cron=true", "schedule": "*/10 * * * *" },
+    { "path": "/v1/_jobs/process-bank-webhooks?cron=true", "schedule": "*/2 * * * *" },
+    { "path": "/v1/_jobs/extension-settlement?cron=true", "schedule": "0 3 * * *" },
+    { "path": "/v1/_jobs/subscription-charge?cron=true", "schedule": "0 4 * * *" },
+    { "path": "/v1/_jobs/dunning-retries?cron=true", "schedule": "0 7 * * *" },
+    { "path": "/v1/_jobs/scheduler-tick?cron=true", "schedule": "* * * * *" },
+    { "path": "/v1/_jobs/workflow-tick?cron=true", "schedule": "*/2 * * * *" },
+    { "path": "/v1/_jobs/lifecycle-tick?cron=true", "schedule": "*/15 * * * *" },
+    { "path": "/v1/_jobs/oauth-refresh?cron=true", "schedule": "*/30 * * * *" },
+    { "path": "/v1/_jobs/tool-health-sweep?cron=true", "schedule": "0 */6 * * *" },
+    { "path": "/v1/_jobs/escrow-auto-release?cron=true", "schedule": "0 */6 * * *" }
+  ]
+}
