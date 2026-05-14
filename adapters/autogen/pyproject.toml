@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "openheab-autogen"
+version = "0.1.0"
+description = "OpenHeab adapter for AutoGen / AG2."
+readme = "README.md"
+license = { text = "Apache-2.0" }
+requires-python = ">=3.9"
+dependencies = ["openheab>=0.1.0"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["openheab_autogen*"]

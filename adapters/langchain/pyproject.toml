@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "openheab-langchain"
+version = "0.1.0"
+description = "OpenHeab adapter for LangChain — drop-in agent identity, wallet, email, KYC, memory tools."
+readme = "README.md"
+license = { text = "Apache-2.0" }
+requires-python = ">=3.9"
+dependencies = ["openheab>=0.1.0", "langchain>=0.1.0", "pydantic>=2.0"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["openheab_langchain*"]

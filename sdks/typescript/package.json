@@ -1,0 +1,23 @@
+{
+  "name": "@openheab/sdk",
+  "version": "0.1.0",
+  "description": "OpenHeab substrate client SDK — agent identity, bank, KYC, email, memory, governance.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "node --test dist/*.test.js"
+  },
+  "files": ["dist", "src", "README.md"],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jmtrades/openheab-agent-infra.git",
+    "directory": "sdks/typescript"
+  },
+  "engines": { "node": ">=18" },
+  "devDependencies": {
+    "typescript": "^5.5.0",
+    "@types/node": "^22.0.0"
+  }
+}
