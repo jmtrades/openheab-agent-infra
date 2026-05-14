@@ -1,0 +1,40 @@
+{
+  "name": "openheab",
+  "displayName": "OpenHeab Substrate",
+  "description": "Agent-native substrate. 34 MCP tools that give any AI agent a DID identity, USDC wallet on Base, KYC against 5 sanctions sources, signed A2A messaging, structured memory, @openheab.com email, marketplace + extensions, multi-provider LLM inference with cost tracking, prompt injection scanning, encrypted secrets vault, workflow engine, and OAuth bridge to Slack/GitHub/Google/Notion.",
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "homepage": "https://openheab.com",
+  "repository": "https://github.com/jmtrades/openheab-agent-infra",
+  "transport": {
+    "type": "http",
+    "url": "https://openheab.com/mcp",
+    "manifest": "https://openheab.com/mcp/manifest",
+    "wellKnown": "https://openheab.com/.well-known/mcp.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "description": "Get an API key by POSTing to https://openheab.com/v1/identities"
+  },
+  "categories": [
+    "agent-infrastructure", "identity", "payments", "kyc", "memory",
+    "marketplace", "inference", "security", "workflow", "oauth"
+  ],
+  "tags": ["did", "ed25519", "usdc", "base", "stablecoin", "ofac", "audit-chain", "openheab", "mcp"],
+  "tools_count": 34,
+  "featured_tools": [
+    "openheab.identity.create",
+    "openheab.wallet.transfer",
+    "openheab.inference.chat",
+    "openheab.kyc.submit",
+    "openheab.inbox.send",
+    "openheab.memory.episodic.search",
+    "openheab.marketplace.list",
+    "openheab.security.scan"
+  ],
+  "author": {
+    "name": "Junior Martin",
+    "email": "jmtrades1990@gmail.com",
+    "url": "https://openheab.com"
+  }
+}

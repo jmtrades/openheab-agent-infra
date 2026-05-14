@@ -1,0 +1,41 @@
+name: publish-pypi
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+
+jobs:
+  publish-sdk:
+    name: openheab (Python SDK + CLI)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - run: pip install build twine
+      - working-directory: sdks/python
+        run: python -m build
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: sdks/python/dist
+
+  publish-adapters:
+    name: openheab-${{ matrix.adapter }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        adapter: [langchain, llamaindex, crewai, autogen]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - run: pip install build
+      - working-directory: adapters/${{ matrix.adapter }}
+        run: python -m build
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: adapters/${{ matrix.adapter }}/dist

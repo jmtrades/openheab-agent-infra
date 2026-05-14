@@ -1,0 +1,25 @@
+name: publish-npm
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  publish-sdk:
+    name: '@openheab/sdk'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+      - working-directory: sdks/typescript
+        run: |
+          npm ci || npm install
+          npm run build
+      - working-directory: sdks/typescript
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
