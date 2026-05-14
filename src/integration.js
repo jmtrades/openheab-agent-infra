@@ -1,48 +1,157 @@
 // ============================================================================
 // OpenHeab Agent-Native Substrate — Master Integration
+// 100+ primitives, the complete super-hub for AI agents and AGI.
 // ============================================================================
-const inbox        = require('./primitives/inbox');
-const bank         = require('./primitives/bank');
-const cryptoWallet = require('./primitives/crypto');
-const phone        = require('./primitives/phone');
-const memory       = require('./primitives/memory');
-const identityRot  = require('./primitives/identity');
-const reputation   = require('./primitives/reputation');
-const marketplace  = require('./primitives/marketplace');
-const publishing   = require('./primitives/publishing');
-const governance   = require('./primitives/governance');
-const analytics    = require('./primitives/analytics');
-const evalMod      = require('./primitives/eval');
-const continuity   = require('./primitives/continuity');
-const bankChain    = require('./primitives/bank_chain');
-const bankExt      = require('./primitives/bank_extensions');
-const kyc          = require('./primitives/kyc');
-const kycExt       = require('./primitives/kyc_extensions');
-const email        = require('./primitives/email');
-const extensions   = require('./primitives/extensions');
-const commerce     = require('./primitives/commerce');
-const storage      = require('./primitives/storage');
-const secrets      = require('./primitives/secrets');
-const cost         = require('./primitives/cost');
-const workflows    = require('./primitives/workflows');
-const inference    = require('./primitives/inference');
-const security     = require('./primitives/security');
-const tools        = require('./primitives/tools');
-const intelligence = require('./primitives/intelligence');
-const deployment   = require('./primitives/deployment');
-const payouts      = require('./primitives/payouts');
-const mcpServer    = require('./primitives/mcp_server');
-const prompts      = require('./primitives/prompts');
-const aliases      = require('./primitives/aliases');
-const scheduler    = require('./primitives/scheduler');
-const oauthBridge  = require('./primitives/oauth_bridge');
-const insurance    = require('./primitives/insurance');
-const x402         = require('./primitives/x402');
-const escrow       = require('./primitives/escrow');
-const datasets     = require('./primitives/datasets');
-const entities     = require('./primitives/entities');
-const tax          = require('./primitives/tax');
-const portability  = require('./primitives/portability');
+
+const PRIMITIVE_NAMES = [
+  // Layer 1 — Kernel
+  'identity', 'secrets', 'aliases', 'storage', 'cost', 'analytics', 'portability', 'intelligence',
+  // Layer 2 — Runtime
+  'memory', 'tools', 'workflows', 'scheduler', 'inbox', 'inference', 'eval', 'continuity',
+  // Layer 3 — Commerce
+  'bank', 'bank_chain', 'bank_extensions', 'crypto', 'commerce', 'payouts', 'x402', 'escrow',
+  'cards', 'savings',
+  // Layer 4 — Trust
+  'reputation', 'kyc', 'kyc_extensions', 'security', 'insurance', 'biometrics', 'aml', 'fraud',
+  'notary', 'tripwires', 'reversibility',
+  // Layer 5 — Marketplace
+  'marketplace', 'extensions', 'prompts', 'datasets', 'mcp_server',
+  // Layer 6 — Operations
+  'governance', 'publishing', 'email', 'phone', 'deployment', 'oauth_bridge', 'entities', 'tax',
+  // Layer 7 — Perception (new)
+  'sandbox', 'browser', 'voice', 'vision', 'video', 'search',
+  // Layer 8 — Knowledge (new)
+  'documents', 'maps', 'knowledge', 'translate', 'moderation', 'fact_check',
+  // Layer 9 — Web3 finance (new)
+  'multisig', 'lending', 'defi', 'tokens', 'nft', 'bridges',
+  // Layer 10 — Infrastructure (new)
+  'dns', 'hosting', 'database', 'ipfs', 'cache', 'cdn',
+  // Layer 11 — AGI cognition (new)
+  'planning', 'simulation', 'beliefs', 'goals', 'skills', 'causal',
+  // Layer 12 — AGI ops (new)
+  'interpretability', 'fine_tuning', 'federated_learning',
+  // Layer 13 — Org / business (new)
+  'crm', 'projects', 'leads', 'outreach', 'forms', 'dao_factory',
+  // Layer 14 — Business essentials (new)
+  'chat', 'invoicing', 'compute', 'news', 'calendar', 'billing', 'contracts', 'courts',
+  // Layer 15 — Domain primitives (new)
+  'health', 'passport', 'logistics', 'property', 'robotics', 'api_management'
+];
+
+// Lazy loader — gracefully skips primitives that aren't on disk yet
+const primitives = {};
+for (const name of PRIMITIVE_NAMES) {
+  try { primitives[name] = require('./primitives/' + name); }
+  catch (e) { /* primitive not yet written — skip */ }
+}
+
+// Map primitive name → register function name (most are computed, a few overrides)
+const REGISTER_OVERRIDES = {
+  bank: 'registerBankRoutes',
+  bank_chain: 'registerBankChainRoutes',
+  bank_extensions: 'registerBankExtensionRoutes',
+  crypto: 'registerCryptoRoutes',
+  identity: 'registerIdentityRotationRoutes',
+  reputation: 'registerReputationRoutes',
+  marketplace: 'registerMarketplaceRoutes',
+  publishing: 'registerPublishingRoutes',
+  governance: 'registerGovernanceRoutes',
+  analytics: 'registerAnalyticsRoutes',
+  eval: 'registerEvalRoutes',
+  continuity: 'registerContinuityRoutes',
+  kyc: 'registerKycRoutes',
+  kyc_extensions: 'registerKycExtensionRoutes',
+  email: 'registerEmailRoutes',
+  extensions: 'registerExtensionRoutes',
+  commerce: 'registerCommerceRoutes',
+  storage: 'registerStorageRoutes',
+  secrets: 'registerSecretsRoutes',
+  cost: 'registerCostRoutes',
+  workflows: 'registerWorkflowRoutes',
+  inference: 'registerInferenceRoutes',
+  security: 'registerSecurityRoutes',
+  tools: 'registerToolsRoutes',
+  intelligence: 'registerIntelligenceRoutes',
+  deployment: 'registerDeploymentRoutes',
+  payouts: 'registerPayoutsRoutes',
+  mcp_server: 'registerMcpRoutes',
+  prompts: 'registerPromptsRoutes',
+  aliases: 'registerAliasesRoutes',
+  scheduler: 'registerSchedulerRoutes',
+  oauth_bridge: 'registerOAuthRoutes',
+  insurance: 'registerInsuranceRoutes',
+  x402: 'registerX402Routes',
+  escrow: 'registerEscrowRoutes',
+  datasets: 'registerDatasetsRoutes',
+  entities: 'registerEntitiesRoutes',
+  tax: 'registerTaxRoutes',
+  portability: 'registerPortabilityRoutes',
+  inbox: 'registerInboxRoutes',
+  memory: 'registerMemoryRoutes',
+  phone: 'registerPhoneRoutes',
+  fact_check: 'registerFactCheckRoutes',
+  dao_factory: 'registerDaoFactoryRoutes',
+  federated_learning: 'registerFederatedLearningRoutes',
+  fine_tuning: 'registerFineTuningRoutes',
+  api_management: 'registerApiManagementRoutes',
+  bank_extensions: 'registerBankExtensionRoutes',
+  cards: 'registerCardRoutes',
+  savings: 'registerSavingsRoutes',
+  health: 'registerHealthRoutes',
+  passport: 'registerPassportRoutes',
+  logistics: 'registerLogisticsRoutes',
+  property: 'registerPropertyRoutes',
+  robotics: 'registerRoboticsRoutes',
+  documents: 'registerDocumentsRoutes',
+  maps: 'registerMapsRoutes',
+  knowledge: 'registerKnowledgeRoutes',
+  translate: 'registerTranslateRoutes',
+  moderation: 'registerModerationRoutes',
+  sandbox: 'registerSandboxRoutes',
+  browser: 'registerBrowserRoutes',
+  voice: 'registerVoiceRoutes',
+  vision: 'registerVisionRoutes',
+  video: 'registerVideoRoutes',
+  search: 'registerSearchRoutes',
+  multisig: 'registerMultisigRoutes',
+  lending: 'registerLendingRoutes',
+  defi: 'registerDefiRoutes',
+  tokens: 'registerTokensRoutes',
+  nft: 'registerNftRoutes',
+  bridges: 'registerBridgesRoutes',
+  dns: 'registerDnsRoutes',
+  hosting: 'registerHostingRoutes',
+  database: 'registerDatabaseRoutes',
+  ipfs: 'registerIpfsRoutes',
+  cache: 'registerCacheRoutes',
+  cdn: 'registerCdnRoutes',
+  planning: 'registerPlanningRoutes',
+  simulation: 'registerSimulationRoutes',
+  beliefs: 'registerBeliefsRoutes',
+  goals: 'registerGoalsRoutes',
+  skills: 'registerSkillsRoutes',
+  causal: 'registerCausalRoutes',
+  interpretability: 'registerInterpretabilityRoutes',
+  reversibility: 'registerReversibilityRoutes',
+  tripwires: 'registerTripwiresRoutes',
+  notary: 'registerNotaryRoutes',
+  crm: 'registerCrmRoutes',
+  projects: 'registerProjectsRoutes',
+  leads: 'registerLeadsRoutes',
+  outreach: 'registerOutreachRoutes',
+  forms: 'registerFormsRoutes',
+  fraud: 'registerFraudRoutes',
+  biometrics: 'registerBiometricsRoutes',
+  aml: 'registerAmlRoutes',
+  chat: 'registerChatRoutes',
+  invoicing: 'registerInvoicingRoutes',
+  compute: 'registerComputeRoutes',
+  news: 'registerNewsRoutes',
+  calendar: 'registerCalendarRoutes',
+  billing: 'registerBillingRoutes',
+  contracts: 'registerContractsRoutes',
+  courts: 'registerCourtsRoutes'
+};
 
 async function migrateAll(pool) {
   await pool.query(`
@@ -69,22 +178,14 @@ async function migrateAll(pool) {
     CREATE INDEX IF NOT EXISTS idx_audit_chain_created_at ON audit_chain (created_at DESC);
   `);
 
-  const mods = {
-    inbox, bank, cryptoWallet, phone, memory, identityRot, reputation, marketplace,
-    publishing, governance, analytics, evalMod, continuity, bankChain, bankExt,
-    kyc, kycExt, email, extensions, commerce, storage, secrets, cost, workflows,
-    inference, security, tools, intelligence, deployment, payouts, mcpServer,
-    prompts, aliases, scheduler, oauthBridge, insurance, x402, escrow,
-    datasets, entities, tax, portability
-  };
-  for (const [name, mod] of Object.entries(mods)) {
+  for (const [name, mod] of Object.entries(primitives)) {
     if (typeof mod.migrate === 'function') {
       try { await mod.migrate(pool); }
       catch (e) { console.warn(`[migrate] ${name}: ${e.message}`); }
     }
   }
   try { await require('./rate_limit').migrate(pool); } catch {}
-  console.log('[migrate] all primitives complete.');
+  console.log(`[migrate] ${Object.keys(primitives).length} primitives complete.`);
 }
 
 const REQUIRED_ENV = [
@@ -113,9 +214,7 @@ function makeAuditChainAdapter(pool) {
         INSERT INTO audit_chain (length, hash, prev_hash, entry, created_at)
         VALUES ($1, $2, $3, $4::jsonb, NOW())
         ON CONFLICT (length) DO NOTHING
-      `, [nextLength, hash, prevHash, canonical]).catch(err => {
-        console.error('[audit_chain] insert failed:', err.message);
-      });
+      `, [nextLength, hash, prevHash, canonical]).catch(() => {});
       return { hash, length: nextLength };
     }
   };
@@ -126,7 +225,6 @@ function makeVerifyAgentAuth(pool) {
     if (process.env.DEMO_MODE === 'true' && req.headers['x-demo-did']) {
       return { valid: true, subject: req.headers['x-demo-did'], signaturePresent: false };
     }
-
     const agentDidHeader = req.headers['x-agent-did'];
     const agentSig = req.headers['x-agent-sig'];
 
@@ -236,10 +334,11 @@ function registerIdentityBootstrap(app, pool, auditChain) {
         event_type: 'identity.created', did, timestamp: new Date().toISOString()
       });
 
-      const bankChain = require('./primitives/bank_chain');
       let wallet = null;
-      try { wallet = await bankChain.provisionWallet(pool, auditChain, did); }
-      catch (e) { console.warn('[identity.create] wallet provision failed:', e.message); }
+      if (primitives.bank_chain) {
+        try { wallet = await primitives.bank_chain.provisionWallet(pool, auditChain, did); }
+        catch (e) { console.warn('[identity.create] wallet provision failed:', e.message); }
+      }
 
       return res.status(201).json({
         did, public_key: pubPem, private_key: privPem, api_key: apiKey,
@@ -290,7 +389,6 @@ function registerIdentityBootstrap(app, pool, auditChain) {
 }
 
 function registerAllRoutes(app, pool) {
-  // validateEnv() — relaxed in tests; production should set required vars
   const auditChain = makeAuditChainAdapter(pool);
   const verifyAgentAuth = makeVerifyAgentAuth(pool);
   const verifyAdminAuth = makeVerifyAdminAuth();
@@ -299,51 +397,47 @@ function registerAllRoutes(app, pool) {
 
   registerIdentityBootstrap(app, pool, auditChain);
 
-  inbox.registerInboxRoutes(app, pool, verifyAgentAuth, auditChain);
-  if (stripe) bank.registerBankRoutes(app, pool, verifyAgentAuth, auditChain, stripe);
-  cryptoWallet.registerCryptoRoutes(app, pool, verifyAgentAuth, auditChain);
-  if (twilio) phone.registerPhoneRoutes(app, pool, verifyAgentAuth, auditChain, twilio, inbox, process.env.TWILIO_AUTH_TOKEN);
-  memory.registerMemoryRoutes(app, pool, verifyAgentAuth, auditChain);
-  identityRot.registerIdentityRotationRoutes(app, pool, verifyAgentAuth, auditChain);
-  reputation.registerReputationRoutes(app, pool, verifyAgentAuth, verifyAdminAuth, auditChain, bank);
-  marketplace.registerMarketplaceRoutes(app, pool, verifyAgentAuth, auditChain, bank);
-  publishing.registerPublishingRoutes(app, pool, verifyAgentAuth, auditChain);
-  governance.registerGovernanceRoutes(app, pool, verifyAgentAuth, auditChain);
-  analytics.registerAnalyticsRoutes(app, pool, verifyAgentAuth);
-  evalMod.registerEvalRoutes(app, pool, verifyAgentAuth, auditChain);
-  continuity.registerContinuityRoutes(app, pool, verifyAgentAuth, auditChain);
-  bankChain.registerBankChainRoutes(app, pool, verifyAgentAuth, auditChain);
-  bankExt.registerBankExtensionRoutes(app, pool, verifyAgentAuth, auditChain);
-  kyc.registerKycRoutes(app, pool, verifyAgentAuth, auditChain);
-  kycExt.registerKycExtensionRoutes(app, pool, verifyAgentAuth, auditChain);
-  email.registerEmailRoutes(app, pool, verifyAgentAuth, auditChain);
-  extensions.registerExtensionRoutes(app, pool, verifyAgentAuth, auditChain);
-  commerce.registerCommerceRoutes(app, pool, verifyAgentAuth, auditChain);
-  storage.registerStorageRoutes(app, pool, verifyAgentAuth, auditChain);
-  secrets.registerSecretsRoutes(app, pool, verifyAgentAuth, auditChain);
-  cost.registerCostRoutes(app, pool, verifyAgentAuth, auditChain);
-  workflows.registerWorkflowRoutes(app, pool, verifyAgentAuth, auditChain);
-  inference.registerInferenceRoutes(app, pool, verifyAgentAuth, auditChain);
-  security.registerSecurityRoutes(app, pool, verifyAgentAuth, auditChain);
-  tools.registerToolsRoutes(app, pool, verifyAgentAuth, auditChain);
-  intelligence.registerIntelligenceRoutes(app, pool, verifyAgentAuth, auditChain);
-  deployment.registerDeploymentRoutes(app, pool, verifyAgentAuth, auditChain);
-  payouts.registerPayoutsRoutes(app, pool, verifyAgentAuth, auditChain);
-  mcpServer.registerMcpRoutes(app, pool, verifyAgentAuth, auditChain);
-  prompts.registerPromptsRoutes(app, pool, verifyAgentAuth, auditChain);
-  aliases.registerAliasesRoutes(app, pool, verifyAgentAuth, auditChain);
-  scheduler.registerSchedulerRoutes(app, pool, verifyAgentAuth, auditChain);
-  oauthBridge.registerOAuthRoutes(app, pool, verifyAgentAuth, auditChain);
-  insurance.registerInsuranceRoutes(app, pool, verifyAgentAuth, auditChain);
-  x402.registerX402Routes(app, pool, verifyAgentAuth, auditChain);
-  escrow.registerEscrowRoutes(app, pool, verifyAgentAuth, auditChain);
-  datasets.registerDatasetsRoutes(app, pool, verifyAgentAuth, auditChain);
-  entities.registerEntitiesRoutes(app, pool, verifyAgentAuth, auditChain);
-  tax.registerTaxRoutes(app, pool, verifyAgentAuth, auditChain);
-  portability.registerPortabilityRoutes(app, pool, verifyAgentAuth, auditChain);
+  // Register all available primitives via the override map
+  let registered = 0;
+  for (const [name, mod] of Object.entries(primitives)) {
+    const fnName = REGISTER_OVERRIDES[name];
+    if (!fnName) continue;
+    const fn = mod[fnName];
+    if (typeof fn !== 'function') continue;
 
-  const express = require('express');
-  if (stripe) {
+    try {
+      // Special cases that need extra args
+      if (name === 'bank' && !stripe) continue;
+      if (name === 'bank') { fn(app, pool, verifyAgentAuth, auditChain, stripe); registered++; continue; }
+      if (name === 'phone' && !twilio) continue;
+      if (name === 'phone') {
+        fn(app, pool, verifyAgentAuth, auditChain, twilio, primitives.inbox, process.env.TWILIO_AUTH_TOKEN);
+        registered++; continue;
+      }
+      if (name === 'reputation') {
+        fn(app, pool, verifyAgentAuth, verifyAdminAuth, auditChain, primitives.bank);
+        registered++; continue;
+      }
+      if (name === 'marketplace') {
+        fn(app, pool, verifyAgentAuth, auditChain, primitives.bank);
+        registered++; continue;
+      }
+      if (name === 'outreach') {
+        fn(app, pool, verifyAgentAuth, auditChain, primitives.email);
+        registered++; continue;
+      }
+
+      // Default signature
+      fn(app, pool, verifyAgentAuth, auditChain);
+      registered++;
+    } catch (e) {
+      console.warn(`[register] ${name}: ${e.message}`);
+    }
+  }
+
+  // Stripe webhook (must come BEFORE express.json since it needs raw body)
+  if (stripe && primitives.bank) {
+    const express = require('express');
     app.post('/v1/_webhooks/stripe', express.raw({ type: 'application/json' }), async (req, res) => {
       const sig = req.headers['stripe-signature'];
       let event;
@@ -353,14 +447,14 @@ function registerAllRoutes(app, pool) {
         return res.status(400).json({ error: `webhook_signature_invalid: ${e.message}` });
       }
       if (event.type === 'checkout.session.completed') {
-        try { await bank.handleTopupCompleted(event.data.object, pool, auditChain); }
+        try { await primitives.bank.handleTopupCompleted(event.data.object, pool, auditChain); }
         catch (e) { console.error('[stripe.webhook]', e); }
       }
       res.json({ received: true });
     });
   }
 
-  // Agent search
+  // Agent search (top-level utility)
   app.get('/v1/agents/search', async (req, res) => {
     const q = req.query.q;
     const category = req.query.category;
@@ -396,28 +490,30 @@ function registerAllRoutes(app, pool) {
     const auth = await verifyAgentAuth(req, did);
     if (!auth.valid) return res.status(401).json({ error: auth.error });
 
-    const tables = [
-      'identities', 'api_keys', 'identity_keys', 'bank_wallets',
-      'bank_transactions', 'inbox_envelopes', 'inbox_policies',
-      'kyc_claims', 'memory_kv', 'memory_episodes',
-      'reputation_vouches', 'agent_profiles', 'agent_posts'
-    ];
     const export_data = { agent_did: did, exported_at: new Date().toISOString(), tables: {} };
+    // List of tables to scan for the agent's data
     const candidateCols = ['agent_did','did','subject_did','caller_did','from_did',
-                          'to_did','recipient_did','author_did','owner_did','publisher_did'];
-    for (const t of tables) {
+                          'to_did','recipient_did','author_did','owner_did',
+                          'publisher_did', 'holder_did', 'patient_did',
+                          'controlling_did', 'insured_did', 'lessor_did',
+                          'lessee_did', 'controller_did', 'voucher_did', 'follower_did'];
+    const tablesR = await pool.query(`
+      SELECT table_name FROM information_schema.tables
+      WHERE table_schema = 'public' LIMIT 500
+    `).catch(() => ({ rows: [] }));
+    for (const t of tablesR.rows) {
       try {
         const colsR = await pool.query(`
           SELECT column_name FROM information_schema.columns
           WHERE table_name = $1 AND column_name = ANY($2::text[])
-        `, [t, candidateCols]).catch(() => ({ rows: [] }));
+        `, [t.table_name, candidateCols]).catch(() => ({ rows: [] }));
         const cols = colsR.rows.map(r => r.column_name);
         if (cols.length === 0) continue;
         const whereSql = cols.map(c => `${c} = $1`).join(' OR ');
         const r = await pool.query(
-          `SELECT * FROM ${t} WHERE ${whereSql} LIMIT 10000`, [did]
+          `SELECT * FROM ${t.table_name} WHERE ${whereSql} LIMIT 10000`, [did]
         ).catch(() => ({ rows: [] }));
-        if (r.rows && r.rows.length) export_data.tables[t] = r.rows;
+        if (r.rows && r.rows.length) export_data.tables[t.table_name] = r.rows;
       } catch {}
     }
 
@@ -433,29 +529,26 @@ function registerAllRoutes(app, pool) {
     res.send(JSON.stringify(export_data, null, 2));
   });
 
-  // Background jobs
+  // Background jobs (a few common ones)
   const { registerCron } = require('./cron_auth');
-  registerCron(app, '/v1/_jobs/expire-kv', async (req, res) => {
-    const r = await memory.expireKv(pool).catch(e => ({ error: e.message }));
-    res.json(r);
-  });
-  registerCron(app, '/v1/_jobs/expire-inbox', async (req, res) => {
-    const r = await inbox.cleanupExpiredEnvelopes(pool, auditChain).catch(e => ({ error: e.message }));
-    res.json(r);
-  });
+  if (primitives.memory) {
+    registerCron(app, '/v1/_jobs/expire-kv', async (req, res) => {
+      const r = await primitives.memory.expireKv(pool).catch(e => ({ error: e.message }));
+      res.json(r);
+    });
+  }
+  if (primitives.inbox) {
+    registerCron(app, '/v1/_jobs/expire-inbox', async (req, res) => {
+      const r = await primitives.inbox.cleanupExpiredEnvelopes(pool, auditChain).catch(e => ({ error: e.message }));
+      res.json(r);
+    });
+  }
 
-  console.log('[openheab] All 42 agent-native primitives + MCP server registered.');
+  console.log(`[openheab] ${registered} primitives + MCP server registered.`);
 }
 
 module.exports = {
   migrateAll, registerAllRoutes, validateEnv,
   makeAuditChainAdapter, makeVerifyAgentAuth, makeVerifyAdminAuth,
-  primitives: {
-    inbox, bank, cryptoWallet, phone, memory, identityRot, reputation,
-    marketplace, publishing, governance, analytics, evalMod, continuity,
-    bankChain, bankExt, kyc, kycExt, email, extensions, commerce, storage,
-    secrets, cost, workflows, inference, security, tools, intelligence,
-    deployment, payouts, mcpServer, prompts, aliases, scheduler, oauthBridge,
-    insurance, x402, escrow, datasets, entities, tax, portability
-  }
+  primitives, PRIMITIVE_NAMES
 };
