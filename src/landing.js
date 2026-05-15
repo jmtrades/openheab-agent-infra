@@ -10,7 +10,7 @@ function publicUrl() {
 
 function primitiveCount() {
   try { return Object.keys(require('./integration').primitives).length; }
-  catch { return 153; }
+  catch { return 154; }
 }
 
 // ----------------------------------------------------------------------------
@@ -167,7 +167,8 @@ const LAYERS = [
   ['L20', 'Org / billing / commerce ops', 'org · subscriptions · metering · revenue'],
   ['L21', 'Enterprise readiness', 'sso · rbac · compliance_pack · credits'],
   ['L22', 'Growth + distribution', 'onboarding · dashboard · embed · public_directory'],
-  ['L23', 'Channel + payments', 'partnerships · whitelabel · ach · quotes']
+  ['L23', 'Channel + payments', 'partnerships · whitelabel · ach · quotes'],
+  ['L24', 'Realtime', 'realtime (SSE event stream of every audit-chained action)']
 ];
 
 // ----------------------------------------------------------------------------
@@ -192,8 +193,8 @@ function renderLanding(app) {
   <div class="metrics">
     <div class="metric"><div class="v">${prims}</div><div class="l">Primitives</div></div>
     <div class="metric"><div class="v">${routes.length}</div><div class="l">HTTP routes</div></div>
-    <div class="metric"><div class="v">23</div><div class="l">Layers</div></div>
-    <div class="metric"><div class="v">120+</div><div class="l">MCP tools</div></div>
+    <div class="metric"><div class="v">24</div><div class="l">Layers</div></div>
+    <div class="metric"><div class="v">145+</div><div class="l">MCP tools</div></div>
     <div class="metric"><div class="v">14</div><div class="l">Revenue lines</div></div>
     <div class="metric"><div class="v">$10B+</div><div class="l">Saturation ARR</div></div>
   </div>

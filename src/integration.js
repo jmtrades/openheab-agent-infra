@@ -51,7 +51,9 @@ const PRIMITIVE_NAMES = [
   // Layer 22 — Growth + distribution (new)
   'onboarding', 'dashboard', 'embed', 'public_directory',
   // Layer 23 — Channel + payments accelerators (new)
-  'partnerships', 'whitelabel', 'ach', 'quotes'
+  'partnerships', 'whitelabel', 'ach', 'quotes',
+  // Layer 24 — Realtime (new)
+  'realtime'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -223,7 +225,9 @@ const REGISTER_OVERRIDES = {
   partnerships: 'registerPartnershipsRoutes',
   whitelabel: 'registerWhitelabelRoutes',
   ach: 'registerAchRoutes',
-  quotes: 'registerQuotesRoutes'
+  quotes: 'registerQuotesRoutes',
+  // Layer 24 — Realtime
+  realtime: 'registerRealtimeRoutes'
 };
 
 async function migrateAll(pool) {

@@ -12,8 +12,8 @@ Repo: `github.com/jmtrades/openheab-agent-infra`
 
 | Metric | Value |
 |---|---|
-| Primitive modules | **137** in `src/primitives/` |
-| HTTP routes | **1000+** registered |
+| Primitive modules | **154** in `src/primitives/` |
+| HTTP routes | **1175+** registered |
 | Cron jobs | 18 scheduled |
 | MCP tools | 115+ at `/mcp` |
 | Revenue layers | 14 (see `BILLION_DOLLAR_PATH.md`) |
@@ -39,6 +39,11 @@ Repo: `github.com/jmtrades/openheab-agent-infra`
 **L17 Developer infra (8):** github, ci_cd, monitoring, error_tracking, feature_flags, experiments, webhooks, events
 **L18 AGI learning + gov/legal (8):** learning, voice_agents, labs, gov_filing, legal_research, court_records, ip_registry, climate
 **L19 Customer service + community (8):** support, referrals, loyalty, surveys, recruiting, supply_chain, licensing, benchmarks
+**L20 Org / billing / commerce ops (4):** org, subscriptions, metering, revenue
+**L21 Enterprise readiness (4):** sso, rbac, compliance_pack, credits
+**L22 Growth + distribution (4):** onboarding, dashboard, embed, public_directory
+**L23 Channel + payments (4):** partnerships, whitelabel, ach, quotes
+**L24 Realtime (1):** realtime (SSE event stream)
 
 ## Critical infrastructure files
 

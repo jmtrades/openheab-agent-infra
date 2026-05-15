@@ -36,7 +36,7 @@ function groupByFamily(routes) {
 
 function primitiveCount() {
   try { return Object.keys(require('./integration').primitives).length; }
-  catch { return 153; }
+  catch { return 154; }
 }
 
 function renderOpenApiSpec(app, opts = {}) {
@@ -72,19 +72,80 @@ function registerStatusPage(app, pool) {
     const routes = collectRoutes(app);
     const groups = groupByFamily(routes);
     const familyCount = Object.keys(groups).length;
+    const prims = primitiveCount();
+    const verbColor = m => ({ GET: '#7df9ff', POST: '#7dffaf', PUT: '#ffd866', DELETE: '#ff6e6e', PATCH: '#c084fc' })[m] || '#888';
+    const filter = String(req.query.q || '').toLowerCase();
+
     res.setHeader('content-type', 'text/html; charset=utf-8');
     res.setHeader('cache-control', 'public, max-age=60');
-    res.send(`<!doctype html><html><head><title>OpenHeab Console</title>
-<style>body{font-family:ui-monospace,Menlo,monospace;background:#0a0a0a;color:#e8e8e8;padding:24px;max-width:920px;margin:0 auto}
-h1{color:#6cf}details{background:#141414;border:1px solid #222;padding:10px;margin:4px 0;border-radius:6px}
-summary{cursor:pointer}.m-get{color:#6cf}.m-post{color:#6c9}.m-put{color:#fc6}.m-delete{color:#f66}
-code{color:#fff}</style></head><body>
-<h1>OpenHeab Substrate</h1><p>${routes.length} routes across ${familyCount} primitive families.</p>
-${Object.entries(groups).sort(([a],[b])=>a.localeCompare(b)).map(([f, rs]) =>
-  `<details><summary>${f} (${rs.length})</summary>${rs.map(r => `<div><span class="m-${r.method.toLowerCase()}">${r.method}</span> <code>${r.path}</code></div>`).join('')}</details>`
-).join('')}
-<p style="margin-top:30px;color:#888"><a href="/openapi.json" style="color:#6cf">/openapi.json</a> · <a href="/.well-known/agents.json" style="color:#6cf">agents.json</a> · <a href="/healthz" style="color:#6cf">/healthz</a></p>
-</body></html>`);
+    res.send(`<!doctype html><html lang=en><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<title>Console — OpenHeab</title>
+<style>
+:root{--bg:#0a0a0a;--fg:#f0f0f0;--dim:#7a7a7a;--dim2:#bdbdbd;--acc:#7df9ff;--card:#0f0f0f;--br:#1a1a1a;--mono:ui-monospace,'SF Mono','JetBrains Mono',Menlo,Consolas,monospace;--sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,system-ui,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font:14px/1.55 var(--sans);background:var(--bg);color:var(--fg);padding:24px}
+.wrap{max-width:1080px;margin:0 auto}
+.head{margin-bottom:28px;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:18px}
+.head h1{font:600 28px/1 var(--mono);letter-spacing:-1px}
+.head h1 .dot{color:var(--acc)}
+.sub{color:var(--dim2);font-size:14px;margin-top:6px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:24px}
+.kpi{background:var(--card);border:1px solid var(--br);border-radius:8px;padding:14px 18px}
+.kpi .l{font:500 10px/1 var(--mono);color:var(--dim);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:6px}
+.kpi .v{font:700 22px/1 var(--mono);letter-spacing:-1px}
+input.search{width:100%;background:var(--card);color:var(--fg);border:1px solid var(--br);border-radius:8px;padding:12px 16px;font:500 14px/1 var(--mono);outline:none;margin-bottom:18px}
+input.search:focus{border-color:var(--acc)}
+details{background:var(--card);border:1px solid var(--br);padding:0;margin:4px 0;border-radius:8px;overflow:hidden}
+summary{cursor:pointer;padding:12px 18px;display:flex;justify-content:space-between;align-items:center;font:500 13px/1 var(--mono);color:var(--fg);user-select:none}
+summary::-webkit-details-marker{display:none}
+summary:hover{background:rgba(255,255,255,0.02)}
+summary .count{color:var(--dim);font-size:11px;background:rgba(125,249,255,0.08);padding:3px 8px;border-radius:99px}
+.routes{padding:8px 0;border-top:1px solid var(--br)}
+.route{padding:6px 18px;display:flex;align-items:center;gap:12px;font-family:var(--mono);font-size:12px}
+.route:hover{background:rgba(255,255,255,0.02)}
+.verb{font:600 11px/1 var(--mono);min-width:54px;text-align:center;padding:3px 6px;border:1px solid currentColor;border-radius:4px}
+.path{color:var(--dim2);word-break:break-all}
+.foot{margin-top:30px;padding-top:18px;border-top:1px solid var(--br);color:var(--dim);font-size:12px;display:flex;gap:18px;flex-wrap:wrap}
+.foot a{color:var(--acc);text-decoration:none}
+.foot a:hover{text-decoration:underline}
+@media (max-width:640px){body{padding:16px}.route{font-size:11px}.verb{min-width:48px}}
+</style></head><body><div class=wrap>
+<div class=head>
+  <div>
+    <h1>openheab<span class=dot>.</span> console</h1>
+    <div class=sub>${routes.length} routes · ${familyCount} families · ${prims} primitives</div>
+  </div>
+  <div style="display:flex;gap:8px">
+    <a href="/" style="color:var(--dim2);font-size:13px;padding:8px 12px;border:1px solid var(--br);border-radius:6px;text-decoration:none">← Home</a>
+    <a href="/v1/dashboard" style="color:var(--dim2);font-size:13px;padding:8px 12px;border:1px solid var(--br);border-radius:6px;text-decoration:none">Dashboard</a>
+    <a href="/openapi.json" style="background:var(--acc);color:#001a1f;font-size:13px;font-weight:600;padding:8px 12px;border-radius:6px;text-decoration:none">OpenAPI</a>
+  </div>
+</div>
+<div class=kpis>
+  <div class=kpi><div class=l>Primitives</div><div class=v>${prims}</div></div>
+  <div class=kpi><div class=l>Routes</div><div class=v>${routes.length}</div></div>
+  <div class=kpi><div class=l>Families</div><div class=v>${familyCount}</div></div>
+  <div class=kpi><div class=l>Layers</div><div class=v>24</div></div>
+</div>
+<form method=get><input type=search name=q value="${filter.replace(/"/g, '&quot;')}" placeholder="Filter routes (e.g. wallet, kyc, savings)…" class=search autofocus></form>
+${Object.entries(groups).sort(([a],[b])=>a.localeCompare(b)).map(([f, rs]) => {
+  const visibleRoutes = filter ? rs.filter(r => r.path.toLowerCase().includes(filter) || f.includes(filter)) : rs;
+  if (visibleRoutes.length === 0) return '';
+  return `<details ${filter ? 'open' : ''}>
+    <summary>${f} <span class=count>${visibleRoutes.length}</span></summary>
+    <div class=routes>${visibleRoutes.map(r => `<div class=route><span class=verb style="color:${verbColor(r.method)}">${r.method}</span><span class=path>${r.path}</span></div>`).join('')}</div>
+  </details>`;
+}).join('')}
+<div class=foot>
+  <a href="/openapi.json">OpenAPI 3.1</a>
+  <a href="/.well-known/agents.json">agents.json</a>
+  <a href="/llms.txt">llms.txt</a>
+  <a href="/mcp/manifest">MCP manifest</a>
+  <a href="/v1/realtime/stream">SSE stream</a>
+  <a href="/healthz">/healthz</a>
+</div>
+</div></body></html>`);
   });
 
   app.get('/', (req, res, next) => {
