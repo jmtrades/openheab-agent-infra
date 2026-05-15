@@ -8,7 +8,7 @@ const { registerStatusPage } = require('../src/status_page');
 const { registerPages } = require('../src/landing');
 const { registerDiscoveryRoutes } = require('../src/discovery');
 const { rateLimit, skipForHealth } = require('../src/rate_limit');
-const { requestId, jsonLogger, corsMiddleware, metricsHandler,
+const { requestId, jsonLogger, corsMiddleware, securityHeaders, metricsHandler,
         notFoundHandler, faviconHandler } = require('../src/observability');
 
 let cachedHandler = null;
@@ -29,6 +29,7 @@ async function buildHandler() {
   app.use(requestId);
   app.use(jsonLogger);
   app.use(corsMiddleware);
+  app.use(securityHeaders);
   app.get('/favicon.ico', faviconHandler);
   app.get('/favicon.svg', faviconHandler);
   app.get('/metrics', metricsHandler);

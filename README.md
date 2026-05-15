@@ -1,17 +1,22 @@
 # openheab-agent-infra
 
-**The agent-native infrastructure layer.** Every AI agent that uses it gets a signed DID identity, a non-custodial USDC wallet on Base, KYC against 5 sanctions sources, signed A2A messaging, structured memory, marketplaces, insurance pools, escrow, multi-provider LLM inference, and 34 MCP tools — all behind a Merkle-style audit chain.
+**The agent-native infrastructure substrate.** Every AI agent that uses it gets a signed Ed25519 DID, a non-custodial USDC wallet on Base, KYC against 5 sanctions sources, virtual + physical debit cards, interest-bearing savings, lending, signed A2A messaging, structured + episodic + vector memory, marketplaces, insurance, escrow, multi-provider LLM inference, sandboxed code execution, headless browsers, voice (TTS/STT) + vision + video, planning + simulation + beliefs + goals + skills, DAOs, legal entities, contracts, courts, IP registry, real estate, prediction markets, AGI passport, RLAF, and 145+ MCP tools — all behind a Merkle-style SHA-256 audit chain signed with Ed25519.
 
 ```
-42 primitives · 334 routes · Apache 2.0
-Identity   Bank    Email    KYC     Memory   Reputation
-Marketplace  Governance  Audit  Extensions  MCP Server
-Inference  Security  Storage  Secrets  Cost  Workflows
-Tools  Intelligence  Deployment  Payouts  Prompts  Aliases
-Scheduler  OAuth  Insurance  x402  Escrow  Datasets
-Entities  Tax  Portability  Continuity  Eval  Analytics
-Crypto  Phone  Publishing  Bank-Extensions  KYC-Extensions
+228 primitives · 1,676+ routes · 39 layers · 145+ MCP tools · Apache 2.0
 ```
+
+| Try it | Endpoint |
+|---|---|
+| Live demo (provisions a real agent end-to-end) | `/demo` |
+| Operator dashboard (TV-on-the-wall view) | `/launch` |
+| Deep health check (17 checks) | `/v1/_health/deep` |
+| SDK examples (curl/Python/TS/Go/Rust) | `/sdk` |
+| Docs | `/docs` |
+| Pricing | `/pricing` |
+| Activity feed (live audit chain) | `/activity` |
+| OpenAPI 3.1 spec | `/openapi.json` |
+| MCP server (145+ tools) | `/mcp` |
 
 ## Why this exists
 

@@ -119,6 +119,40 @@ function corsMiddleware(req, res, next) {
   next();
 }
 
+// Security headers: HSTS, CSP, X-Frame-Options, etc.
+// Applied to every response. For HTML routes we set a relaxed CSP that
+// allows inline styles + scripts (we ship a lot of inline-styled HTML pages);
+// for JSON routes we use a stricter "none" default.
+function securityHeaders(req, res, next) {
+  // Strict-Transport-Security — 1 year, include subdomains, preload eligible
+  if (process.env.NODE_ENV === 'production') {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+  }
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=(), payment=()');
+  res.setHeader('X-DNS-Prefetch-Control', 'off');
+  // CSP: relaxed for HTML pages we ship (inline styles + the demo JS); strict for everything else
+  const acceptsHtml = (req.headers.accept || '').includes('text/html');
+  if (acceptsHtml) {
+    res.setHeader('Content-Security-Policy',
+      "default-src 'self'; " +
+      "style-src 'self' 'unsafe-inline'; " +
+      "script-src 'self' 'unsafe-inline'; " +
+      "img-src 'self' data: blob: https:; " +
+      "font-src 'self' data:; " +
+      "connect-src 'self' https://*.openheab.com https://api.stripe.com https://js.stripe.com; " +
+      "frame-ancestors 'none'; " +
+      "form-action 'self'; " +
+      "base-uri 'self'"
+    );
+  } else {
+    res.setHeader('Content-Security-Policy', "default-src 'none'; frame-ancestors 'none'");
+  }
+  next();
+}
+
 function notFoundHandler(req, res) {
   res.status(404).json({
     error: 'not_found', method: req.method, path: req.path,
@@ -138,6 +172,6 @@ function faviconHandler(req, res) {
 }
 
 module.exports = {
-  requestId, jsonLogger, corsMiddleware, metricsHandler,
+  requestId, jsonLogger, corsMiddleware, securityHeaders, metricsHandler,
   notFoundHandler, faviconHandler, metrics, renderPrometheus
 };

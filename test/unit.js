@@ -150,6 +150,49 @@ test('canonical hash is deterministic', () => {
     .then(([r1, r2]) => assert.strictEqual(r1.hash, r2.hash));
 });
 
+// security headers
+console.log('\n== security headers ==');
+test('securityHeaders sets HSTS in production', () => {
+  process.env.NODE_ENV = 'production';
+  const { securityHeaders } = require('../src/observability');
+  const headers = {};
+  const res = { setHeader: (k, v) => { headers[k] = v; } };
+  let nextCalled = false;
+  securityHeaders({ headers: {}, path: '/' }, res, () => { nextCalled = true; });
+  assert.ok(nextCalled);
+  assert.ok(headers['Strict-Transport-Security']?.includes('max-age=31536000'));
+  assert.strictEqual(headers['X-Content-Type-Options'], 'nosniff');
+  assert.strictEqual(headers['X-Frame-Options'], 'DENY');
+  delete process.env.NODE_ENV;
+});
+test('securityHeaders sets CSP for HTML accept', () => {
+  const { securityHeaders } = require('../src/observability');
+  const headers = {};
+  const res = { setHeader: (k, v) => { headers[k] = v; } };
+  securityHeaders({ headers: { accept: 'text/html' }, path: '/' }, res, () => {});
+  assert.ok(headers['Content-Security-Policy']?.includes("'unsafe-inline'"));
+  assert.ok(headers['Content-Security-Policy']?.includes("frame-ancestors 'none'"));
+});
+test('securityHeaders sets strict CSP for JSON', () => {
+  const { securityHeaders } = require('../src/observability');
+  const headers = {};
+  const res = { setHeader: (k, v) => { headers[k] = v; } };
+  securityHeaders({ headers: { accept: 'application/json' }, path: '/v1/x' }, res, () => {});
+  assert.ok(headers['Content-Security-Policy']?.includes("default-src 'none'"));
+});
+
+// cron registry
+console.log('\n== cron registry ==');
+test('registerCron + listCrons round-trips', () => {
+  const { registerCron, listCrons } = require('../src/cron_auth');
+  const fakeApp = { post: () => {}, get: () => {} };
+  const handler = () => {};
+  registerCron(fakeApp, '/v1/_jobs/test-unit-cron', handler);
+  const found = listCrons().find(c => c.path === '/v1/_jobs/test-unit-cron');
+  assert.ok(found, 'cron should be registered');
+  assert.strictEqual(found.handler, handler);
+});
+
 setTimeout(() => {
   console.log(`\n${passed} passed, ${failed} failed`);
   process.exit(failed > 0 ? 1 : 0);

@@ -1,17 +1,18 @@
 {
   "name": "openheab-substrate",
-  "version": "0.1.0",
-  "description": "Agent-native substrate — 42 production primitives (identity, inbox, bank, crypto, phone, memory, reputation, marketplace, publishing, governance, analytics, eval, continuity, KYC, email, extensions, commerce, storage, secrets, cost, workflows, inference, security, tools, intelligence, deployment, payouts, MCP server, prompts, aliases, scheduler, OAuth bridge, insurance, x402, escrow, datasets, entities, tax, portability).",
+  "version": "0.2.0",
+  "description": "Agent-native infrastructure substrate — 228 production primitives across 39 layers (identity, USDC bank on Base, KYC, cards, lending, multi-provider LLM inference, sandboxes, browsers, voice/vision/video, planning/simulation, DAOs, entities, contracts, courts, IP registry, brokerage, prediction markets, AGI passport, RLAF, audit chain). 145+ MCP tools. Sold to AI agents.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
     "migrate": "node -e \"require('dotenv').config(); const {Pool}=require('pg'); const {migrateAll}=require('./src/integration'); const p=new Pool({connectionString:process.env.DATABASE_URL,ssl:process.env.DATABASE_URL.includes('sslmode=require')?{rejectUnauthorized:false}:undefined}); migrateAll(p).then(()=>{console.log('done');process.exit(0)}).catch(e=>{console.error(e);process.exit(1)})\"",
-    "test": "node test/unit.js && node test/boot.js && node test/integration.js",
+    "test": "node test/unit.js && node test/boot.js && node test/bank_lifecycle.js && node test/e2e.js && node test/route_smoke.js",
     "test:unit": "node test/unit.js",
     "test:boot": "node test/boot.js",
-    "test:integration": "node test/integration.js",
-    "test:smoke": "node test/smoke.js"
+    "test:bank": "node test/bank_lifecycle.js",
+    "test:e2e": "node test/e2e.js",
+    "test:smoke": "node test/route_smoke.js"
   },
   "engines": {
     "node": ">=18"
