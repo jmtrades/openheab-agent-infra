@@ -23,6 +23,7 @@ dryrun.js
 # OS / IDE
 .vscode/
 .idea/
+.claude/
 
 # Python build artifacts
 __pycache__/
