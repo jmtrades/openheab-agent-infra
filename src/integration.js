@@ -67,7 +67,9 @@ const PRIMITIVE_NAMES = [
   // Layer 30 — In-house "no third party" core: bank, email, KYC, inference, insurance, audit, payment rails, card issuing
   'bank_core', 'email_core', 'kyc_core', 'inference_core', 'insurance_core', 'audit_core', 'payment_rails', 'card_core',
   // Layer 31 — Quickstart surfaces: /setup wizard, /welcome tour, /playground
-  'quickstart'
+  'quickstart',
+  // Layer 32 — Coworker handoff: demo seed + operator HQ
+  'demo_seed', 'operator_hq'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -284,7 +286,10 @@ const REGISTER_OVERRIDES = {
   payment_rails: 'registerPaymentRailsRoutes',
   card_core: 'registerCardCoreRoutes',
   // Layer 31 — Quickstart
-  quickstart: 'registerQuickstartRoutes'
+  quickstart: 'registerQuickstartRoutes',
+  // Layer 32 — Coworker handoff
+  demo_seed: 'registerDemoSeedRoutes',
+  operator_hq: 'registerOperatorHqRoutes'
 };
 
 async function migrateAll(pool) {
