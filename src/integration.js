@@ -77,7 +77,11 @@ const PRIMITIVE_NAMES = [
   // Layer 34 — AGI-era primitives: cross-lab passport, hierarchical delegation, decision provenance,
   // alignment scorecard, Sybil-resistant personhood, succession, real Anthropic adapter
   'agi_passport', 'agi_delegation', 'agi_provenance', 'agi_alignment_score',
-  'agi_proof_of_personhood', 'agi_succession', 'anthropic_adapter'
+  'agi_proof_of_personhood', 'agi_succession', 'anthropic_adapter',
+  // Layer 35 — Real third-party adapters: OpenAI, Google, Stripe, Twilio, Plaid, cloud (Modal/E2B/Browserbase/Sentry/Datadog/PagerDuty/GitHub/Slack)
+  // Plus ERC-20 factory + RLAF pipeline
+  'openai_adapter', 'google_adapter', 'stripe_adapter', 'twilio_adapter', 'plaid_adapter',
+  'cloud_adapters', 'erc20_factory', 'rlaf'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -316,7 +320,16 @@ const REGISTER_OVERRIDES = {
   agi_alignment_score: 'registerAgiAlignmentScoreRoutes',
   agi_proof_of_personhood: 'registerAgiPersonhoodRoutes',
   agi_succession: 'registerAgiSuccessionRoutes',
-  anthropic_adapter: 'registerAnthropicAdapterRoutes'
+  anthropic_adapter: 'registerAnthropicAdapterRoutes',
+  // Layer 35 — Real third-party adapters + on-chain + RLAF
+  openai_adapter: 'registerOpenaiAdapterRoutes',
+  google_adapter: 'registerGoogleAdapterRoutes',
+  stripe_adapter: 'registerStripeAdapterRoutes',
+  twilio_adapter: 'registerTwilioAdapterRoutes',
+  plaid_adapter: 'registerPlaidAdapterRoutes',
+  cloud_adapters: 'registerCloudAdaptersRoutes',
+  erc20_factory: 'registerErc20FactoryRoutes',
+  rlaf: 'registerRlafRoutes'
 };
 
 async function migrateAll(pool) {

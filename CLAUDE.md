@@ -12,8 +12,8 @@ Repo: `github.com/jmtrades/openheab-agent-infra`
 
 | Metric | Value |
 |---|---|
-| Primitive modules | **189** in `src/primitives/` |
-| HTTP routes | **1495+** registered |
+| Primitive modules | **217** in `src/primitives/` |
+| HTTP routes | **1618+** registered |
 | Cron jobs | 18 scheduled |
 | MCP tools | 115+ at `/mcp` |
 | Revenue layers | 14 (see `BILLION_DOLLAR_PATH.md`) |
