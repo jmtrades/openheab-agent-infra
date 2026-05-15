@@ -69,7 +69,11 @@ const PRIMITIVE_NAMES = [
   // Layer 31 — Quickstart surfaces: /setup wizard, /welcome tour, /playground
   'quickstart',
   // Layer 32 — Coworker handoff: demo seed + operator HQ
-  'demo_seed', 'operator_hq'
+  'demo_seed', 'operator_hq',
+  // Layer 33 — Agent-first meta-runtime + interop: agent runtime, capability catalog, batch, GraphQL,
+  // quantum-resistant DIDs, skill composer, personality, self-improvement, federation, benchmark harness
+  'agent_runtime', 'capability_catalog', 'batch', 'graphql', 'quantum_did',
+  'skill_composer', 'agent_personality', 'self_improvement', 'federation', 'benchmark_harness'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -289,7 +293,18 @@ const REGISTER_OVERRIDES = {
   quickstart: 'registerQuickstartRoutes',
   // Layer 32 — Coworker handoff
   demo_seed: 'registerDemoSeedRoutes',
-  operator_hq: 'registerOperatorHqRoutes'
+  operator_hq: 'registerOperatorHqRoutes',
+  // Layer 33 — Agent-first meta-runtime + interop
+  agent_runtime: 'registerAgentRuntimeRoutes',
+  capability_catalog: 'registerCapabilityCatalogRoutes',
+  batch: 'registerBatchRoutes',
+  graphql: 'registerGraphqlRoutes',
+  quantum_did: 'registerQuantumDidRoutes',
+  skill_composer: 'registerSkillComposerRoutes',
+  agent_personality: 'registerAgentPersonalityRoutes',
+  self_improvement: 'registerSelfImprovementRoutes',
+  federation: 'registerFederationRoutes',
+  benchmark_harness: 'registerBenchmarkHarnessRoutes'
 };
 
 async function migrateAll(pool) {
