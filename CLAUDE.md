@@ -12,8 +12,8 @@ Repo: `github.com/jmtrades/openheab-agent-infra`
 
 | Metric | Value |
 |---|---|
-| Primitive modules | **156** in `src/primitives/` |
-| HTTP routes | **1230+** registered |
+| Primitive modules | **159** in `src/primitives/` |
+| HTTP routes | **1280+** registered |
 | Cron jobs | 18 scheduled |
 | MCP tools | 115+ at `/mcp` |
 | Revenue layers | 14 (see `BILLION_DOLLAR_PATH.md`) |
@@ -45,6 +45,7 @@ Repo: `github.com/jmtrades/openheab-agent-infra`
 **L23 Channel + payments (4):** partnerships, whitelabel, ach, quotes
 **L24 Realtime (1):** realtime (SSE event stream)
 **L25 Full email + KYC depth (2):** email_advanced (threading, attachments, aliases, filters, templates, lists/newsletters, analytics, suppression, calendar invites, search, snooze, autoresponder), kyc_advanced (KYB orgs, ID document verification, UBOs, address proofs, source-of-funds, Travel Rule FATF, adverse media, country+industry risk scoring, SAR generation, ZK proofs, continuous monitoring)
+**L26 Marketing + SEO + Blog (3):** blog (8 seed posts + RSS + double-opt-in newsletter signup + admin authoring), marketing (lead capture with UTM attribution, conversion tracking, lead magnets, comparison pages, solution pages by use case, /about, /customers, /jobs, /press, /security, /status, /changelog, /roadmap), seo (comprehensive sitemap index, robots.txt, security.txt RFC 9116, humans.txt, llms.txt + llms-full.txt, site.webmanifest, favicon.svg, og.svg, agents.json, JSON-LD Organization+SoftwareApplication+FAQPage+SearchAction+BreadcrumbList helpers)
 
 ## Critical infrastructure files
 

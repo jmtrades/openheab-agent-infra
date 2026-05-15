@@ -55,7 +55,9 @@ const PRIMITIVE_NAMES = [
   // Layer 24 — Realtime (new)
   'realtime',
   // Layer 25 — Full email + KYC depth (new)
-  'email_advanced', 'kyc_advanced'
+  'email_advanced', 'kyc_advanced',
+  // Layer 26 — Marketing + SEO + Blog (new)
+  'blog', 'marketing', 'seo'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -232,7 +234,11 @@ const REGISTER_OVERRIDES = {
   realtime: 'registerRealtimeRoutes',
   // Layer 25 — Full email + KYC depth
   email_advanced: 'registerEmailAdvancedRoutes',
-  kyc_advanced: 'registerKycAdvancedRoutes'
+  kyc_advanced: 'registerKycAdvancedRoutes',
+  // Layer 26 — Marketing + SEO + Blog
+  blog: 'registerBlogRoutes',
+  marketing: 'registerMarketingRoutes',
+  seo: 'registerSeoRoutes'
 };
 
 async function migrateAll(pool) {

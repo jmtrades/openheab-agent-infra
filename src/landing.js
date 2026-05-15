@@ -16,17 +16,35 @@ function primitiveCount() {
 // ----------------------------------------------------------------------------
 // Shared head + nav + footer (single CSS payload, ~3KB)
 // ----------------------------------------------------------------------------
-function head(title, description) {
+function head(title, description, opts = {}) {
+  const path = opts.path || '/';
+  const canonical = opts.canonical || `${publicUrl()}${path}`;
+  const ogImage = opts.ogImage || `${publicUrl()}/og.svg`;
+  const jsonLd = opts.jsonLd || '';
   return `<!doctype html><html lang="en"><head>
 <meta charset="utf-8"><title>${title}</title>
 <meta name="description" content="${description}">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<link rel="canonical" href="${publicUrl()}/">
+<link rel="canonical" href="${canonical}">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="apple-touch-icon" href="/favicon.svg">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="alternate" type="application/rss+xml" title="OpenHeab Blog" href="/blog/rss.xml">
 <meta property="og:title" content="${title}">
 <meta property="og:description" content="${description}">
 <meta property="og:type" content="website">
-<meta property="og:url" content="${publicUrl()}/">
+<meta property="og:url" content="${canonical}">
+<meta property="og:site_name" content="OpenHeab">
+<meta property="og:image" content="${ogImage}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@openheab">
+<meta name="twitter:title" content="${title}">
+<meta name="twitter:description" content="${description}">
+<meta name="twitter:image" content="${ogImage}">
 <meta name="theme-color" content="#0a0a0a">
+${jsonLd}
 <style>
 :root{
   --bg:#0a0a0a;--fg:#f0f0f0;--dim:#7a7a7a;--dim2:#bdbdbd;
@@ -179,7 +197,17 @@ function renderLanding(app) {
   const prims = primitiveCount();
   const desc = `${prims} primitives. Identity, USDC bank, KYC, email, memory, marketplaces, perception, AGI cognition — every primitive an AI agent needs to act on the internet. Open source. Self-hostable.`;
 
-  return head('OpenHeab — agent-native infrastructure for AI agents and AGI', desc) + nav() + `<main>
+  // Comprehensive JSON-LD: Organization + SoftwareApplication + FAQPage + WebSite (search action)
+  let jsonLd = '';
+  try {
+    const seo = require('./primitives/seo');
+    jsonLd = `<script type="application/ld+json">${seo.organizationJsonLd()}</script>
+<script type="application/ld+json">${seo.softwareApplicationJsonLd(prims, routes.length)}</script>
+<script type="application/ld+json">${seo.faqJsonLd()}</script>
+<script type="application/ld+json">${seo.searchActionJsonLd()}</script>`;
+  } catch {}
+
+  return head('OpenHeab — agent-native infrastructure for AI agents and AGI', desc, { path: '/', jsonLd }) + nav() + `<main>
 
 <section class="hero">
   <span class="pill"><span class="live"></span> ${prims} primitives live · ${routes.length} routes</span>
