@@ -12,8 +12,8 @@ Repo: `github.com/jmtrades/openheab-agent-infra`
 
 | Metric | Value |
 |---|---|
-| Primitive modules | **154** in `src/primitives/` |
-| HTTP routes | **1175+** registered |
+| Primitive modules | **156** in `src/primitives/` |
+| HTTP routes | **1230+** registered |
 | Cron jobs | 18 scheduled |
 | MCP tools | 115+ at `/mcp` |
 | Revenue layers | 14 (see `BILLION_DOLLAR_PATH.md`) |
@@ -44,6 +44,7 @@ Repo: `github.com/jmtrades/openheab-agent-infra`
 **L22 Growth + distribution (4):** onboarding, dashboard, embed, public_directory
 **L23 Channel + payments (4):** partnerships, whitelabel, ach, quotes
 **L24 Realtime (1):** realtime (SSE event stream)
+**L25 Full email + KYC depth (2):** email_advanced (threading, attachments, aliases, filters, templates, lists/newsletters, analytics, suppression, calendar invites, search, snooze, autoresponder), kyc_advanced (KYB orgs, ID document verification, UBOs, address proofs, source-of-funds, Travel Rule FATF, adverse media, country+industry risk scoring, SAR generation, ZK proofs, continuous monitoring)
 
 ## Critical infrastructure files
 

@@ -53,7 +53,9 @@ const PRIMITIVE_NAMES = [
   // Layer 23 — Channel + payments accelerators (new)
   'partnerships', 'whitelabel', 'ach', 'quotes',
   // Layer 24 — Realtime (new)
-  'realtime'
+  'realtime',
+  // Layer 25 — Full email + KYC depth (new)
+  'email_advanced', 'kyc_advanced'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -227,7 +229,10 @@ const REGISTER_OVERRIDES = {
   ach: 'registerAchRoutes',
   quotes: 'registerQuotesRoutes',
   // Layer 24 — Realtime
-  realtime: 'registerRealtimeRoutes'
+  realtime: 'registerRealtimeRoutes',
+  // Layer 25 — Full email + KYC depth
+  email_advanced: 'registerEmailAdvancedRoutes',
+  kyc_advanced: 'registerKycAdvancedRoutes'
 };
 
 async function migrateAll(pool) {
