@@ -59,7 +59,11 @@ const PRIMITIVE_NAMES = [
   // Layer 26 — Marketing + SEO + Blog (new)
   'blog', 'marketing', 'seo',
   // Layer 27 — Conversion + AGI-future + execution (new)
-  'signup', 'negotiation', 'orchestration', 'constitution', 'safety', 'growth_plan', 'cli'
+  'signup', 'negotiation', 'orchestration', 'constitution', 'safety', 'growth_plan', 'cli',
+  // Layer 28 — Industry verticals + multimodal + capital markets + agent-marketplace + evals + integrations + RT-bidirectional + mobile + IPO-readiness
+  'verticals', 'multimodal', 'capital_markets', 'agent_market', 'evals', 'integrations', 'realtime_ws', 'mobile', 'ipo_readiness',
+  // Layer 29 — Design system + workflows + provider adapters + customer success + i18n + status incidents
+  'design_system', 'workflow_builder', 'provider_adapters', 'customer_success', 'i18n', 'status_incidents'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -248,7 +252,24 @@ const REGISTER_OVERRIDES = {
   constitution: 'registerConstitutionRoutes',
   safety: 'registerSafetyRoutes',
   growth_plan: 'registerGrowthPlanRoutes',
-  cli: 'registerCliRoutes'
+  cli: 'registerCliRoutes',
+  // Layer 28 — Verticals + AGI-future
+  verticals: 'registerVerticalsRoutes',
+  multimodal: 'registerMultimodalRoutes',
+  capital_markets: 'registerCapitalMarketsRoutes',
+  agent_market: 'registerAgentMarketRoutes',
+  evals: 'registerEvalsRoutes',
+  integrations: 'registerIntegrationsRoutes',
+  realtime_ws: 'registerRealtimeWsRoutes',
+  mobile: 'registerMobileRoutes',
+  ipo_readiness: 'registerIpoReadinessRoutes',
+  // Layer 29 — Design + workflows + adapters + CS + i18n + incidents
+  design_system: 'registerDesignSystemRoutes',
+  workflow_builder: 'registerWorkflowBuilderRoutes',
+  provider_adapters: 'registerProviderAdaptersRoutes',
+  customer_success: 'registerCustomerSuccessRoutes',
+  i18n: 'registerI18nRoutes',
+  status_incidents: 'registerStatusIncidentsRoutes'
 };
 
 async function migrateAll(pool) {
