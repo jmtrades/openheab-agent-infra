@@ -3,17 +3,17 @@
 // ============================================================================
 function collectRoutes(app) {
   const out = [];
+  const pushIfString = (method, path) => {
+    if (typeof path === 'string') out.push({ method: method.toUpperCase(), path });
+    else if (Array.isArray(path)) for (const p of path) if (typeof p === 'string') out.push({ method: method.toUpperCase(), path: p });
+  };
   for (const layer of app._router?.stack || []) {
     if (layer.route) {
-      for (const method of Object.keys(layer.route.methods)) {
-        out.push({ method: method.toUpperCase(), path: layer.route.path });
-      }
+      for (const method of Object.keys(layer.route.methods)) pushIfString(method, layer.route.path);
     } else if (layer.name === 'router' && layer.handle?.stack) {
       for (const sub of layer.handle.stack) {
         if (sub.route) {
-          for (const method of Object.keys(sub.route.methods)) {
-            out.push({ method: method.toUpperCase(), path: sub.route.path });
-          }
+          for (const method of Object.keys(sub.route.methods)) pushIfString(method, sub.route.path);
         }
       }
     }

@@ -81,7 +81,11 @@ const PRIMITIVE_NAMES = [
   // Layer 35 — Real third-party adapters: OpenAI, Google, Stripe, Twilio, Plaid, cloud (Modal/E2B/Browserbase/Sentry/Datadog/PagerDuty/GitHub/Slack)
   // Plus ERC-20 factory + RLAF pipeline
   'openai_adapter', 'google_adapter', 'stripe_adapter', 'twilio_adapter', 'plaid_adapter',
-  'cloud_adapters', 'erc20_factory', 'rlaf'
+  'cloud_adapters', 'erc20_factory', 'rlaf',
+  // Layer 36 — Bulk adapter wirings: Mistral/Together/Modern Treasury/Wise/SendGrid/Onfido/Persona/Sumsub/Comply
+  // Advantage/Vercel/Cloudflare/AWS S3/Alchemy/Discord/Vanta/Drata/Carta/Teams/WhatsApp — 19 providers, one file.
+  // Plus production_checks (readiness verifier) + e2e_demo (single shareable demo URL)
+  'adapter_wirings', 'production_checks', 'e2e_demo'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -329,7 +333,11 @@ const REGISTER_OVERRIDES = {
   plaid_adapter: 'registerPlaidAdapterRoutes',
   cloud_adapters: 'registerCloudAdaptersRoutes',
   erc20_factory: 'registerErc20FactoryRoutes',
-  rlaf: 'registerRlafRoutes'
+  rlaf: 'registerRlafRoutes',
+  // Layer 36 — Bulk adapter wirings + production checks + e2e demo
+  adapter_wirings: 'registerAdapterWiringsRoutes',
+  production_checks: 'registerProductionChecksRoutes',
+  e2e_demo: 'registerE2eDemoRoutes'
 };
 
 async function migrateAll(pool) {
@@ -606,6 +614,11 @@ function registerAllRoutes(app, pool) {
         fn(app, pool, verifyAgentAuth, auditChain, primitives.email);
         registered++; continue;
       }
+      // Layer 36: pass integration context for deep introspection
+      if (name === 'production_checks' || name === 'e2e_demo') {
+        fn(app, pool, verifyAgentAuth, auditChain, { app, pool, auditChain, primitives, crons: [] });
+        registered++; continue;
+      }
 
       // Default signature
       fn(app, pool, verifyAgentAuth, auditChain);
@@ -725,6 +738,8 @@ function registerAllRoutes(app, pool) {
   }
 
   console.log(`[openheab] ${registered} primitives + MCP server registered.`);
+
+  return { app, pool, auditChain, verifyAgentAuth, verifyAdminAuth, primitives, registered };
 }
 
 module.exports = {

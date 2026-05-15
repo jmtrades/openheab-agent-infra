@@ -12,10 +12,12 @@ Repo: `github.com/jmtrades/openheab-agent-infra`
 
 | Metric | Value |
 |---|---|
-| Primitive modules | **217** in `src/primitives/` |
-| HTTP routes | **1618+** registered |
+| Primitive modules | **220** in `src/primitives/` |
+| HTTP routes | **1,643+** registered |
 | Cron jobs | 18 scheduled |
 | MCP tools | 115+ at `/mcp` |
+| Architecture layers | 36 |
+| Tests | 59 passing (boot + unit + bank_lifecycle + e2e) |
 | Revenue layers | 14 (see `BILLION_DOLLAR_PATH.md`) |
 
 ## The 135 primitives (19 layers)
@@ -50,6 +52,12 @@ Repo: `github.com/jmtrades/openheab-agent-infra`
 **L28 Verticals + AGI-future + IPO (9):** verticals (10 industry-specific compliance shims: healthcare/HIPAA, education/FERPA, defense/ITAR, government/FedRAMP, finance/FINRA, insurance/NAIC, pharma/21CFR, aviation/FAA, legal/ABA, energy/NERC), multimodal (text+image+audio+video+sensor fusion routed to cheapest provider supporting all modalities), capital_markets (cap tables with vesting, bonds, funding rounds, dividends, agent-issued equity), agent_market (hire-an-agent: RFPs/bids/escrowed engagement/reviews; 20% take rate), evals (8 seed benchmarks + leaderboards), integrations (Slack/Discord/Teams/WhatsApp/Telegram/SMS/iMessage with encrypted access tokens), realtime_ws (long-poll bidirectional channels), mobile (device enrollment, push notifications, app version checks, deep links via Apple/Google universal links, public agent profile pages /a/:did_or_slug), ipo_readiness (19 ICFR controls, board-pack generator, S-1/10-K/10-Q filing tracker, employee equity admin with vesting+cliff, insider trading windows, readiness score)
 **L29 Design + workflows + adapters + CS + i18n + incidents (6):** design_system, workflow_builder, provider_adapters, customer_success, i18n, status_incidents
 **L30 In-house "no third party" core (8):** bank_core (double-entry general ledger replacing Mercury/Stripe Treasury — FBO accounts, reserve mgmt, capital adequacy ratio, balance sheet, public proof-of-reserves), email_core (DKIM/SPF/DMARC signing+verification replacing SendGrid — RSA-2048 keypair gen, MTA queue with backoff, IMAP-style folders, Bayesian spam scorer), kyc_core (canonical sanctions DB + Levenshtein fuzzy match + decisioning rules replacing Onfido/Persona/Sumsub), inference_core (OpenAI-compatible chat completions + embeddings + fine-tuning replacing Anthropic/OpenAI — 5 model tiers, pluggable backend), insurance_core (full underwriting + claims + reserves + reinsurance replacing Embroker/Vouch — 5 products, premium calc with KYC risk multiplier), audit_core (continuous evidence collection + Ed25519-signed independent attestations replacing Vanta/Drata — auditor portal with token-scoped access), payment_rails (real NACHA file gen for ACH + SWIFT MT103 + SEPA pain.001 XML replacing Modern Treasury/Dwolla/Wise — full file generation with Luhn-correct entry hashes), card_core (Luhn-valid PAN gen + AES-256-GCM PAN storage + ISO 8583 auth/capture/reverse/chargeback flow replacing Stripe Issuing/Marqeta/Lithic — interchange revenue auto-recorded)
+**L31 Operator-facing demo surface (3):** quickstart (`/setup` wizard + `/welcome` tour + `/playground` live API explorer)
+**L32 Empty-dashboard fix (2):** demo_seed (`/v1/admin/demo/seed` populates 50 agents, 10 orgs, 100 transactions for instant "alive" dashboards), operator_hq (`/v1/admin/hq` cross-tenant operator overview)
+**L33 Agent-first meta-primitives (10):** agent_runtime, capability_catalog, batch, graphql, quantum_did, skill_composer, agent_personality, self_improvement, federation, benchmark_harness
+**L34 AGI-era primitives (7):** agi_passport (cross-lab portable agent identity), agi_delegation (hierarchical scope-restricted authority), agi_provenance (Ed25519-signed decision audit), agi_alignment_score (continuous behavioral scoring), agi_proof_of_personhood (Sybil resistance via biometric+social+stake+RLAF), agi_succession (estate planning for retiring agents), anthropic_adapter (real Anthropic API forwarder with budget enforcement)
+**L35 Real third-party adapters (8):** openai_adapter, google_adapter, stripe_adapter, twilio_adapter, plaid_adapter, cloud_adapters (Modal+E2B+Browserbase+Sentry+Datadog+PagerDuty+GitHub+Slack), erc20_factory (real on-chain ERC-20 deploy via viem), rlaf (Reinforcement Learning from Agent Feedback)
+**L36 Anthropic-launch readiness (3):** adapter_wirings (19 more provider HTTP forwarders in one file: Mistral, Together, Modern Treasury, Wise, SendGrid, Onfido, Persona, Sumsub, Comply Advantage, Vercel, Cloudflare DNS, AWS S3 presign, Alchemy webhooks, Discord, Vanta, Drata, Carta, Teams, WhatsApp), production_checks (`/v1/_health/deep` comprehensive readiness verifier — DB roundtrip + audit chain integrity + in-house cores + adapters + tables + routes + crons + secrets + bank ledger consistency), e2e_demo (`/demo` single shareable URL provisioning real demo agent end-to-end in ~200ms)
 
 ## Critical infrastructure files
 
