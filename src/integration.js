@@ -63,7 +63,9 @@ const PRIMITIVE_NAMES = [
   // Layer 28 — Industry verticals + multimodal + capital markets + agent-marketplace + evals + integrations + RT-bidirectional + mobile + IPO-readiness
   'verticals', 'multimodal', 'capital_markets', 'agent_market', 'evals', 'integrations', 'realtime_ws', 'mobile', 'ipo_readiness',
   // Layer 29 — Design system + workflows + provider adapters + customer success + i18n + status incidents
-  'design_system', 'workflow_builder', 'provider_adapters', 'customer_success', 'i18n', 'status_incidents'
+  'design_system', 'workflow_builder', 'provider_adapters', 'customer_success', 'i18n', 'status_incidents',
+  // Layer 30 — In-house "no third party" core: bank, email, KYC, inference, insurance, audit, payment rails, card issuing
+  'bank_core', 'email_core', 'kyc_core', 'inference_core', 'insurance_core', 'audit_core', 'payment_rails', 'card_core'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -269,7 +271,16 @@ const REGISTER_OVERRIDES = {
   provider_adapters: 'registerProviderAdaptersRoutes',
   customer_success: 'registerCustomerSuccessRoutes',
   i18n: 'registerI18nRoutes',
-  status_incidents: 'registerStatusIncidentsRoutes'
+  status_incidents: 'registerStatusIncidentsRoutes',
+  // Layer 30 — In-house core (no third party)
+  bank_core: 'registerBankCoreRoutes',
+  email_core: 'registerEmailCoreRoutes',
+  kyc_core: 'registerKycCoreRoutes',
+  inference_core: 'registerInferenceCoreRoutes',
+  insurance_core: 'registerInsuranceCoreRoutes',
+  audit_core: 'registerAuditCoreRoutes',
+  payment_rails: 'registerPaymentRailsRoutes',
+  card_core: 'registerCardCoreRoutes'
 };
 
 async function migrateAll(pool) {
