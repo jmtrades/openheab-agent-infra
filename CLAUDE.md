@@ -12,8 +12,8 @@ Repo: `github.com/jmtrades/openheab-agent-infra`
 
 | Metric | Value |
 |---|---|
-| Primitive modules | **159** in `src/primitives/` |
-| HTTP routes | **1280+** registered |
+| Primitive modules | **166** in `src/primitives/` |
+| HTTP routes | **1325+** registered |
 | Cron jobs | 18 scheduled |
 | MCP tools | 115+ at `/mcp` |
 | Revenue layers | 14 (see `BILLION_DOLLAR_PATH.md`) |
@@ -46,6 +46,7 @@ Repo: `github.com/jmtrades/openheab-agent-infra`
 **L24 Realtime (1):** realtime (SSE event stream)
 **L25 Full email + KYC depth (2):** email_advanced (threading, attachments, aliases, filters, templates, lists/newsletters, analytics, suppression, calendar invites, search, snooze, autoresponder), kyc_advanced (KYB orgs, ID document verification, UBOs, address proofs, source-of-funds, Travel Rule FATF, adverse media, country+industry risk scoring, SAR generation, ZK proofs, continuous monitoring)
 **L26 Marketing + SEO + Blog (3):** blog (8 seed posts + RSS + double-opt-in newsletter signup + admin authoring), marketing (lead capture with UTM attribution, conversion tracking, lead magnets, comparison pages, solution pages by use case, /about, /customers, /jobs, /press, /security, /status, /changelog, /roadmap), seo (comprehensive sitemap index, robots.txt, security.txt RFC 9116, humans.txt, llms.txt + llms-full.txt, site.webmanifest, favicon.svg, og.svg, agents.json, JSON-LD Organization+SoftwareApplication+FAQPage+SearchAction+BreadcrumbList helpers)
+**L27 Conversion + AGI-future + execution (7):** signup (real Stripe Checkout flow + provisioning identity+org+wallet+API key in one POST + Stripe webhook handlers — THE #1 revenue gate), negotiation (A2A bid/ask/counter/accept protocol with escrow + dispute), orchestration (Airflow-for-agents DAG with cron-driven node execution), constitution (declarative agent rules with cryptographic enforcement + binding + violation tracking), safety (AGI safety classifier with 14 attack categories, auto-quarantine, red-team runs), growth_plan ($10M MRR/90-day execution dashboard with weekly targets + milestones + linear projection), cli (downloadable CLI tool at /cli/install.sh + /cli/openheab — `npx openheab signup`)
 
 ## Critical infrastructure files
 

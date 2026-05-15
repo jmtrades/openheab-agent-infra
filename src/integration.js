@@ -57,7 +57,9 @@ const PRIMITIVE_NAMES = [
   // Layer 25 — Full email + KYC depth (new)
   'email_advanced', 'kyc_advanced',
   // Layer 26 — Marketing + SEO + Blog (new)
-  'blog', 'marketing', 'seo'
+  'blog', 'marketing', 'seo',
+  // Layer 27 — Conversion + AGI-future + execution (new)
+  'signup', 'negotiation', 'orchestration', 'constitution', 'safety', 'growth_plan', 'cli'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -238,7 +240,15 @@ const REGISTER_OVERRIDES = {
   // Layer 26 — Marketing + SEO + Blog
   blog: 'registerBlogRoutes',
   marketing: 'registerMarketingRoutes',
-  seo: 'registerSeoRoutes'
+  seo: 'registerSeoRoutes',
+  // Layer 27 — Conversion + AGI-future + execution
+  signup: 'registerSignupRoutes',
+  negotiation: 'registerNegotiationRoutes',
+  orchestration: 'registerOrchestrationRoutes',
+  constitution: 'registerConstitutionRoutes',
+  safety: 'registerSafetyRoutes',
+  growth_plan: 'registerGrowthPlanRoutes',
+  cli: 'registerCliRoutes'
 };
 
 async function migrateAll(pool) {
@@ -497,6 +507,7 @@ function registerAllRoutes(app, pool) {
       // Special cases that need extra args
       if (name === 'bank' && !stripe) continue;
       if (name === 'bank') { fn(app, pool, verifyAgentAuth, auditChain, stripe); registered++; continue; }
+      if (name === 'signup') { fn(app, pool, verifyAgentAuth, auditChain, stripe); registered++; continue; }
       if (name === 'phone' && !twilio) continue;
       if (name === 'phone') {
         fn(app, pool, verifyAgentAuth, auditChain, twilio, primitives.inbox, process.env.TWILIO_AUTH_TOKEN);
