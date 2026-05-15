@@ -73,7 +73,11 @@ const PRIMITIVE_NAMES = [
   // Layer 33 — Agent-first meta-runtime + interop: agent runtime, capability catalog, batch, GraphQL,
   // quantum-resistant DIDs, skill composer, personality, self-improvement, federation, benchmark harness
   'agent_runtime', 'capability_catalog', 'batch', 'graphql', 'quantum_did',
-  'skill_composer', 'agent_personality', 'self_improvement', 'federation', 'benchmark_harness'
+  'skill_composer', 'agent_personality', 'self_improvement', 'federation', 'benchmark_harness',
+  // Layer 34 — AGI-era primitives: cross-lab passport, hierarchical delegation, decision provenance,
+  // alignment scorecard, Sybil-resistant personhood, succession, real Anthropic adapter
+  'agi_passport', 'agi_delegation', 'agi_provenance', 'agi_alignment_score',
+  'agi_proof_of_personhood', 'agi_succession', 'anthropic_adapter'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -304,7 +308,15 @@ const REGISTER_OVERRIDES = {
   agent_personality: 'registerAgentPersonalityRoutes',
   self_improvement: 'registerSelfImprovementRoutes',
   federation: 'registerFederationRoutes',
-  benchmark_harness: 'registerBenchmarkHarnessRoutes'
+  benchmark_harness: 'registerBenchmarkHarnessRoutes',
+  // Layer 34 — AGI-era
+  agi_passport: 'registerAgiPassportRoutes',
+  agi_delegation: 'registerAgiDelegationRoutes',
+  agi_provenance: 'registerAgiProvenanceRoutes',
+  agi_alignment_score: 'registerAgiAlignmentScoreRoutes',
+  agi_proof_of_personhood: 'registerAgiPersonhoodRoutes',
+  agi_succession: 'registerAgiSuccessionRoutes',
+  anthropic_adapter: 'registerAnthropicAdapterRoutes'
 };
 
 async function migrateAll(pool) {
