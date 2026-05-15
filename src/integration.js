@@ -84,8 +84,11 @@ const PRIMITIVE_NAMES = [
   'cloud_adapters', 'erc20_factory', 'rlaf',
   // Layer 36 — Bulk adapter wirings: Mistral/Together/Modern Treasury/Wise/SendGrid/Onfido/Persona/Sumsub/Comply
   // Advantage/Vercel/Cloudflare/AWS S3/Alchemy/Discord/Vanta/Drata/Carta/Teams/WhatsApp — 19 providers, one file.
-  // Plus production_checks (readiness verifier) + e2e_demo (single shareable demo URL)
-  'adapter_wirings', 'production_checks', 'e2e_demo'
+  // Plus production_checks (readiness verifier) + e2e_demo (single shareable demo URL) + launch_dashboard (TV-on-the-wall ops dashboard)
+  'adapter_wirings', 'production_checks', 'e2e_demo', 'launch_dashboard',
+  // Layer 37 — Operator-facing day-2 surfaces: webhook subscriptions w/ HMAC signing
+  // + retries, API key management (create/list/rotate/revoke) with sha256-hashed storage
+  'webhooks_v2', 'api_keys_v2'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -334,10 +337,14 @@ const REGISTER_OVERRIDES = {
   cloud_adapters: 'registerCloudAdaptersRoutes',
   erc20_factory: 'registerErc20FactoryRoutes',
   rlaf: 'registerRlafRoutes',
-  // Layer 36 — Bulk adapter wirings + production checks + e2e demo
+  // Layer 36 — Bulk adapter wirings + production checks + e2e demo + launch dashboard
   adapter_wirings: 'registerAdapterWiringsRoutes',
   production_checks: 'registerProductionChecksRoutes',
-  e2e_demo: 'registerE2eDemoRoutes'
+  e2e_demo: 'registerE2eDemoRoutes',
+  launch_dashboard: 'registerLaunchDashboardRoutes',
+  // Layer 37 — Day-2 operator surfaces
+  webhooks_v2: 'registerWebhooksV2Routes',
+  api_keys_v2: 'registerApiKeysV2Routes'
 };
 
 async function migrateAll(pool) {
@@ -402,6 +409,13 @@ function makeAuditChainAdapter(pool) {
         VALUES ($1, $2, $3, $4::jsonb, NOW())
         ON CONFLICT (length) DO NOTHING
       `, [nextLength, hash, prevHash, canonical]).catch(() => {});
+      // Fan out to webhook subscribers (best-effort, non-blocking)
+      try {
+        const webhooks = require('./primitives/webhooks_v2');
+        if (entry?.event_type && webhooks?.enqueue) {
+          webhooks.enqueue(pool, entry.event_type, { ...entry, _audit_hash: hash, _audit_length: nextLength }).catch(() => {});
+        }
+      } catch {}
       return { hash, length: nextLength };
     }
   };
@@ -615,7 +629,7 @@ function registerAllRoutes(app, pool) {
         registered++; continue;
       }
       // Layer 36: pass integration context for deep introspection
-      if (name === 'production_checks' || name === 'e2e_demo') {
+      if (name === 'production_checks' || name === 'e2e_demo' || name === 'launch_dashboard') {
         fn(app, pool, verifyAgentAuth, auditChain, { app, pool, auditChain, primitives, crons: [] });
         registered++; continue;
       }
