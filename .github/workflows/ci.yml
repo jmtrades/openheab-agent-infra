@@ -2,14 +2,24 @@ name: ci
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'claude/**']
   pull_request:
     branches: [main]
 
 jobs:
-  syntax:
-    name: Syntax + boot test
+  test:
+    name: Syntax + boot + unit + bank + e2e + smoke
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgres://x:x@x/x?sslmode=require
+      STRIPE_SECRET_KEY: sk_test_dummy
+      STRIPE_WEBHOOK_SECRET: whsec_dummy
+      STRIPE_PRICE_PRO_MONTHLY: price_dummy
+      IDENTITY_MASTER_KEK: '0000000000000000000000000000000000000000000000000000000000000000'
+      CRYPTO_MASTER_KEK: '0000000000000000000000000000000000000000000000000000000000000000'
+      BANK_MASTER_KEK: '0000000000000000000000000000000000000000000000000000000000000000'
+      OPERATOR_PUBLIC_URL: https://openheab.com
+      OPENAI_API_KEY: sk-dummy
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -17,28 +27,28 @@ jobs:
           node-version: '22'
           cache: 'npm'
       - run: npm ci --no-audit --no-fund
+
       - name: node --check every JS file
         run: |
           set -e
-          for f in $(find src api server.js test email-gateway -name '*.js'); do
+          for f in $(find src api server.js test email-gateway -name '*.js' 2>/dev/null); do
             node --check "$f"
           done
+
       - name: boot test
-        env:
-          DATABASE_URL: postgres://x:x@x/x?sslmode=require
-          STRIPE_SECRET_KEY: sk_test_dummy
-          STRIPE_WEBHOOK_SECRET: whsec_dummy
-          STRIPE_PRICE_PRO_MONTHLY: price_dummy
-          IDENTITY_MASTER_KEK: '0000000000000000000000000000000000000000000000000000000000000000'
-          CRYPTO_MASTER_KEK: '0000000000000000000000000000000000000000000000000000000000000000'
-          BANK_MASTER_KEK: '0000000000000000000000000000000000000000000000000000000000000000'
-          OPERATOR_PUBLIC_URL: https://openheab.com
-          OPENAI_API_KEY: sk-dummy
         run: node test/boot.js
+
       - name: unit tests
-        env:
-          BANK_MASTER_KEK: '0000000000000000000000000000000000000000000000000000000000000000'
         run: node test/unit.js
+
+      - name: bank lifecycle tests
+        run: node test/bank_lifecycle.js
+
+      - name: e2e tests
+        run: node test/e2e.js
+
+      - name: route smoke test (0 5xx tolerance)
+        run: node test/route_smoke.js
 
   solidity:
     name: Solidity (Foundry)

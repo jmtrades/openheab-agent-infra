@@ -51,6 +51,17 @@ async function start() {
   registerDiscoveryRoutes(app);
   app.use(notFoundHandler);
 
+  let cronStopper = null;
+  if (process.env.ENABLE_INPROCESS_CRON === 'true') {
+    const { startInProcessScheduler } = require('./src/cron_auth');
+    const interval = parseInt(process.env.CRON_INTERVAL_MS || '60000');
+    cronStopper = startInProcessScheduler({
+      intervalMs: interval,
+      onError: (e, path) => console.warn(`[cron] ${path} failed: ${e.message}`)
+    });
+    console.log(`[openheab] in-process cron scheduler firing every ${interval}ms`);
+  }
+
   const port = parseInt(process.env.PORT || '3000');
   const server = app.listen(port, () => {
     console.log(JSON.stringify({ ts: new Date().toISOString(), level: 'info', event: 'listening', port }));
@@ -60,6 +71,7 @@ async function start() {
   async function shutdown(signal) {
     if (shuttingDown) return;
     shuttingDown = true;
+    if (cronStopper) cronStopper();
     server.close(() => {});
     setTimeout(async () => {
       try { await pool.end(); } catch {}

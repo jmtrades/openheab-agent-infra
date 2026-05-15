@@ -91,7 +91,11 @@ const PRIMITIVE_NAMES = [
   'webhooks_v2', 'api_keys_v2',
   // Layer 38 — Developer experience: copy-paste-ready SDK snippets for every flow
   // in curl/Python/TypeScript/Go/Rust (the Anthropic-quality "first 60 seconds" surface)
-  'sdk_examples'
+  'sdk_examples',
+  // Layer 39 — Public-facing polish + legal compliance: terms/privacy/gdpr/cookies/
+  // acceptable-use, polished pricing page with checkout, full docs surface, and a
+  // live activity feed showing audit chain events
+  'legal_pages', 'pricing_page', 'docs_page', 'activity_feed'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -349,7 +353,12 @@ const REGISTER_OVERRIDES = {
   webhooks_v2: 'registerWebhooksV2Routes',
   api_keys_v2: 'registerApiKeysV2Routes',
   // Layer 38 — Developer experience
-  sdk_examples: 'registerSdkExamplesRoutes'
+  sdk_examples: 'registerSdkExamplesRoutes',
+  // Layer 39 — Public-facing polish + legal compliance
+  legal_pages: 'registerLegalPagesRoutes',
+  pricing_page: 'registerPricingPageRoutes',
+  docs_page: 'registerDocsPageRoutes',
+  activity_feed: 'registerActivityFeedRoutes'
 };
 
 async function migrateAll(pool) {
@@ -756,9 +765,11 @@ function registerAllRoutes(app, pool) {
     });
   }
 
-  console.log(`[openheab] ${registered} primitives + MCP server registered.`);
+  const { listCrons } = require('./cron_auth');
+  const crons = listCrons();
+  console.log(`[openheab] ${registered} primitives + MCP server registered. ${crons.length} cron jobs.`);
 
-  return { app, pool, auditChain, verifyAgentAuth, verifyAdminAuth, primitives, registered };
+  return { app, pool, auditChain, verifyAgentAuth, verifyAdminAuth, primitives, registered, crons };
 }
 
 module.exports = {

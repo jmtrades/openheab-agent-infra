@@ -12,12 +12,12 @@ Repo: `github.com/jmtrades/openheab-agent-infra`
 
 | Metric | Value |
 |---|---|
-| Primitive modules | **223** in `src/primitives/` |
-| HTTP routes | **1,657+** registered |
+| Primitive modules | **228** in `src/primitives/` |
+| HTTP routes | **1,676+** registered |
 | Cron jobs | 19 scheduled |
-| MCP tools | 115+ at `/mcp` |
-| Architecture layers | 37 |
-| Tests | 59 passing (boot + unit + bank_lifecycle + e2e) |
+| MCP tools | 145+ at `/mcp` |
+| Architecture layers | 39 |
+| Tests | 59 passing + route smoke (0 5xx across 759 GET routes) |
 | Revenue layers | 14 (see `BILLION_DOLLAR_PATH.md`) |
 
 ## The 135 primitives (19 layers)
@@ -59,6 +59,8 @@ Repo: `github.com/jmtrades/openheab-agent-infra`
 **L35 Real third-party adapters (8):** openai_adapter, google_adapter, stripe_adapter, twilio_adapter, plaid_adapter, cloud_adapters (Modal+E2B+Browserbase+Sentry+Datadog+PagerDuty+GitHub+Slack), erc20_factory (real on-chain ERC-20 deploy via viem), rlaf (Reinforcement Learning from Agent Feedback)
 **L36 Anthropic-launch readiness (4):** adapter_wirings (19 more provider HTTP forwarders in one file: Mistral, Together, Modern Treasury, Wise, SendGrid, Onfido, Persona, Sumsub, Comply Advantage, Vercel, Cloudflare DNS, AWS S3 presign, Alchemy webhooks, Discord, Vanta, Drata, Carta, Teams, WhatsApp), production_checks (`/v1/_health/deep` comprehensive readiness verifier — DB roundtrip + audit chain integrity + in-house cores + adapters + tables + routes + crons + secrets + bank ledger consistency), e2e_demo (`/demo` single shareable URL provisioning real demo agent end-to-end in ~200ms), launch_dashboard (`/launch` TV-on-the-wall operator HTML — substrate metrics + 24h activity + revenue + adapter status, auto-refreshes every 30s)
 **L37 Day-2 operator surfaces (2):** webhooks_v2 (agents subscribe to event streams via `POST /v1/agents/:did/webhooks/subscribe` with HMAC-signed deliveries + exponential backoff retries, audit chain auto-fans-out to subscribers), api_keys_v2 (full key lifecycle: create/list/rotate/revoke with sha256-hashed storage, scoped to read-only/read-write/billing-only/admin, expiry support, raw key only shown once at creation)
+**L38 Developer experience (1):** sdk_examples (`/sdk` polished page with curl/Python/TypeScript/Go/Rust snippets for signup/inference/transfer/KYC/webhooks/MCP — copy buttons + language picker)
+**L39 Public polish + legal compliance (4):** legal_pages (Terms, Privacy, Acceptable Use, Cookies, GDPR rights — plus self-serve `/v1/legal/gdpr/export` and `/v1/legal/gdpr/delete` endpoints), pricing_page (`/pricing` polished 5-tier comparison with direct checkout buttons + FAQ + usage-based add-ons table), docs_page (`/docs` documentation surface with sidebar nav, 9 sections, in-page search), activity_feed (`/activity` live-refreshing audit chain visualization showing recent substrate events with stat counters)
 
 ## Critical infrastructure files
 
