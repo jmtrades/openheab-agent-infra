@@ -63,6 +63,9 @@ export class OpenHeab {
 
   identity: IdentityModule;
   wallet: WalletModule;
+  bank: BankModule;
+  cards: CardsModule;
+  savings: SavingsModule;
   audit: AuditModule;
   email: EmailModule;
   inbox: InboxModule;
@@ -71,6 +74,11 @@ export class OpenHeab {
   reputation: ReputationModule;
   marketplace: MarketplaceModule;
   extensions: ExtensionsModule;
+  inference: InferenceModule;
+  org: OrgModule;
+  subscriptions: SubscriptionsModule;
+  credits: CreditsModule;
+  onboarding: OnboardingModule;
 
   constructor(cfg: OpenHeabConfig) {
     this.baseUrl = cfg.baseUrl.replace(/\/$/, '');
@@ -79,6 +87,9 @@ export class OpenHeab {
 
     this.identity = new IdentityModule(this);
     this.wallet = new WalletModule(this);
+    this.bank = new BankModule(this);
+    this.cards = new CardsModule(this);
+    this.savings = new SavingsModule(this);
     this.audit = new AuditModule(this);
     this.email = new EmailModule(this);
     this.inbox = new InboxModule(this);
@@ -87,6 +98,11 @@ export class OpenHeab {
     this.reputation = new ReputationModule(this);
     this.marketplace = new MarketplaceModule(this);
     this.extensions = new ExtensionsModule(this);
+    this.inference = new InferenceModule(this);
+    this.org = new OrgModule(this);
+    this.subscriptions = new SubscriptionsModule(this);
+    this.credits = new CreditsModule(this);
+    this.onboarding = new OnboardingModule(this);
   }
 
   useApiKey(key: string) { this.apiKey = key; }
@@ -242,6 +258,143 @@ class ExtensionsModule {
   invoke(slug: string, callerDid: string, input: any) {
     return this.c.request('POST', `/v1/extensions/${slug}/invoke`, {
       body: { input }, headers: { 'x-agent-did': callerDid }
+    });
+  }
+}
+
+// ----------------------------------------------------------------------------
+// Bank, cards, savings, inference, org, subscriptions, credits, onboarding
+// ----------------------------------------------------------------------------
+class BankModule {
+  constructor(private c: OpenHeab) {}
+  account(did: string, opts: { fast?: boolean } = {}) {
+    return this.c.request('GET', `/v1/agents/${did}/bank`, { query: opts.fast ? { fast: '1' } : {} });
+  }
+  statement(did: string, opts: { from?: string; to?: string; format?: 'json' | 'csv' } = {}) {
+    return this.c.request('GET', `/v1/agents/${did}/bank/statement`, { query: opts });
+  }
+  deposits(did: string, limit = 50) {
+    return this.c.request<{ deposits: any[] }>('GET', `/v1/agents/${did}/bank/deposits`, { query: { limit } });
+  }
+  reconcile(did: string) {
+    return this.c.request<{ in_sync: boolean; drift_cents: number; ledger_cents: number; onchain_cents: number }>(
+      'POST', `/v1/agents/${did}/bank/reconcile`
+    );
+  }
+  sweep(did: string, args: {
+    from: 'wallet' | 'ledger' | 'savings';
+    to: 'wallet' | 'ledger' | 'savings' | 'lending_repay';
+    amount_cents: number;
+    savings_account_id?: string;
+    loan_id?: string;
+  }) {
+    return this.c.request('POST', `/v1/agents/${did}/bank/sweep`, { body: args });
+  }
+}
+
+class CardsModule {
+  constructor(private c: OpenHeab) {}
+  issue(did: string, args: { kind?: 'virtual' | 'physical'; monthly_limit_cents?: number; per_tx_limit_cents?: number; shipping_address?: any } = {}) {
+    return this.c.request('POST', `/v1/agents/${did}/cards`, { body: args });
+  }
+  list(did: string) {
+    return this.c.request<{ cards: any[] }>('GET', `/v1/agents/${did}/cards`);
+  }
+  freeze(did: string, cardId: string) {
+    return this.c.request('POST', `/v1/agents/${did}/cards/${cardId}/freeze`);
+  }
+  cancel(did: string, cardId: string) {
+    return this.c.request('POST', `/v1/agents/${did}/cards/${cardId}/cancel`);
+  }
+}
+
+class SavingsModule {
+  constructor(private c: OpenHeab) {}
+  open(did: string, args: { strategy?: string; auto_compound?: boolean; lock_until?: string } = {}) {
+    return this.c.request('POST', `/v1/agents/${did}/savings/accounts`, { body: args });
+  }
+  list(did: string) {
+    return this.c.request<{ accounts: any[] }>('GET', `/v1/agents/${did}/savings/accounts`);
+  }
+  deposit(did: string, accountId: string, amountRaw: string) {
+    return this.c.request('POST', `/v1/agents/${did}/savings/accounts/${accountId}/deposit`, { body: { amount_raw: amountRaw } });
+  }
+  withdraw(did: string, accountId: string, amountRaw: string) {
+    return this.c.request('POST', `/v1/agents/${did}/savings/accounts/${accountId}/withdraw`, { body: { amount_raw: amountRaw } });
+  }
+}
+
+class InferenceModule {
+  constructor(private c: OpenHeab) {}
+  chat(did: string, args: { model: string; messages: any[]; max_tokens?: number; temperature?: number }) {
+    return this.c.request('POST', `/v1/agents/${did}/inference/chat`, { body: args });
+  }
+  embeddings(did: string, args: { model: string; input: string[] }) {
+    return this.c.request('POST', `/v1/agents/${did}/inference/embeddings`, { body: args });
+  }
+}
+
+class OrgModule {
+  constructor(private c: OpenHeab) {}
+  create(args: { name: string; slug?: string; kind?: string; owner_did: string; billing_email?: string }) {
+    return this.c.request('POST', '/v1/orgs', { body: args });
+  }
+  get(orgId: string) {
+    return this.c.request('GET', `/v1/orgs/${orgId}`);
+  }
+  members(orgId: string) {
+    return this.c.request<{ members: any[] }>('GET', `/v1/orgs/${orgId}/members`);
+  }
+  invite(orgId: string, args: { email: string; role?: string }) {
+    return this.c.request('POST', `/v1/orgs/${orgId}/invites`, { body: args });
+  }
+}
+
+class SubscriptionsModule {
+  constructor(private c: OpenHeab) {}
+  plans() {
+    return this.c.request<{ plans: any[] }>('GET', '/v1/subscriptions/plans');
+  }
+  subscribe(orgId: string, args: { plan_code: string; trial_days?: number; payment_method_id?: string; billing_interval?: 'monthly' | 'annual' }) {
+    return this.c.request('POST', `/v1/orgs/${orgId}/subscription`, { body: args });
+  }
+  current(orgId: string) {
+    return this.c.request('GET', `/v1/orgs/${orgId}/subscription`);
+  }
+  upgrade(orgId: string, newPlanCode: string) {
+    return this.c.request('POST', `/v1/orgs/${orgId}/subscription/upgrade`, { body: { new_plan_code: newPlanCode } });
+  }
+  cancel(orgId: string, atPeriodEnd = true) {
+    return this.c.request('POST', `/v1/orgs/${orgId}/subscription/cancel`, { body: { at_period_end: atPeriodEnd } });
+  }
+}
+
+class CreditsModule {
+  constructor(private c: OpenHeab) {}
+  packs() {
+    return this.c.request<{ packs: any[] }>('GET', '/v1/credits/packs');
+  }
+  purchase(orgId: string, packCode: string, paymentMethodId?: string) {
+    return this.c.request('POST', `/v1/orgs/${orgId}/credits/purchase`, {
+      body: { pack_code: packCode, payment_method_id: paymentMethodId }
+    });
+  }
+  balance(orgId: string) {
+    return this.c.request('GET', `/v1/orgs/${orgId}/credits/balance`);
+  }
+}
+
+class OnboardingModule {
+  constructor(private c: OpenHeab) {}
+  start(did: string, args: { source?: string; utm_source?: string; org_id?: string } = {}) {
+    return this.c.request('POST', `/v1/agents/${did}/onboarding/start`, { body: args });
+  }
+  state(did: string) {
+    return this.c.request('GET', `/v1/agents/${did}/onboarding`);
+  }
+  complete(did: string, stepCode: string, evidencePayload?: any) {
+    return this.c.request('POST', `/v1/agents/${did}/onboarding/complete`, {
+      body: { step_code: stepCode, evidence_payload: evidencePayload }
     });
   }
 }
