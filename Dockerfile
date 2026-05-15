@@ -1,6 +1,6 @@
 # ============================================================================
 # OpenHeab Substrate — production Dockerfile
-# 189 primitives, 1,495 routes, Apache-2.0, self-hostable.
+# 231 primitives, 1,690+ routes, 40 layers, Apache-2.0, self-hostable.
 # ============================================================================
 FROM node:22-alpine AS base
 WORKDIR /app

@@ -219,6 +219,91 @@ async function run() {
     assert.ok([200, 201, 400, 401, 402, 502].includes(r.status), `signup should respond, got ${r.status}`);
   });
 
+  console.log('\n== e2e: layer 39 — public polish + legal compliance ==');
+  await test('GET /legal/terms renders HTML', async () => {
+    const r = await fetchPath('/legal/terms');
+    assert.strictEqual(r.status, 200);
+    assert.ok(/Terms of Service/.test(r.body));
+  });
+  await test('GET /legal/privacy renders HTML', async () => {
+    const r = await fetchPath('/legal/privacy');
+    assert.strictEqual(r.status, 200);
+    assert.ok(/Privacy Policy/.test(r.body));
+  });
+  await test('POST /v1/legal/gdpr/export accepts request', async () => {
+    const r = await fetchPath('/v1/legal/gdpr/export', {
+      method: 'POST',
+      body: { email: 'test@example.com' }
+    });
+    assert.strictEqual(r.status, 202);
+    const j = JSON.parse(r.body);
+    assert.ok(j.request_id && j.request_id.startsWith('gdpr_export_'));
+  });
+  await test('POST /v1/legal/gdpr/delete requires confirm string', async () => {
+    const r = await fetchPath('/v1/legal/gdpr/delete', {
+      method: 'POST',
+      body: { email: 'test@example.com' }
+    });
+    assert.strictEqual(r.status, 400);
+    const j = JSON.parse(r.body);
+    assert.strictEqual(j.error, 'confirm_required');
+  });
+  await test('GET /pricing renders 5 tiers', async () => {
+    const r = await fetchPath('/pricing');
+    assert.strictEqual(r.status, 200);
+    assert.ok(/Free/.test(r.body) && /Starter/.test(r.body) && /Pro/.test(r.body)
+      && /Team/.test(r.body) && /Enterprise/.test(r.body));
+  });
+  await test('GET /pricing.json returns tiers + addons', async () => {
+    const r = await fetchPath('/pricing.json');
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(Array.isArray(j.tiers) && j.tiers.length === 5);
+    assert.ok(Array.isArray(j.addons) && j.addons.length > 0);
+  });
+  await test('GET /docs renders HTML', async () => {
+    const r = await fetchPath('/docs');
+    assert.strictEqual(r.status, 200);
+    assert.ok(/Getting Started/.test(r.body));
+  });
+  await test('GET /docs/authentication renders authentication section', async () => {
+    const r = await fetchPath('/docs/authentication');
+    assert.strictEqual(r.status, 200);
+    assert.ok(/Authentication/.test(r.body));
+  });
+  await test('GET /activity renders live audit feed', async () => {
+    const r = await fetchPath('/activity');
+    assert.strictEqual(r.status, 200);
+    assert.ok(/Activity/.test(r.body));
+  });
+
+  console.log('\n== e2e: layer 40 — account dashboard + admin + backup ==');
+  await test('GET /dashboard prompts for DID without auth', async () => {
+    const r = await fetchPath('/dashboard');
+    assert.strictEqual(r.status, 200);
+    assert.ok(/Open your agent dashboard|did:op:/.test(r.body));
+  });
+  await test('GET /dashboard?did=... renders agent dashboard', async () => {
+    const r = await fetchPath('/dashboard?did=did:op:test_dashboard');
+    assert.strictEqual(r.status, 200);
+    assert.ok(/did:op:test_dashboard/.test(r.body));
+  });
+  await test('GET /admin without token returns 401', async () => {
+    process.env.OPERATOR_ADMIN_TOKEN = 'test-admin-token-for-e2e';
+    process.env.NODE_ENV = 'production';
+    const r = await fetchPath('/admin');
+    assert.strictEqual(r.status, 401);
+    delete process.env.OPERATOR_ADMIN_TOKEN;
+    delete process.env.NODE_ENV;
+  });
+  await test('POST /v1/admin/backup/create requires admin', async () => {
+    const r = await fetchPath('/v1/admin/backup/create', {
+      method: 'POST',
+      body: {}
+    });
+    assert.ok([401, 500].includes(r.status), `expected 401/500, got ${r.status}`);
+  });
+
   console.log(`\n${passed} passed, ${failed} failed`);
   if (skipReasons.length) console.log(`(${skipReasons.length} skipped: ${skipReasons.join(', ')})`);
   await new Promise(r => server.close(r));

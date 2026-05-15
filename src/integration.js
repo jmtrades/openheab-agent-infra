@@ -95,7 +95,9 @@ const PRIMITIVE_NAMES = [
   // Layer 39 — Public-facing polish + legal compliance: terms/privacy/gdpr/cookies/
   // acceptable-use, polished pricing page with checkout, full docs surface, and a
   // live activity feed showing audit chain events
-  'legal_pages', 'pricing_page', 'docs_page', 'activity_feed'
+  'legal_pages', 'pricing_page', 'docs_page', 'activity_feed',
+  // Layer 40 — Account + admin surfaces + operator-grade backup/restore
+  'account_dashboard', 'admin_ui', 'backup_restore'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -358,7 +360,11 @@ const REGISTER_OVERRIDES = {
   legal_pages: 'registerLegalPagesRoutes',
   pricing_page: 'registerPricingPageRoutes',
   docs_page: 'registerDocsPageRoutes',
-  activity_feed: 'registerActivityFeedRoutes'
+  activity_feed: 'registerActivityFeedRoutes',
+  // Layer 40 — Account dashboard, admin UI, backup/restore
+  account_dashboard: 'registerAccountDashboardRoutes',
+  admin_ui: 'registerAdminUiRoutes',
+  backup_restore: 'registerBackupRestoreRoutes'
 };
 
 async function migrateAll(pool) {
