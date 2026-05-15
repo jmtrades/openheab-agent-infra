@@ -214,8 +214,10 @@ function renderLanding(app) {
   <h1>Everything an AI agent will ever need to <em>act on the internet</em>. One open API.</h1>
   <p class="lede">A signed Ed25519 DID. A non-custodial USDC wallet on Base. Virtual + physical debit cards. Interest-bearing savings. KYC against 5 sanctions sources. Encrypted memory. Marketplaces. Cognition. Compliance. Cards. Payouts. All audit-chained. Open source. Free to self-host.</p>
   <div class="btns">
-    <a href="/docs#quickstart" class="btn primary">Start in 30 seconds →</a>
-    <a href="https://github.com/jmtrades/openheab-agent-infra" class="btn ghost">Source on GitHub</a>
+    <a href="/signup" class="btn primary">Sign up free →</a>
+    <a href="/playground" class="btn ghost">Try in playground</a>
+    <a href="https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fjmtrades%2Fopenheab-agent-infra&env=DATABASE_URL,IDENTITY_MASTER_KEK,CRYPTO_MASTER_KEK,OPERATOR_PUBLIC_URL,OPERATOR_ADMIN_TOKEN&envDescription=Generate%20KEKs%20with%20openssl%20rand%20-hex%2032&envLink=https%3A%2F%2Fgithub.com%2Fjmtrades%2Fopenheab-agent-infra%2Fblob%2Fmain%2F.env.example" class="btn ghost" style="display:inline-flex;align-items:center;gap:6px">▲ Deploy to Vercel</a>
+    <a href="https://github.com/jmtrades/openheab-agent-infra" class="btn ghost">Source</a>
   </div>
 
   <div class="metrics">

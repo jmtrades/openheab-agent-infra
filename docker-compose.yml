@@ -1,0 +1,32 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: openheab
+      POSTGRES_PASSWORD: openheab_dev
+      POSTGRES_DB: openheab
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U openheab"]
+      interval: 5s
+
+  substrate:
+    build: .
+    depends_on:
+      postgres: { condition: service_healthy }
+    environment:
+      DATABASE_URL: postgres://openheab:openheab_dev@postgres:5432/openheab
+      OPERATOR_PUBLIC_URL: http://localhost:3000
+      IDENTITY_MASTER_KEK: 0000000000000000000000000000000000000000000000000000000000000000
+      CRYPTO_MASTER_KEK: 0000000000000000000000000000000000000000000000000000000000000000
+      BANK_MASTER_KEK: 0000000000000000000000000000000000000000000000000000000000000000
+      CARD_CORE_MASTER_KEK: 0000000000000000000000000000000000000000000000000000000000000000
+      ACH_MASTER_KEK: 0000000000000000000000000000000000000000000000000000000000000000
+      OPERATOR_ADMIN_TOKEN: dev_admin_token_change_in_production
+      RUN_MIGRATIONS_ON_BOOT: "true"
+      DEMO_MODE: "true"
+    ports: ["3000:3000"]
+
+volumes:
+  pgdata:
