@@ -234,7 +234,7 @@ function registerCliRoutes(app, pool, _verifyAgentAuth, _auditChain) {
     const total = await pool.query(`SELECT COUNT(*)::int AS c FROM cli_installs`).catch(() => ({ rows: [{ c: 0 }] }));
     const last24h = await pool.query(`SELECT COUNT(*)::int AS c FROM cli_installs WHERE occurred_at > NOW() - INTERVAL '24 hours'`).catch(() => ({ rows: [{ c: 0 }] }));
     const byPlatform = await pool.query(`SELECT platform, COUNT(*)::int AS c FROM cli_installs GROUP BY platform ORDER BY c DESC LIMIT 20`).catch(() => ({ rows: [] }));
-    res.json({ total_installs: total.rows[0].c, installs_24h: last24h.rows[0].c, by_platform: byPlatform.rows });
+    res.json({ total_installs: total.rows[0]?.c || 0, installs_24h: last24h.rows[0]?.c || 0, by_platform: byPlatform.rows });
   });
 }
 

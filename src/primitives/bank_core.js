@@ -189,8 +189,8 @@ async function computeReserveRatio(pool) {
     `SELECT COALESCE(SUM(balance_cents),0)::bigint AS total FROM gl_accounts
      WHERE account_kind IN ('reserve_capital', 'reserve_operating')`
   ).catch(() => ({ rows: [{ total: 0 }] }));
-  const liabCents = Number(liab.rows[0].total);
-  const resvCents = Number(reserves.rows[0].total);
+  const liabCents = Number(liab.rows[0]?.total || 0);
+  const resvCents = Number(reserves.rows[0]?.total || 0);
   const ratio = liabCents > 0 ? Math.round((resvCents * 10000) / liabCents) : 10000;
   return {
     customer_liabilities_cents: liabCents,

@@ -580,7 +580,7 @@ function registerIdentityBootstrap(app, pool, auditChain) {
     }
     const totalRow = await pool.query(`SELECT COUNT(*) AS n FROM audit_chain`)
       .catch(() => ({ rows: [{ n: 0 }] }));
-    return res.json({ valid: ok, verified: r.rows.length, total: parseInt(totalRow.rows[0].n) });
+    return res.json({ valid: ok, verified: r.rows.length, total: parseInt(totalRow.rows[0]?.n || 0) });
   });
 
   app.get('/v1/audit/chain', async (req, res) => {
