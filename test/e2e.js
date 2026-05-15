@@ -304,6 +304,33 @@ async function run() {
     assert.ok([401, 500].includes(r.status), `expected 401/500, got ${r.status}`);
   });
 
+  console.log('\n== e2e: layer 41 — status page + email templates ==');
+  await test('GET /status renders HTML with overall status', async () => {
+    const r = await fetchPath('/status');
+    assert.strictEqual(r.status, 200);
+    assert.ok(/OpenHeab Status|operational|degraded/i.test(r.body));
+  });
+  await test('GET /status.json returns components + incidents', async () => {
+    const r = await fetchPath('/status.json');
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(Array.isArray(j.components) && j.components.length > 0);
+    assert.ok(j.incidents && Array.isArray(j.incidents.active));
+    assert.ok(['operational', 'degraded', 'partial_outage', 'incident'].includes(j.overall));
+  });
+  await test('GET /v1/email-templates lists templates', async () => {
+    const r = await fetchPath('/v1/email-templates');
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(Array.isArray(j.templates) && j.templates.length >= 5);
+    assert.ok(j.templates.find(t => t.name === 'signup_welcome'));
+  });
+  await test('GET /v1/email-templates/signup_welcome/preview renders HTML', async () => {
+    const r = await fetchPath('/v1/email-templates/signup_welcome/preview?name=Test&did=did:op:abc');
+    assert.strictEqual(r.status, 200);
+    assert.ok(/Welcome to OpenHeab|did:op:abc/.test(r.body));
+  });
+
   console.log(`\n${passed} passed, ${failed} failed`);
   if (skipReasons.length) console.log(`(${skipReasons.length} skipped: ${skipReasons.join(', ')})`);
   await new Promise(r => server.close(r));
