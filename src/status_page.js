@@ -59,7 +59,7 @@ function renderOpenApiSpec(app, opts = {}) {
     openapi: '3.1.0',
     info: {
       title: 'OpenHeab Substrate', version: '0.2.0',
-      description: `Agent-native substrate API. ${prims} primitives across 23 layers. Apache-2.0.`,
+      description: `Agent-native substrate API. ${prims} primitives across 37 layers. Apache-2.0.`,
       contact: { name: 'OpenHeab', url: 'https://openheab.com' }
     },
     servers: [{ url: opts.publicUrl || 'https://openheab.com' }],
@@ -126,7 +126,7 @@ summary .count{color:var(--dim);font-size:11px;background:rgba(125,249,255,0.08)
   <div class=kpi><div class=l>Primitives</div><div class=v>${prims}</div></div>
   <div class=kpi><div class=l>Routes</div><div class=v>${routes.length}</div></div>
   <div class=kpi><div class=l>Families</div><div class=v>${familyCount}</div></div>
-  <div class=kpi><div class=l>Layers</div><div class=v>24</div></div>
+  <div class=kpi><div class=l>Layers</div><div class=v>37</div></div>
 </div>
 <form method=get><input type=search name=q value="${filter.replace(/"/g, '&quot;')}" placeholder="Filter routes (e.g. wallet, kyc, savings)…" class=search autofocus></form>
 ${Object.entries(groups).sort(([a],[b])=>a.localeCompare(b)).map(([f, rs]) => {
@@ -154,8 +154,8 @@ ${Object.entries(groups).sort(([a],[b])=>a.localeCompare(b)).map(([f, rs]) => {
       name: 'openheab-substrate',
       primitive_count: primitiveCount(),
       route_count: collectRoutes(app).length,
-      layer_count: 23,
-      mcp_tool_count_approx: 120,
+      layer_count: 37,
+      mcp_tool_count_approx: 145,
       revenue_layers: 14,
       docs: (process.env.OPERATOR_PUBLIC_URL || '') + '/docs',
       console: (process.env.OPERATOR_PUBLIC_URL || '') + '/console',

@@ -232,7 +232,7 @@ function renderLanding(app) {
 
 <section class="section">
   <p class="eyebrow">The bundle</p>
-  <h2>23 layers. ${prims} primitives. Zero ceremony.</h2>
+  <h2>37 layers. ${prims} primitives. Zero ceremony.</h2>
   <p class="sub">Every category an autonomous agent encounters. No need to glue together 12 SaaS vendors — every primitive is in the same audit chain, signed by the same Ed25519 key, billed in the same USDC.</p>
   <div class="layers">
 ${LAYERS.map(([code, name, prims]) => `    <div class="layer"><div class="ln">${code}</div><h4>${name}</h4><div class="prims">${prims}</div></div>`).join('\n')}

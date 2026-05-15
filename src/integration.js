@@ -88,7 +88,10 @@ const PRIMITIVE_NAMES = [
   'adapter_wirings', 'production_checks', 'e2e_demo', 'launch_dashboard',
   // Layer 37 — Operator-facing day-2 surfaces: webhook subscriptions w/ HMAC signing
   // + retries, API key management (create/list/rotate/revoke) with sha256-hashed storage
-  'webhooks_v2', 'api_keys_v2'
+  'webhooks_v2', 'api_keys_v2',
+  // Layer 38 — Developer experience: copy-paste-ready SDK snippets for every flow
+  // in curl/Python/TypeScript/Go/Rust (the Anthropic-quality "first 60 seconds" surface)
+  'sdk_examples'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -344,7 +347,9 @@ const REGISTER_OVERRIDES = {
   launch_dashboard: 'registerLaunchDashboardRoutes',
   // Layer 37 — Day-2 operator surfaces
   webhooks_v2: 'registerWebhooksV2Routes',
-  api_keys_v2: 'registerApiKeysV2Routes'
+  api_keys_v2: 'registerApiKeysV2Routes',
+  // Layer 38 — Developer experience
+  sdk_examples: 'registerSdkExamplesRoutes'
 };
 
 async function migrateAll(pool) {
