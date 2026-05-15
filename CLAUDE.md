@@ -12,12 +12,12 @@ Repo: `github.com/jmtrades/openheab-agent-infra`
 
 | Metric | Value |
 |---|---|
-| Primitive modules | **233** in `src/primitives/` |
-| HTTP routes | **1,695+** registered |
+| Primitive modules | **234** in `src/primitives/` |
+| HTTP routes | **1,697+** registered |
 | Cron jobs | 21 scheduled |
 | MCP tools | 145+ at `/mcp` |
-| Architecture layers | 41 |
-| Tests | 71 passing + route smoke (0 5xx across 770 GET routes) |
+| Architecture layers | 42 |
+| Tests | 74 passing + route smoke (0 5xx across 772 GET routes) |
 | Revenue layers | 14 (see `BILLION_DOLLAR_PATH.md`) |
 
 ## The 135 primitives (19 layers)
@@ -63,6 +63,7 @@ Repo: `github.com/jmtrades/openheab-agent-infra`
 **L39 Public polish + legal compliance (4):** legal_pages (Terms, Privacy, Acceptable Use, Cookies, GDPR rights — plus self-serve `/v1/legal/gdpr/export` and `/v1/legal/gdpr/delete` endpoints), pricing_page (`/pricing` polished 5-tier comparison with direct checkout buttons + FAQ + usage-based add-ons table), docs_page (`/docs` documentation surface with sidebar nav, 9 sections, in-page search), activity_feed (`/activity` live-refreshing audit chain visualization showing recent substrate events with stat counters)
 **L40 Account + admin + backup (3):** account_dashboard (`/dashboard` polished agent home — wallet, KYC, cards, recent events, API keys, webhooks all live from Postgres; with sign-in prompt when no DID supplied), admin_ui (`/admin` operator-gated cross-tenant dashboard — agent counts, 24h activity, top spenders, KYC tier distribution, adapter status, recent audit events, admin actions), backup_restore (`POST /v1/admin/backup/create` dumps every table to signed JSON bundle with sha256 digest; `GET /v1/admin/backup/list`; daily cron job)
 **L41 Public status + email templates (2):** status_uptime (`/status` polished public status page like status.openheab.com — per-component health, 24h uptime %, latency, active + recent incidents, auto-refresh 60s; admin endpoints to record checks + declare/resolve incidents; cron job for self-checks), email_templates (transactional templates for signup_welcome / billing_receipt / security_alert / kyc_approved / password_reset; render HTML + text; preview endpoint at `/v1/email-templates/:name/preview`; send-via-internal-key endpoint logging to transactional_emails)
+**L42 First-time user tour (1):** welcome_tour (`/tour` polished 6-step interactive walkthrough — signup → profile → inference → wallet → MCP → done. Each step shows copy-paste curl + JS snippets, progress bar, "I'm done" advance, breadcrumb step nav. The page every new visitor lands on after signup)
 
 ## Critical infrastructure files
 

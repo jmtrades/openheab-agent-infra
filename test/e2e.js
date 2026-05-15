@@ -331,6 +331,24 @@ async function run() {
     assert.ok(/Welcome to OpenHeab|did:op:abc/.test(r.body));
   });
 
+  console.log('\n== e2e: layer 42 — welcome tour ==');
+  await test('GET /tour renders first step', async () => {
+    const r = await fetchPath('/tour');
+    assert.strictEqual(r.status, 200);
+    assert.ok(/Create your first agent|Step 1/.test(r.body));
+  });
+  await test('GET /tour?step=2 renders inference step', async () => {
+    const r = await fetchPath('/tour?step=2');
+    assert.strictEqual(r.status, 200);
+    assert.ok(/inference|Make your first/.test(r.body));
+  });
+  await test('GET /tour.json lists steps', async () => {
+    const r = await fetchPath('/tour.json');
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(Array.isArray(j.steps) && j.steps.length >= 5);
+  });
+
   console.log(`\n${passed} passed, ${failed} failed`);
   if (skipReasons.length) console.log(`(${skipReasons.length} skipped: ${skipReasons.join(', ')})`);
   await new Promise(r => server.close(r));

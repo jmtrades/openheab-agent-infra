@@ -153,7 +153,7 @@ async function pageSetup(pool) {
 
 <div class=step><span class=n>3</span>${s.db_reachable ? '<span class=done>✓ done</span>' : ''}
   <h3>Database</h3>
-  <p>Postgres reachable: <strong>${s.db_reachable ? 'yes' : 'NO — check DATABASE_URL'}</strong>. Run <code>npm run migrate</code> to apply all 189 primitives' schemas idempotently.</p>
+  <p>Postgres reachable: <strong>${s.db_reachable ? 'yes' : 'NO — check DATABASE_URL'}</strong>. Run <code>npm run migrate</code> to apply all 233 primitives' schemas idempotently.</p>
   ${s.db_reachable ? '' : '<pre>npm run migrate</pre>'}
 </div>
 
@@ -177,7 +177,7 @@ open ${escapeHtml(process.env.OPERATOR_PUBLIC_URL || 'http://localhost:3000')}/s
 </div>
 
 <div style="margin-top:48px;padding-top:24px;border-top:1px solid var(--br);color:var(--dim);font-size:12px">
-  Substrate: ${prims} primitives across 30 layers · ${routes} routes · Apache-2.0 · self-hostable
+  Substrate: ${prims} primitives across 41 layers · ${routes} routes · Apache-2.0 · self-hostable
 </div>
 `});
 }
@@ -238,7 +238,7 @@ function pageWelcome() {
 </div>
 <div class=grid>${cards}</div>
 <div style="margin-top:48px;padding:24px;background:var(--card);border:1px solid var(--br);border-radius:var(--r-xl)">
-  <h3 style="font-size:16px;font-weight:600;margin-bottom:10px">All 30 layers, 189 primitives, 1,495 routes</h3>
+  <h3 style="font-size:16px;font-weight:600;margin-bottom:10px">All 41 layers, 233 primitives, 1,695+ routes</h3>
   <p style="color:var(--dim2);font-size:14px;margin:0">Browse the complete list at <a href="/console" style="color:var(--acc)">/console</a> · view OpenAPI at <a href="/openapi.json" style="color:var(--acc)">/openapi.json</a> · MCP manifest at <a href="/mcp/manifest" style="color:var(--acc)">/mcp/manifest</a></p>
 </div>
 `});

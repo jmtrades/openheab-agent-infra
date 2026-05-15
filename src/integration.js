@@ -99,7 +99,9 @@ const PRIMITIVE_NAMES = [
   // Layer 40 — Account + admin surfaces + operator-grade backup/restore
   'account_dashboard', 'admin_ui', 'backup_restore',
   // Layer 41 — Public status page + transactional email templates
-  'status_uptime', 'email_templates'
+  'status_uptime', 'email_templates',
+  // Layer 42 — Step-by-step interactive tour for first-time users
+  'welcome_tour'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -369,7 +371,9 @@ const REGISTER_OVERRIDES = {
   backup_restore: 'registerBackupRestoreRoutes',
   // Layer 41 — Status page + transactional email templates
   status_uptime: 'registerStatusUptimeRoutes',
-  email_templates: 'registerEmailTemplatesRoutes'
+  email_templates: 'registerEmailTemplatesRoutes',
+  // Layer 42 — Step-by-step interactive tour
+  welcome_tour: 'registerWelcomeTourRoutes'
 };
 
 async function migrateAll(pool) {

@@ -10,7 +10,7 @@ function publicUrl() {
 
 function primitiveCount() {
   try { return Object.keys(require('./integration').primitives).length; }
-  catch { return 154; }
+  catch { return 233; }
 }
 
 // ----------------------------------------------------------------------------
