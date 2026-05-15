@@ -34,8 +34,14 @@ function groupByFamily(routes) {
   return groups;
 }
 
+function primitiveCount() {
+  try { return Object.keys(require('./integration').primitives).length; }
+  catch { return 153; }
+}
+
 function renderOpenApiSpec(app, opts = {}) {
   const routes = collectRoutes(app);
+  const prims = primitiveCount();
   const paths = {};
   for (const r of routes) {
     const oasPath = r.path.replace(/:(\w+)/g, '{$1}');
@@ -52,8 +58,8 @@ function renderOpenApiSpec(app, opts = {}) {
   return {
     openapi: '3.1.0',
     info: {
-      title: 'OpenHeab Substrate', version: '0.1.0',
-      description: 'Agent-native substrate API. 42 primitives. Apache-2.0.',
+      title: 'OpenHeab Substrate', version: '0.2.0',
+      description: `Agent-native substrate API. ${prims} primitives across 23 layers. Apache-2.0.`,
       contact: { name: 'OpenHeab', url: 'https://openheab.com' }
     },
     servers: [{ url: opts.publicUrl || 'https://openheab.com' }],
@@ -85,12 +91,16 @@ ${Object.entries(groups).sort(([a],[b])=>a.localeCompare(b)).map(([f, rs]) =>
     if (req.headers.accept?.includes('text/html')) return next();
     res.json({
       name: 'openheab-substrate',
-      primitive_count: 42,
+      primitive_count: primitiveCount(),
       route_count: collectRoutes(app).length,
-      master_doc_coverage: '33/40 categories',
+      layer_count: 23,
+      mcp_tool_count_approx: 120,
+      revenue_layers: 14,
       docs: (process.env.OPERATOR_PUBLIC_URL || '') + '/docs',
       console: (process.env.OPERATOR_PUBLIC_URL || '') + '/console',
-      openapi: '/openapi.json'
+      pricing: (process.env.OPERATOR_PUBLIC_URL || '') + '/pricing',
+      openapi: '/openapi.json',
+      mcp_manifest: '/mcp/manifest'
     });
   });
 

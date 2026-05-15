@@ -35,8 +35,8 @@ for (const layer of app._router?.stack || []) {
 }
 
 const primitiveCount = Object.keys(primitives).length;
-const expectedMinPrimitives = 120;  // we have 135+; this is a floor
-const expectedMinRoutes = 600;
+const expectedMinPrimitives = 140;  // we have 153 once full revenue layer ships; this is a floor
+const expectedMinRoutes = 800;
 
 console.log(`primitive_count=${primitiveCount}`);
 console.log(`route_count=${routeCount}`);

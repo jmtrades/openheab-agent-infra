@@ -43,7 +43,15 @@ const PRIMITIVE_NAMES = [
   // Layer 18 — AGI learning + gov/legal (new)
   'learning', 'voice_agents', 'labs', 'gov_filing', 'legal_research', 'court_records', 'ip_registry', 'climate',
   // Layer 19 — Customer service + community (new)
-  'support', 'referrals', 'loyalty', 'surveys', 'recruiting', 'supply_chain', 'licensing', 'benchmarks'
+  'support', 'referrals', 'loyalty', 'surveys', 'recruiting', 'supply_chain', 'licensing', 'benchmarks',
+  // Layer 20 — Org / billing / commerce ops (new)
+  'org', 'subscriptions', 'metering', 'revenue',
+  // Layer 21 — Enterprise readiness (new)
+  'sso', 'rbac', 'compliance_pack', 'credits',
+  // Layer 22 — Growth + distribution (new)
+  'onboarding', 'dashboard', 'embed', 'public_directory',
+  // Layer 23 — Channel + payments accelerators (new)
+  'partnerships', 'whitelabel', 'ach', 'quotes'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -195,7 +203,27 @@ const REGISTER_OVERRIDES = {
   recruiting: 'registerRecruitingRoutes',
   supply_chain: 'registerSupplyChainRoutes',
   licensing: 'registerLicensingRoutes',
-  benchmarks: 'registerBenchmarksRoutes'
+  benchmarks: 'registerBenchmarksRoutes',
+  // Layer 20 — Org / billing / commerce ops
+  org: 'registerOrgRoutes',
+  subscriptions: 'registerSubscriptionsRoutes',
+  metering: 'registerMeteringRoutes',
+  revenue: 'registerRevenueRoutes',
+  // Layer 21 — Enterprise readiness
+  sso: 'registerSsoRoutes',
+  rbac: 'registerRbacRoutes',
+  compliance_pack: 'registerCompliancePackRoutes',
+  credits: 'registerCreditsRoutes',
+  // Layer 22 — Growth + distribution
+  onboarding: 'registerOnboardingRoutes',
+  dashboard: 'registerDashboardRoutes',
+  embed: 'registerEmbedRoutes',
+  public_directory: 'registerPublicDirectoryRoutes',
+  // Layer 23 — Channel + payments accelerators
+  partnerships: 'registerPartnershipsRoutes',
+  whitelabel: 'registerWhitelabelRoutes',
+  ach: 'registerAchRoutes',
+  quotes: 'registerQuotesRoutes'
 };
 
 async function migrateAll(pool) {
