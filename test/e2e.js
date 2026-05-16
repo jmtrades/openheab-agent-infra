@@ -944,6 +944,93 @@ async function run() {
     assert.ok(/Audit Chain Visualizer|<svg|<rect/.test(r.body));
   });
 
+  console.log('\n== e2e: layer 53 — auth polish (magic-link + MFA + preferences) ==');
+  await test('GET /auth/sign-in renders magic-link form', async () => {
+    const r = await fetchPath('/auth/sign-in');
+    assert.strictEqual(r.status, 200);
+    assert.ok(/Sign in|magic link|passwordless/i.test(r.body));
+  });
+  await test('POST /v1/auth/magic-link/send with invalid email returns 400', async () => {
+    const r = await fetchPath('/v1/auth/magic-link/send', {
+      method: 'POST',
+      body: { email: 'not-an-email' }
+    });
+    assert.strictEqual(r.status, 400);
+  });
+  await test('POST /v1/auth/magic-link/send with valid email returns 202', async () => {
+    const r = await fetchPath('/v1/auth/magic-link/send', {
+      method: 'POST',
+      body: { email: 'test@example.com' }
+    });
+    assert.strictEqual(r.status, 202);
+    const j = JSON.parse(r.body);
+    assert.ok(j.sent);
+  });
+  await test('GET /v1/auth/magic-link/verify/:invalid returns 404', async () => {
+    const r = await fetchPath('/v1/auth/magic-link/verify/mlink_invalid');
+    assert.strictEqual(r.status, 404);
+  });
+  await test('GET /v1/me/mfa/enroll without auth returns 401', async () => {
+    const r = await fetchPath('/v1/me/mfa/enroll');
+    assert.strictEqual(r.status, 401);
+  });
+  await test('GET /v1/me/mfa/enroll with auth returns secret + otpauth URI', async () => {
+    const r = await fetchPath('/v1/me/mfa/enroll', { headers: { 'x-agent-did': 'did:op:mfa-test' } });
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(j.secret && j.secret.length >= 16);
+    assert.ok(j.otpauth_uri && j.otpauth_uri.startsWith('otpauth://totp/'));
+  });
+  await test('POST /v1/me/mfa/verify with valid code enrolls successfully', async () => {
+    const { generateTotpSecret, totp } = require('../src/primitives/auth_polish');
+    const secret = generateTotpSecret();
+    const code = totp(secret);
+    const r = await fetchPath('/v1/me/mfa/verify', {
+      method: 'POST',
+      headers: { 'x-agent-did': 'did:op:mfa-verify-test' },
+      body: { secret, code, enroll: true }
+    });
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.strictEqual(j.ok, true);
+    assert.strictEqual(j.enrolled, true);
+    assert.ok(Array.isArray(j.backup_codes) && j.backup_codes.length === 8);
+  });
+  await test('POST /v1/me/mfa/verify with wrong code returns 400', async () => {
+    const { generateTotpSecret } = require('../src/primitives/auth_polish');
+    const r = await fetchPath('/v1/me/mfa/verify', {
+      method: 'POST',
+      headers: { 'x-agent-did': 'did:op:mfa-verify-test' },
+      body: { secret: generateTotpSecret(), code: '000000' }
+    });
+    assert.strictEqual(r.status, 400);
+  });
+  await test('GET /v1/me/mfa/status returns enrollment state', async () => {
+    const r = await fetchPath('/v1/me/mfa/status', { headers: { 'x-agent-did': 'did:op:mfa-status' } });
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(typeof j.enrolled === 'boolean');
+  });
+  await test('GET + PUT /v1/me/preferences round-trips', async () => {
+    const did = 'did:op:prefs-test';
+    const put = await fetchPath('/v1/me/preferences', {
+      method: 'PUT',
+      headers: { 'x-agent-did': did },
+      body: { theme: 'dark', notifications_email: true }
+    });
+    assert.strictEqual(put.status, 200);
+    const get = await fetchPath('/v1/me/preferences', { headers: { 'x-agent-did': did } });
+    assert.strictEqual(get.status, 200);
+    const j = JSON.parse(get.body);
+    assert.ok(j.preferences);
+  });
+  await test('GET /v1/me/sessions returns session list', async () => {
+    const r = await fetchPath('/v1/me/sessions', { headers: { 'x-agent-did': 'did:op:sess-test' } });
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(Array.isArray(j.sessions));
+  });
+
   console.log(`\n${passed} passed, ${failed} failed`);
   if (skipReasons.length) console.log(`(${skipReasons.length} skipped: ${skipReasons.join(', ')})`);
   await new Promise(r => server.close(r));

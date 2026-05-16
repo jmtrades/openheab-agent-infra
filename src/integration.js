@@ -133,7 +133,10 @@ const PRIMITIVE_NAMES = [
   'growth_surfaces',
   // Layer 52 — Last polish: in-app notifications + /whatsnew auto-feed +
   // audit chain Merkle visualizer (SVG)
-  'notifications_whatsnew_visualizer'
+  'notifications_whatsnew_visualizer',
+  // Layer 53 — Final auth polish for billion-dollar UX: email magic-link
+  // sign-in (passwordless), TOTP 2FA, user preferences, session management
+  'auth_polish'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -430,7 +433,9 @@ const REGISTER_OVERRIDES = {
   // Layer 51 — Growth: referrals + compare-models + chart widgets
   growth_surfaces: 'registerGrowthSurfacesRoutes',
   // Layer 52 — Notifications + whatsnew + audit visualizer
-  notifications_whatsnew_visualizer: 'registerNotificationsWhatsNewVisualizerRoutes'
+  notifications_whatsnew_visualizer: 'registerNotificationsWhatsNewVisualizerRoutes',
+  // Layer 53 — Auth UX polish (magic link + MFA + preferences + sessions)
+  auth_polish: 'registerAuthPolishRoutes'
 };
 
 async function migrateAll(pool) {
