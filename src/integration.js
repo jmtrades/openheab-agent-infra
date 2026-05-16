@@ -108,7 +108,9 @@ const PRIMITIVE_NAMES = [
   'me_endpoints', 'catalog_pages', 'feeds_and_probes',
   // Layer 44 — Integrations catalog + competitor migration guides +
   // embeddable badges + Stripe customer portal endpoint
-  'integrations_migrate'
+  'integrations_migrate',
+  // Layer 45 — /explorer interactive OpenAPI browser + /help searchable knowledge base
+  'api_explorer', 'help_center'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -386,7 +388,10 @@ const REGISTER_OVERRIDES = {
   catalog_pages: 'registerCatalogPagesRoutes',
   feeds_and_probes: 'registerFeedsAndProbesRoutes',
   // Layer 44 — Integrations + migrate + embed + billing portal
-  integrations_migrate: 'registerIntegrationsMigrateRoutes'
+  integrations_migrate: 'registerIntegrationsMigrateRoutes',
+  // Layer 45 — Developer experience polish
+  api_explorer: 'registerApiExplorerRoutes',
+  help_center: 'registerHelpCenterRoutes'
 };
 
 async function migrateAll(pool) {

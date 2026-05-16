@@ -535,6 +535,39 @@ async function run() {
     assert.ok(j.stub && j.portal_url);
   });
 
+  console.log('\n== e2e: layer 45 — API explorer + help center ==');
+  await test('GET /explorer renders interactive OpenAPI browser', async () => {
+    const r = await fetchPath('/explorer');
+    assert.strictEqual(r.status, 200);
+    assert.ok(/elements-api|apiDescriptionUrl|OpenAPI/.test(r.body));
+  });
+  await test('GET /api-explorer redirects to /explorer', async () => {
+    const r = await fetchPath('/api-explorer');
+    assert.strictEqual(r.status, 301);
+  });
+  await test('GET /help renders knowledge base', async () => {
+    const r = await fetchPath('/help');
+    assert.strictEqual(r.status, 200);
+    assert.ok(/How can we help|getting-started|How do I/.test(r.body));
+  });
+  await test('GET /help?q=webhook returns matching articles', async () => {
+    const r = await fetchPath('/help?q=webhook');
+    assert.strictEqual(r.status, 200);
+    assert.ok(/webhook|HMAC/i.test(r.body));
+  });
+  await test('GET /help.json with query returns scored results', async () => {
+    const r = await fetchPath('/help.json?q=api+key');
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(Array.isArray(j.results));
+    assert.strictEqual(j.query, 'api key');
+  });
+  await test('GET /v1/admin/help/top-searches requires admin', async () => {
+    delete process.env.OPERATOR_ADMIN_TOKEN;
+    const r = await fetchPath('/v1/admin/help/top-searches');
+    assert.strictEqual(r.status, 401);
+  });
+
   console.log(`\n${passed} passed, ${failed} failed`);
   if (skipReasons.length) console.log(`(${skipReasons.length} skipped: ${skipReasons.join(', ')})`);
   await new Promise(r => server.close(r));
