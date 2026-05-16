@@ -145,7 +145,12 @@ const PRIMITIVE_NAMES = [
   // verifies SendGrid + persists OAuth creds + bootstrap-generates all KEKs.
   // landing_widgets_swarm exposes /v1/anon/try (anonymous IP-rate-limited
   // chat completion) + iframe-able /embed/try-now.html + viral /swarm page.
-  'auto_provision', 'landing_widgets_swarm'
+  'auto_provision', 'landing_widgets_swarm',
+  // Layer 56 — Distribution + auto-ops + revenue automation: /install
+  // one-line installer, /deploy/* (Vercel/Render/Railway buttons), launch
+  // badge SVG, auto-incident watch cron, auto-upgrade-nudge cron, auto-
+  // weekly-digest cron
+  'zero_config_self_run'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -449,7 +454,9 @@ const REGISTER_OVERRIDES = {
   oauth_resources_audit: 'registerOauthResourcesAuditRoutes',
   // Layer 55 — Auto-provision + landing widgets + swarm demo
   auto_provision: 'registerAutoProvisionRoutes',
-  landing_widgets_swarm: 'registerLandingWidgetsSwarmRoutes'
+  landing_widgets_swarm: 'registerLandingWidgetsSwarmRoutes',
+  // Layer 56 — Distribution + auto-ops
+  zero_config_self_run: 'registerZeroConfigSelfRunRoutes'
 };
 
 async function migrateAll(pool) {

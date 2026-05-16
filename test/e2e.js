@@ -1164,6 +1164,56 @@ async function run() {
     assert.ok(/Bootstrap|Stripe|Current configuration/i.test(r.body));
   });
 
+  console.log('\n== e2e: layer 56 — distribution + auto-ops ==');
+  await test('GET /install serves bash installer', async () => {
+    const r = await fetchPath('/install');
+    assert.strictEqual(r.status, 200);
+    assert.ok(r.headers['content-type']?.includes('shellscript') || r.headers['content-type']?.includes('text'));
+    assert.ok(/#!\/usr\/bin\/env bash|set -euo pipefail/.test(r.body));
+  });
+  await test('GET /deploy/vercel renders multi-platform deploy page', async () => {
+    const r = await fetchPath('/deploy/vercel');
+    assert.strictEqual(r.status, 200);
+    assert.ok(/Deploy|Vercel|Render|Railway|Docker/.test(r.body));
+  });
+  await test('GET /deploy/render.yaml returns render blueprint', async () => {
+    const r = await fetchPath('/deploy/render.yaml');
+    assert.strictEqual(r.status, 200);
+    assert.ok(/services:|envVars:|openheab-substrate/.test(r.body));
+  });
+  await test('GET /deploy/railway.json returns railway template', async () => {
+    const r = await fetchPath('/deploy/railway.json');
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(j.services && Array.isArray(j.services));
+  });
+  await test('GET /launch-button.svg returns valid SVG', async () => {
+    const r = await fetchPath('/launch-button.svg');
+    assert.strictEqual(r.status, 200);
+    assert.ok(r.headers['content-type']?.includes('svg'));
+    assert.ok(/<svg|<rect|<text/.test(r.body));
+  });
+  await test('autoIncidentWatch returns status object', async () => {
+    const { autoIncidentWatch } = require('../src/primitives/zero_config_self_run');
+    const mockPool = { query: async () => ({ rows: [] }) };
+    const mockAudit = { append: async () => {} };
+    const result = await autoIncidentWatch(mockPool, mockAudit);
+    assert.ok(result && typeof result === 'object');
+    assert.ok(result.status || result.error);
+  });
+  await test('autoUpgradeNudge returns notification count', async () => {
+    const { autoUpgradeNudge } = require('../src/primitives/zero_config_self_run');
+    const mockPool = { query: async () => ({ rows: [] }) };
+    const result = await autoUpgradeNudge(mockPool, null);
+    assert.strictEqual(typeof result.notified, 'number');
+  });
+  await test('autoSummaryDigest returns sent count', async () => {
+    const { autoSummaryDigest } = require('../src/primitives/zero_config_self_run');
+    const mockPool = { query: async () => ({ rows: [] }) };
+    const result = await autoSummaryDigest(mockPool, null);
+    assert.strictEqual(typeof result.sent, 'number');
+  });
+
   console.log(`\n${passed} passed, ${failed} failed`);
   if (skipReasons.length) console.log(`(${skipReasons.length} skipped: ${skipReasons.join(', ')})`);
   await new Promise(r => server.close(r));
