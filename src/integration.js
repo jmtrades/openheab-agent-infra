@@ -154,7 +154,11 @@ const PRIMITIVE_NAMES = [
   // Layer 57 — Self-improving / self-defending: intelligent provider routing
   // (cost+RLAF-based), RAG-as-a-service (/v1/rag/index + /v1/rag/query in 2
   // endpoints), auto-fraud-freeze (cron that quarantines high-AML-score agents)
-  'intelligent_substrate'
+  'intelligent_substrate',
+  // Layer 58 — Revenue + retention engine: featured marketplace placements
+  // (paid), /leaderboard public showcase, /v1/me/earnings unified view, NPS
+  // surveys + aggregate, churn-risk-scan cron with CSM alerts
+  'revenue_engine'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -462,7 +466,9 @@ const REGISTER_OVERRIDES = {
   // Layer 56 — Distribution + auto-ops
   zero_config_self_run: 'registerZeroConfigSelfRunRoutes',
   // Layer 57 — Intelligent routing + RAG-as-a-service + auto-fraud
-  intelligent_substrate: 'registerIntelligentSubstrateRoutes'
+  intelligent_substrate: 'registerIntelligentSubstrateRoutes',
+  // Layer 58 — Revenue + retention
+  revenue_engine: 'registerRevenueEngineRoutes'
 };
 
 async function migrateAll(pool) {

@@ -1285,6 +1285,85 @@ async function run() {
     assert.ok(typeof r.newly_frozen === 'number');
   });
 
+  console.log('\n== e2e: layer 58 — revenue engine ==');
+  await test('GET /leaderboard renders 4 boards', async () => {
+    const r = await fetchPath('/leaderboard');
+    assert.strictEqual(r.status, 200);
+    assert.ok(/Top API consumers|Top RLAF|Top referrers|Top marketplace/.test(r.body));
+  });
+  await test('GET /leaderboard.json returns 4 lists', async () => {
+    const r = await fetchPath('/leaderboard.json');
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(Array.isArray(j.top_consumers));
+    assert.ok(Array.isArray(j.top_judged));
+    assert.ok(Array.isArray(j.top_referrers));
+    assert.ok(Array.isArray(j.top_sellers));
+  });
+  await test('GET /v1/me/earnings without auth returns 401', async () => {
+    const r = await fetchPath('/v1/me/earnings');
+    assert.strictEqual(r.status, 401);
+  });
+  await test('GET /v1/me/earnings with auth returns summary', async () => {
+    const r = await fetchPath('/v1/me/earnings', { headers: { 'x-agent-did': 'did:op:earn-test' } });
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(j.marketplace_payouts && j.referrals && j.summary);
+  });
+  await test('GET /v1/featured/pricing returns 4 kinds', async () => {
+    const r = await fetchPath('/v1/featured/pricing');
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(j.pricing.tool && j.pricing.extension && j.pricing.prompt && j.pricing.dataset);
+  });
+  await test('POST /v1/featured/purchase with bad kind returns 400', async () => {
+    const r = await fetchPath('/v1/featured/purchase', {
+      method: 'POST',
+      headers: { 'x-agent-did': 'did:op:feat-test' },
+      body: { kind: 'bogus', target_id: 'x' }
+    });
+    assert.strictEqual(r.status, 400);
+  });
+  await test('POST /v1/featured/purchase creates placement', async () => {
+    const r = await fetchPath('/v1/featured/purchase', {
+      method: 'POST',
+      headers: { 'x-agent-did': 'did:op:feat-test' },
+      body: { kind: 'tool', target_id: 'my-tool', weeks: 2 }
+    });
+    assert.strictEqual(r.status, 201);
+    const j = JSON.parse(r.body);
+    assert.ok(j.placement_id && j.total_cents === 10000);
+  });
+  await test('GET /v1/featured/active returns list', async () => {
+    const r = await fetchPath('/v1/featured/active?kind=tool');
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(Array.isArray(j.active));
+  });
+  await test('POST /v1/nps/submit with score 9 returns 201 + promoter msg', async () => {
+    const r = await fetchPath('/v1/nps/submit', { method: 'POST', body: { score: 9, comment: 'love it' } });
+    assert.strictEqual(r.status, 201);
+    const j = JSON.parse(r.body);
+    assert.ok(/promoter|share/i.test(j.thanks));
+  });
+  await test('POST /v1/nps/submit with bad score returns 400', async () => {
+    const r = await fetchPath('/v1/nps/submit', { method: 'POST', body: { score: 99 } });
+    assert.strictEqual(r.status, 400);
+  });
+  await test('GET /v1/nps/aggregate returns NPS calculation', async () => {
+    const r = await fetchPath('/v1/nps/aggregate');
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(typeof j.total === 'number');
+  });
+  await test('churnRiskScan function returns structured result', async () => {
+    const { churnRiskScan } = require('../src/primitives/revenue_engine');
+    const mockPool = { query: async () => ({ rows: [] }) };
+    const r = await churnRiskScan(mockPool, null);
+    assert.ok(typeof r.evaluated === 'number');
+    assert.ok(typeof r.alerted === 'number');
+  });
+
   console.log(`\n${passed} passed, ${failed} failed`);
   if (skipReasons.length) console.log(`(${skipReasons.length} skipped: ${skipReasons.join(', ')})`);
   await new Promise(r => server.close(r));
