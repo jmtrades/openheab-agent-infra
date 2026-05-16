@@ -432,6 +432,65 @@ async function run() {
     delete process.env.CRON_SECRET;
   });
 
+  console.log('\n== e2e: layer 43 — final Anthropic-launch surfaces ==');
+  await test('GET /v1/me without auth returns 401', async () => {
+    const r = await fetchPath('/v1/me');
+    assert.strictEqual(r.status, 401);
+  });
+  await test('GET /v1/me with x-agent-did returns context', async () => {
+    const r = await fetchPath('/v1/me', { headers: { 'x-agent-did': 'did:op:metest' } });
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.strictEqual(j.did, 'did:op:metest');
+    assert.ok(j.plan && j.limits, 'should include plan + limits');
+  });
+  await test('GET /v1/me/usage returns inference + transfer counts', async () => {
+    const r = await fetchPath('/v1/me/usage', { headers: { 'x-agent-did': 'did:op:metest' } });
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(j.inference && j.transfers, 'should include inference + transfers');
+    assert.strictEqual(j.period_days, 30);
+  });
+  await test('GET /v1/me/limits includes remaining', async () => {
+    const r = await fetchPath('/v1/me/limits', { headers: { 'x-agent-did': 'did:op:metest' } });
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(j.remaining, 'should include remaining quotas');
+  });
+  await test('GET /models renders HTML catalog', async () => {
+    const r = await fetchPath('/models');
+    assert.strictEqual(r.status, 200);
+    assert.ok(/claude-haiku|gpt-4o|gemini-pro/.test(r.body));
+  });
+  await test('GET /models.json returns model array', async () => {
+    const r = await fetchPath('/models.json');
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(Array.isArray(j.models) && j.models.length >= 8);
+  });
+  await test('GET /tools renders MCP tool catalog', async () => {
+    const r = await fetchPath('/tools');
+    assert.strictEqual(r.status, 200);
+    assert.ok(/MCP Tools|categories/i.test(r.body));
+  });
+  await test('GET /runbook renders SRE playbooks', async () => {
+    const r = await fetchPath('/runbook');
+    assert.strictEqual(r.status, 200);
+    assert.ok(/Runbook|5xx|audit chain/i.test(r.body));
+  });
+  await test('GET /changelog.rss returns valid RSS', async () => {
+    const r = await fetchPath('/changelog.rss');
+    assert.strictEqual(r.status, 200);
+    assert.ok(r.headers['content-type']?.includes('rss'));
+    assert.ok(/<rss version|<channel>/.test(r.body));
+  });
+  await test('GET /v1/_health/deep/probes returns adapter probe results', async () => {
+    const r = await fetchPath('/v1/_health/deep/probes');
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(typeof j.configured_count === 'number');
+  });
+
   console.log(`\n${passed} passed, ${failed} failed`);
   if (skipReasons.length) console.log(`(${skipReasons.length} skipped: ${skipReasons.join(', ')})`);
   await new Promise(r => server.close(r));

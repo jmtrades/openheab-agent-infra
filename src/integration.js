@@ -101,7 +101,11 @@ const PRIMITIVE_NAMES = [
   // Layer 41 — Public status page + transactional email templates
   'status_uptime', 'email_templates',
   // Layer 42 — Step-by-step interactive tour for first-time users
-  'welcome_tour'
+  'welcome_tour',
+  // Layer 43 — Final Anthropic-launch surfaces: /v1/me convenience endpoints,
+  // /models + /tools HTML catalogs, /runbook SRE playbooks, RSS feeds for
+  // changelog + status, live adapter connectivity probe at /v1/_health/deep/probes
+  'me_endpoints', 'catalog_pages', 'feeds_and_probes'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -373,7 +377,11 @@ const REGISTER_OVERRIDES = {
   status_uptime: 'registerStatusUptimeRoutes',
   email_templates: 'registerEmailTemplatesRoutes',
   // Layer 42 — Step-by-step interactive tour
-  welcome_tour: 'registerWelcomeTourRoutes'
+  welcome_tour: 'registerWelcomeTourRoutes',
+  // Layer 43 — Final Anthropic-launch surfaces
+  me_endpoints: 'registerMeEndpointsRoutes',
+  catalog_pages: 'registerCatalogPagesRoutes',
+  feeds_and_probes: 'registerFeedsAndProbesRoutes'
 };
 
 async function migrateAll(pool) {
