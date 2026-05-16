@@ -150,7 +150,11 @@ const PRIMITIVE_NAMES = [
   // one-line installer, /deploy/* (Vercel/Render/Railway buttons), launch
   // badge SVG, auto-incident watch cron, auto-upgrade-nudge cron, auto-
   // weekly-digest cron
-  'zero_config_self_run'
+  'zero_config_self_run',
+  // Layer 57 — Self-improving / self-defending: intelligent provider routing
+  // (cost+RLAF-based), RAG-as-a-service (/v1/rag/index + /v1/rag/query in 2
+  // endpoints), auto-fraud-freeze (cron that quarantines high-AML-score agents)
+  'intelligent_substrate'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -456,7 +460,9 @@ const REGISTER_OVERRIDES = {
   auto_provision: 'registerAutoProvisionRoutes',
   landing_widgets_swarm: 'registerLandingWidgetsSwarmRoutes',
   // Layer 56 — Distribution + auto-ops
-  zero_config_self_run: 'registerZeroConfigSelfRunRoutes'
+  zero_config_self_run: 'registerZeroConfigSelfRunRoutes',
+  // Layer 57 — Intelligent routing + RAG-as-a-service + auto-fraud
+  intelligent_substrate: 'registerIntelligentSubstrateRoutes'
 };
 
 async function migrateAll(pool) {

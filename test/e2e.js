@@ -1214,6 +1214,77 @@ async function run() {
     assert.strictEqual(typeof result.sent, 'number');
   });
 
+  console.log('\n== e2e: layer 57 — intelligent routing + RAG + auto-fraud ==');
+  await test('GET /v1/inference/route requires model', async () => {
+    const r = await fetchPath('/v1/inference/route');
+    assert.strictEqual(r.status, 400);
+  });
+  await test('GET /v1/inference/route?model=X returns provider pick', async () => {
+    const r = await fetchPath('/v1/inference/route?model=claude-haiku');
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(j.provider);
+    assert.ok(['anthropic', 'stub'].includes(j.provider));
+  });
+  await test('POST /v1/rag/index without auth returns 401', async () => {
+    const r = await fetchPath('/v1/rag/index', { method: 'POST', body: { text: 'hi' } });
+    assert.strictEqual(r.status, 401);
+  });
+  await test('POST /v1/rag/index without text returns 400', async () => {
+    const r = await fetchPath('/v1/rag/index', {
+      method: 'POST',
+      headers: { 'x-agent-did': 'did:op:rag-test' },
+      body: {}
+    });
+    assert.strictEqual(r.status, 400);
+  });
+  await test('POST /v1/rag/index indexes text chunks', async () => {
+    const r = await fetchPath('/v1/rag/index', {
+      method: 'POST',
+      headers: { 'x-agent-did': 'did:op:rag-test' },
+      body: { title: 'Test', text: 'OpenHeab is an agent-native substrate.' }
+    });
+    assert.strictEqual(r.status, 201);
+    const j = JSON.parse(r.body);
+    assert.ok(j.indexed >= 1);
+    assert.ok(Array.isArray(j.doc_ids));
+  });
+  await test('POST /v1/rag/query returns scored results', async () => {
+    const r = await fetchPath('/v1/rag/query', {
+      method: 'POST',
+      headers: { 'x-agent-did': 'did:op:rag-test' },
+      body: { question: 'what is openheab', top_k: 5 }
+    });
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(Array.isArray(j.results));
+    assert.strictEqual(j.top_k, 5);
+  });
+  await test('GET /v1/rag/stats returns chunk count', async () => {
+    const r = await fetchPath('/v1/rag/stats', { headers: { 'x-agent-did': 'did:op:rag-test' } });
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(typeof j.chunks === 'number');
+  });
+  await test('GET /v1/quarantines/:did returns frozen=false for unknown agent', async () => {
+    const r = await fetchPath('/v1/quarantines/did:op:never-existed');
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.strictEqual(j.frozen, false);
+  });
+  await test('POST /v1/admin/quarantines/:did/unfreeze requires admin', async () => {
+    delete process.env.OPERATOR_ADMIN_TOKEN;
+    const r = await fetchPath('/v1/admin/quarantines/did:op:x/unfreeze', { method: 'POST', body: {} });
+    assert.strictEqual(r.status, 401);
+  });
+  await test('autoFraudFreeze function returns structured result', async () => {
+    const { autoFraudFreeze } = require('../src/primitives/intelligent_substrate');
+    const mockPool = { query: async () => ({ rows: [] }) };
+    const r = await autoFraudFreeze(mockPool, null);
+    assert.ok(typeof r.candidates_evaluated === 'number');
+    assert.ok(typeof r.newly_frozen === 'number');
+  });
+
   console.log(`\n${passed} passed, ${failed} failed`);
   if (skipReasons.length) console.log(`(${skipReasons.length} skipped: ${skipReasons.join(', ')})`);
   await new Promise(r => server.close(r));
