@@ -105,7 +105,10 @@ const PRIMITIVE_NAMES = [
   // Layer 43 — Final Anthropic-launch surfaces: /v1/me convenience endpoints,
   // /models + /tools HTML catalogs, /runbook SRE playbooks, RSS feeds for
   // changelog + status, live adapter connectivity probe at /v1/_health/deep/probes
-  'me_endpoints', 'catalog_pages', 'feeds_and_probes'
+  'me_endpoints', 'catalog_pages', 'feeds_and_probes',
+  // Layer 44 — Integrations catalog + competitor migration guides +
+  // embeddable badges + Stripe customer portal endpoint
+  'integrations_migrate'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -381,7 +384,9 @@ const REGISTER_OVERRIDES = {
   // Layer 43 — Final Anthropic-launch surfaces
   me_endpoints: 'registerMeEndpointsRoutes',
   catalog_pages: 'registerCatalogPagesRoutes',
-  feeds_and_probes: 'registerFeedsAndProbesRoutes'
+  feeds_and_probes: 'registerFeedsAndProbesRoutes',
+  // Layer 44 — Integrations + migrate + embed + billing portal
+  integrations_migrate: 'registerIntegrationsMigrateRoutes'
 };
 
 async function migrateAll(pool) {

@@ -491,6 +491,50 @@ async function run() {
     assert.ok(typeof j.configured_count === 'number');
   });
 
+  console.log('\n== e2e: layer 44 — integrations + migrate + embed + billing ==');
+  await test('GET /integrations renders catalog with all categories', async () => {
+    const r = await fetchPath('/integrations');
+    assert.strictEqual(r.status, 200);
+    assert.ok(/Slack|Stripe|Anthropic|Vanta/.test(r.body));
+  });
+  await test('GET /integrations.json returns channel array', async () => {
+    const r = await fetchPath('/integrations.json');
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(Array.isArray(j.channels) && j.channels.length >= 30);
+  });
+  await test('GET /migrate renders competitor migration guides', async () => {
+    const r = await fetchPath('/migrate');
+    assert.strictEqual(r.status, 200);
+    assert.ok(/Stripe Treasury|Mercury|LangChain/.test(r.body));
+  });
+  await test('GET /embed/badge.svg returns SVG', async () => {
+    const r = await fetchPath('/embed/badge.svg');
+    assert.strictEqual(r.status, 200);
+    assert.ok(r.headers['content-type']?.includes('svg'));
+    assert.ok(/Powered by OpenHeab/.test(r.body));
+  });
+  await test('GET /embed/stats returns iframe-able widget', async () => {
+    const r = await fetchPath('/embed/stats');
+    assert.strictEqual(r.status, 200);
+    assert.ok(/Powered by OpenHeab|Agents|Audit events/.test(r.body));
+  });
+  await test('POST /v1/me/billing/portal without auth returns 401', async () => {
+    const r = await fetchPath('/v1/me/billing/portal', { method: 'POST', body: {} });
+    assert.strictEqual(r.status, 401);
+  });
+  await test('POST /v1/me/billing/portal with auth in stub mode returns stub URL', async () => {
+    delete process.env.STRIPE_SECRET_KEY;
+    const r = await fetchPath('/v1/me/billing/portal', {
+      method: 'POST',
+      headers: { 'x-agent-did': 'did:op:billing-test' },
+      body: {}
+    });
+    assert.strictEqual(r.status, 503);
+    const j = JSON.parse(r.body);
+    assert.ok(j.stub && j.portal_url);
+  });
+
   console.log(`\n${passed} passed, ${failed} failed`);
   if (skipReasons.length) console.log(`(${skipReasons.length} skipped: ${skipReasons.join(', ')})`);
   await new Promise(r => server.close(r));
