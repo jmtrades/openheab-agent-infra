@@ -161,6 +161,26 @@ function notFoundHandler(req, res) {
   });
 }
 
+// Final error handler — catches body-parser SyntaxError and any uncaught
+// async throw. Logs the request_id but never leaks a stack trace to the
+// caller. Must be registered AFTER all routes via `app.use(errorHandler)`.
+function errorHandler(err, req, res, next) {
+  if (res.headersSent) return next(err);
+  // Body-parser SyntaxError or HTTP-shaped error
+  const status = err.statusCode || err.status || (err.type === 'entity.parse.failed' ? 400 : 500);
+  const code = err.type === 'entity.parse.failed' ? 'invalid_json'
+            : err.type === 'entity.too.large' ? 'body_too_large'
+            : status >= 500 ? 'internal_error'
+            : (err.code || 'request_failed');
+  // Log full error for the operator but never expose stack to caller
+  try { console.error(JSON.stringify({ level: 'error', request_id: req.id, code, message: err.message })); } catch {}
+  res.status(status).json({
+    error: code,
+    message: status < 500 ? err.message : 'An internal error occurred. The operator has been notified.',
+    request_id: req.id
+  });
+}
+
 function faviconHandler(req, res) {
   res.setHeader('content-type', 'image/svg+xml');
   res.setHeader('cache-control', 'public, max-age=86400');
@@ -173,5 +193,5 @@ function faviconHandler(req, res) {
 
 module.exports = {
   requestId, jsonLogger, corsMiddleware, securityHeaders, metricsHandler,
-  notFoundHandler, faviconHandler, metrics, renderPrometheus
+  notFoundHandler, errorHandler, faviconHandler, metrics, renderPrometheus
 };

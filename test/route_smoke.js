@@ -66,7 +66,7 @@ async function run() {
   registerAllRoutes(app, pool);
   try { require('../src/status_page').registerStatusPage(app); } catch {}
   try { require('../src/discovery').registerDiscoveryRoutes(app); } catch {}
-  try { require('../src/landing').registerLandingPage(app); } catch {}
+  try { require('../src/landing').registerPages(app); } catch {}
 
   const server = http.createServer(app);
   await new Promise(r => server.listen(0, r));

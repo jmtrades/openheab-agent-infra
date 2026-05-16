@@ -65,10 +65,16 @@ async function startServer() {
   const lib = require('../src/integration');
   await lib.migrateAll(pool).catch(() => {});
   integration = lib.registerAllRoutes(app, pool);
-  // Add status page + discovery
+  // Add status page + discovery + landing (matches production wiring)
   try { require('../src/status_page').registerStatusPage(app); } catch {}
   try { require('../src/discovery').registerDiscoveryRoutes(app); } catch {}
-  try { require('../src/landing').registerLandingPage(app); } catch {}
+  try { require('../src/landing').registerPages(app); } catch {}
+  // Final 404 + error handlers (matches server.js + api/index.js)
+  try {
+    const { notFoundHandler, errorHandler } = require('../src/observability');
+    app.use(notFoundHandler);
+    app.use(errorHandler);
+  } catch {}
   server = http.createServer(app);
   await new Promise(resolve => server.listen(0, resolve));
   baseUrl = `http://127.0.0.1:${server.address().port}`;
@@ -369,6 +375,30 @@ async function run() {
     const r = await fetchPath('/v1/admin/access-log');
     assert.strictEqual(r.status, 401);
     delete process.env.OPERATOR_ADMIN_TOKEN;
+  });
+
+  console.log('\n== e2e: bug-fix verification ==');
+  await test('GET / serves the landing page (not 404)', async () => {
+    const r = await fetchPath('/');
+    assert.ok([200, 301, 302].includes(r.status), `expected 2xx/3xx, got ${r.status}`);
+  });
+  await test('POST /v1/signup with malformed JSON returns 400 (not 500)', async () => {
+    const r = await fetchPath('/v1/signup', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: '{not json'
+    });
+    assert.strictEqual(r.status, 400);
+    const j = JSON.parse(r.body);
+    assert.strictEqual(j.error, 'invalid_json');
+    assert.ok(!/SyntaxError|JSON\.parse/.test(r.body), 'should not leak stack trace');
+  });
+  await test('POST /v1/agents/:did/inbox/receive does not 500 with empty body', async () => {
+    const r = await fetchPath('/v1/agents/did:op:test/inbox/receive', {
+      method: 'POST',
+      body: {}
+    });
+    assert.ok(r.status < 500, `expected non-5xx, got ${r.status}`);
   });
 
   console.log(`\n${passed} passed, ${failed} failed`);

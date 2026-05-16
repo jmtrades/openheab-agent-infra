@@ -11,7 +11,7 @@ const { registerPages } = require('./src/landing');
 const { registerDiscoveryRoutes } = require('./src/discovery');
 const { rateLimit, skipForHealth } = require('./src/rate_limit');
 const { requestId, jsonLogger, corsMiddleware, securityHeaders, metricsHandler,
-        notFoundHandler, faviconHandler } = require('./src/observability');
+        notFoundHandler, errorHandler, faviconHandler } = require('./src/observability');
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -51,6 +51,7 @@ async function start() {
   registerStatusPage(app, pool);
   registerDiscoveryRoutes(app);
   app.use(notFoundHandler);
+  app.use(errorHandler);
 
   let cronStopper = null;
   if (process.env.ENABLE_INPROCESS_CRON === 'true') {

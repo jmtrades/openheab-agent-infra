@@ -124,7 +124,7 @@ async function applyRateLimits(pool, recipientDid, senderDid, policy) {
     `SELECT COUNT(*) AS n FROM inbox_rate_log WHERE recipient_did=$1 AND window_start >= $2`,
     [recipientDid, oneHourAgo]
   ).catch(() => ({ rows: [{ n: 0 }] }));
-  const totalCount = parseInt(totalR.rows[0].n);
+  const totalCount = parseInt(totalR.rows[0]?.n || 0);
 
   if (totalCount >= policy.max_total_per_hour) {
     return { allowed: false, reason: 'total_rate_limit_exceeded', count: totalCount };
@@ -136,8 +136,9 @@ async function applyRateLimits(pool, recipientDid, senderDid, policy) {
        WHERE recipient_did=$1 AND sender_did=$2 AND window_start >= $3`,
       [recipientDid, senderDid, oneHourAgo]
     ).catch(() => ({ rows: [{ n: 0 }] }));
-    if (parseInt(senderR.rows[0].n) >= policy.max_per_sender_per_hour) {
-      return { allowed: false, reason: 'per_sender_rate_limit_exceeded', count: parseInt(senderR.rows[0].n) };
+    const senderCount = parseInt(senderR.rows[0]?.n || 0);
+    if (senderCount >= policy.max_per_sender_per_hour) {
+      return { allowed: false, reason: 'per_sender_rate_limit_exceeded', count: senderCount };
     }
   }
 

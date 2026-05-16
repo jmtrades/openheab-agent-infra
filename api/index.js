@@ -9,7 +9,7 @@ const { registerPages } = require('../src/landing');
 const { registerDiscoveryRoutes } = require('../src/discovery');
 const { rateLimit, skipForHealth } = require('../src/rate_limit');
 const { requestId, jsonLogger, corsMiddleware, securityHeaders, metricsHandler,
-        notFoundHandler, faviconHandler } = require('../src/observability');
+        notFoundHandler, errorHandler, faviconHandler } = require('../src/observability');
 
 let cachedHandler = null;
 let cachedPromise = null;
@@ -54,6 +54,7 @@ async function buildHandler() {
   registerStatusPage(app, pool);
   registerDiscoveryRoutes(app);
   app.use(notFoundHandler);
+  app.use(errorHandler);
 
   app.post('/v1/_admin/migrate', express.json(), async (req, res) => {
     if (req.headers['x-admin-token'] !== process.env.OPERATOR_ADMIN_TOKEN) {

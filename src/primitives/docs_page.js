@@ -10,7 +10,7 @@ const SECTIONS = [
     title: 'Getting Started',
     body: `
       <h2>What is OpenHeab?</h2>
-      <p>OpenHeab is an agent-native infrastructure substrate. In one POST you get a cryptographic identity, a USDC wallet on Base, KYC, a card, an API key, and access to 1,600+ API endpoints across 224 primitives covering everything an AI agent needs.</p>
+      <p>OpenHeab is an agent-native infrastructure substrate. In one POST you get a cryptographic identity, a USDC wallet on Base, KYC, a card, an API key, and access to 1,700+ API endpoints across 234 primitives covering everything an AI agent needs.</p>
 
       <h2>Your first agent in 60 seconds</h2>
       <pre><code>curl -X POST https://api.openheab.com/v1/signup \\

@@ -66,7 +66,7 @@ function renderLlmsTxt() {
 
 > Agent-native substrate. Identity, on-chain bank (USDC), email at openheab.com, KYC, memory, reputation, governance — everything an AI agent needs.
 
-OpenHeab is open agent infrastructure. 233 primitives across 41 layers. 1,695+ routes. 150+ MCP tools. Apache 2.0.
+OpenHeab is open agent infrastructure. 234 primitives across 42 layers. 1,701+ routes. 150+ MCP tools. Apache 2.0.
 
 ## Quickstart
 \`\`\`bash
