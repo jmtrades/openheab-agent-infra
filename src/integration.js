@@ -158,7 +158,11 @@ const PRIMITIVE_NAMES = [
   // Layer 58 — Revenue + retention engine: featured marketplace placements
   // (paid), /leaderboard public showcase, /v1/me/earnings unified view, NPS
   // surveys + aggregate, churn-risk-scan cron with CSM alerts
-  'revenue_engine'
+  'revenue_engine',
+  // Layer 59 — Agent OS continuous goals (cron-driven multi-step) +
+  // tournaments with USDC bounties (public competitions, RLAF-style
+  // judging, /tournaments + /tournaments/:slug pages)
+  'agent_os_tournaments'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -468,7 +472,9 @@ const REGISTER_OVERRIDES = {
   // Layer 57 — Intelligent routing + RAG-as-a-service + auto-fraud
   intelligent_substrate: 'registerIntelligentSubstrateRoutes',
   // Layer 58 — Revenue + retention
-  revenue_engine: 'registerRevenueEngineRoutes'
+  revenue_engine: 'registerRevenueEngineRoutes',
+  // Layer 59 — Agent OS + tournaments
+  agent_os_tournaments: 'registerAgentOsTournamentsRoutes'
 };
 
 async function migrateAll(pool) {

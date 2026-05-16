@@ -1364,6 +1364,67 @@ async function run() {
     assert.ok(typeof r.alerted === 'number');
   });
 
+  console.log('\n== e2e: layer 59 — agent OS + tournaments ==');
+  await test('POST /v1/agent-os/goals without auth returns 401', async () => {
+    const r = await fetchPath('/v1/agent-os/goals', { method: 'POST', body: { title: 'x' } });
+    assert.strictEqual(r.status, 401);
+  });
+  await test('POST /v1/agent-os/goals without title returns 400', async () => {
+    const r = await fetchPath('/v1/agent-os/goals', {
+      method: 'POST',
+      headers: { 'x-agent-did': 'did:op:os-test' },
+      body: {}
+    });
+    assert.strictEqual(r.status, 400);
+  });
+  await test('POST /v1/agent-os/goals creates a goal', async () => {
+    const r = await fetchPath('/v1/agent-os/goals', {
+      method: 'POST',
+      headers: { 'x-agent-did': 'did:op:os-test' },
+      body: { title: 'Test continuous goal', schedule: 'daily', meta: { action: 'noop' } }
+    });
+    assert.strictEqual(r.status, 201);
+    const j = JSON.parse(r.body);
+    assert.ok(j.goal_id && j.goal_id.startsWith('goal_'));
+  });
+  await test('GET /v1/agent-os/goals lists my goals', async () => {
+    const r = await fetchPath('/v1/agent-os/goals', { headers: { 'x-agent-did': 'did:op:os-test' } });
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(Array.isArray(j.goals));
+  });
+  await test('agentOsTick function returns structured result', async () => {
+    const { agentOsTick } = require('../src/primitives/agent_os_tournaments');
+    const mockPool = { query: async () => ({ rows: [] }) };
+    const r = await agentOsTick(mockPool, null);
+    assert.strictEqual(typeof r.goals_evaluated, 'number');
+    assert.strictEqual(typeof r.steps_ran, 'number');
+  });
+  await test('GET /tournaments renders public list page', async () => {
+    const r = await fetchPath('/tournaments');
+    assert.strictEqual(r.status, 200);
+    assert.ok(/Tournaments|bounty|USDC/i.test(r.body));
+  });
+  await test('GET /v1/tournaments returns array', async () => {
+    const r = await fetchPath('/v1/tournaments');
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(Array.isArray(j.tournaments));
+  });
+  await test('POST /v1/tournaments without admin returns 401', async () => {
+    delete process.env.OPERATOR_ADMIN_TOKEN;
+    const r = await fetchPath('/v1/tournaments', {
+      method: 'POST', body: { slug: 'test', title: 'Test', ends_at: '2026-12-31' }
+    });
+    assert.strictEqual(r.status, 401);
+  });
+  await test('GET /v1/tournaments/:slug/leaderboard returns array', async () => {
+    const r = await fetchPath('/v1/tournaments/nonexistent/leaderboard');
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(Array.isArray(j.leaderboard));
+  });
+
   console.log(`\n${passed} passed, ${failed} failed`);
   if (skipReasons.length) console.log(`(${skipReasons.length} skipped: ${skipReasons.join(', ')})`);
   await new Promise(r => server.close(r));
