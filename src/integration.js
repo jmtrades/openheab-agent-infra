@@ -136,7 +136,10 @@ const PRIMITIVE_NAMES = [
   'notifications_whatsnew_visualizer',
   // Layer 53 — Final auth polish for billion-dollar UX: email magic-link
   // sign-in (passwordless), TOTP 2FA, user preferences, session management
-  'auth_polish'
+  'auth_polish',
+  // Layer 54 — OAuth providers (Google/GitHub/Microsoft) + /resources
+  // sitemap + /v1/audit/filter compliance query
+  'oauth_resources_audit'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -435,7 +438,9 @@ const REGISTER_OVERRIDES = {
   // Layer 52 — Notifications + whatsnew + audit visualizer
   notifications_whatsnew_visualizer: 'registerNotificationsWhatsNewVisualizerRoutes',
   // Layer 53 — Auth UX polish (magic link + MFA + preferences + sessions)
-  auth_polish: 'registerAuthPolishRoutes'
+  auth_polish: 'registerAuthPolishRoutes',
+  // Layer 54 — OAuth + resources sitemap + audit filter
+  oauth_resources_audit: 'registerOauthResourcesAuditRoutes'
 };
 
 async function migrateAll(pool) {

@@ -1031,6 +1031,50 @@ async function run() {
     assert.ok(Array.isArray(j.sessions));
   });
 
+  console.log('\n== e2e: layer 54 — OAuth + resources + audit filter ==');
+  await test('GET /resources renders sitemap with all groups', async () => {
+    const r = await fetchPath('/resources');
+    assert.strictEqual(r.status, 200);
+    assert.ok(/Resources|Get started|For developers|Operations/.test(r.body));
+  });
+  await test('GET /v1/auth/oauth/providers lists Google/GitHub/Microsoft', async () => {
+    const r = await fetchPath('/v1/auth/oauth/providers');
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(Array.isArray(j.providers) && j.providers.length >= 3);
+    assert.ok(j.providers.find(p => p.id === 'google'));
+    assert.ok(j.providers.find(p => p.id === 'github'));
+  });
+  await test('GET /auth/oauth/google/start redirects to Google authorize', async () => {
+    const r = await fetchPath('/auth/oauth/google/start');
+    assert.ok([301, 302].includes(r.status));
+    assert.ok(r.headers.location?.includes('accounts.google.com'));
+  });
+  await test('GET /auth/oauth/unknown/start returns 404', async () => {
+    const r = await fetchPath('/auth/oauth/unknown/start');
+    assert.strictEqual(r.status, 404);
+  });
+  await test('GET /auth/oauth/google/callback without code returns 400', async () => {
+    const r = await fetchPath('/auth/oauth/google/callback');
+    assert.strictEqual(r.status, 400);
+  });
+  await test('GET /v1/audit/filter without auth returns 401', async () => {
+    const r = await fetchPath('/v1/audit/filter');
+    assert.strictEqual(r.status, 401);
+  });
+  await test('GET /v1/audit/filter with auth returns entries', async () => {
+    const r = await fetchPath('/v1/audit/filter?limit=10', { headers: { 'x-agent-did': 'did:op:filter-test' } });
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(Array.isArray(j.entries));
+    assert.strictEqual(j.limit, 10);
+  });
+  await test('GET /v1/audit/filter cant query other agents without admin', async () => {
+    const r = await fetchPath('/v1/audit/filter?agent_did=did:op:someone-else',
+      { headers: { 'x-agent-did': 'did:op:filter-test' } });
+    assert.strictEqual(r.status, 403);
+  });
+
   console.log(`\n${passed} passed, ${failed} failed`);
   if (skipReasons.length) console.log(`(${skipReasons.length} skipped: ${skipReasons.join(', ')})`);
   await new Promise(r => server.close(r));
