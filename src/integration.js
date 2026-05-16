@@ -130,7 +130,10 @@ const PRIMITIVE_NAMES = [
   // Layer 51 — Growth surfaces: /referrals (25% recurring commission),
   // /compare-models (side-by-side LLM playground), /v1/charts/* (embeddable
   // inline-SVG sparkline/bar/donut for /dashboard /admin /launch)
-  'growth_surfaces'
+  'growth_surfaces',
+  // Layer 52 — Last polish: in-app notifications + /whatsnew auto-feed +
+  // audit chain Merkle visualizer (SVG)
+  'notifications_whatsnew_visualizer'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -425,7 +428,9 @@ const REGISTER_OVERRIDES = {
   // Layer 50 — Enterprise procurement surfaces
   enterprise_assurance: 'registerEnterpriseAssuranceRoutes',
   // Layer 51 — Growth: referrals + compare-models + chart widgets
-  growth_surfaces: 'registerGrowthSurfacesRoutes'
+  growth_surfaces: 'registerGrowthSurfacesRoutes',
+  // Layer 52 — Notifications + whatsnew + audit visualizer
+  notifications_whatsnew_visualizer: 'registerNotificationsWhatsNewVisualizerRoutes'
 };
 
 async function migrateAll(pool) {

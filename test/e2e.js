@@ -909,6 +909,41 @@ async function run() {
     assert.ok(/<path|<circle/.test(r.body));
   });
 
+  console.log('\n== e2e: layer 52 — notifications + whatsnew + audit viz ==');
+  await test('GET /v1/me/notifications without auth returns 401', async () => {
+    const r = await fetchPath('/v1/me/notifications');
+    assert.strictEqual(r.status, 401);
+  });
+  await test('GET /v1/me/notifications with auth returns list', async () => {
+    const r = await fetchPath('/v1/me/notifications', { headers: { 'x-agent-did': 'did:op:notif-test' } });
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(Array.isArray(j.notifications));
+    assert.ok(typeof j.unread_count === 'number');
+  });
+  await test('POST /v1/_internal/notify requires internal key', async () => {
+    const r = await fetchPath('/v1/_internal/notify', {
+      method: 'POST',
+      body: { agent_did: 'did:op:x', kind: 'test', title: 'Test' }
+    });
+    assert.strictEqual(r.status, 401);
+  });
+  await test('GET /notifications renders UI', async () => {
+    const r = await fetchPath('/notifications');
+    assert.strictEqual(r.status, 200);
+    assert.ok(/Notifications|In-app/.test(r.body));
+  });
+  await test('GET /whatsnew renders auto-generated feed', async () => {
+    const r = await fetchPath('/whatsnew');
+    assert.strictEqual(r.status, 200);
+    assert.ok(/What's New|Subscribe|Full changelog/.test(r.body));
+  });
+  await test('GET /audit/visualize renders SVG chain', async () => {
+    const r = await fetchPath('/audit/visualize');
+    assert.strictEqual(r.status, 200);
+    assert.ok(/Audit Chain Visualizer|<svg|<rect/.test(r.body));
+  });
+
   console.log(`\n${passed} passed, ${failed} failed`);
   if (skipReasons.length) console.log(`(${skipReasons.length} skipped: ${skipReasons.join(', ')})`);
   await new Promise(r => server.close(r));

@@ -172,7 +172,7 @@ function registerEmailTemplatesRoutes(app, pool, verifyAgentAuth, auditChain) {
 
   // Send (admin only — or internal trigger from other primitives)
   app.post('/v1/email-templates/send', express.json(), async (req, res) => {
-    if (req.headers['x-internal-api-key'] !== process.env.INTERNAL_API_KEY) {
+    if (!process.env.INTERNAL_API_KEY || req.headers["x-internal-api-key"] !== process.env.INTERNAL_API_KEY) {
       return res.status(401).json({ error: 'unauthorized' });
     }
     try {

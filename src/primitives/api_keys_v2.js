@@ -129,7 +129,7 @@ function registerApiKeysV2Routes(app, pool, verifyAgentAuth, auditChain) {
 
   // Verify (for middleware-style usage by downstream apps)
   app.post('/v1/_internal/api-keys/verify', express.json(), async (req, res) => {
-    if (req.headers['x-internal-api-key'] !== process.env.INTERNAL_API_KEY) return res.status(401).json({ error: 'unauthorized' });
+    if (!process.env.INTERNAL_API_KEY || req.headers["x-internal-api-key"] !== process.env.INTERNAL_API_KEY) return res.status(401).json({ error: 'unauthorized' });
     const result = await verifyApiKey(pool, req.body?.key);
     res.json(result || { valid: false });
   });
