@@ -648,6 +648,55 @@ async function run() {
     assert.ok(Array.isArray(j.audit_events));
   });
 
+  console.log('\n== e2e: layer 47 — Anthropic compat + workbench + cookbook ==');
+  await test('POST /v1/messages without auth returns 401 Anthropic shape', async () => {
+    const r = await fetchPath('/v1/messages', {
+      method: 'POST',
+      body: { model: 'claude-haiku', messages: [{ role: 'user', content: 'hi' }] }
+    });
+    assert.strictEqual(r.status, 401);
+    const j = JSON.parse(r.body);
+    assert.strictEqual(j.type, 'error');
+    assert.strictEqual(j.error?.type, 'authentication_error');
+  });
+  await test('POST /v1/messages with auth returns Anthropic-shape message', async () => {
+    delete process.env.ANTHROPIC_API_KEY;
+    const r = await fetchPath('/v1/messages', {
+      method: 'POST',
+      headers: { 'x-agent-did': 'did:op:msg-test' },
+      body: { model: 'claude-haiku', messages: [{ role: 'user', content: 'hi' }] }
+    });
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.strictEqual(j.type, 'message');
+    assert.strictEqual(j.role, 'assistant');
+    assert.ok(Array.isArray(j.content) && j.content[0]?.type === 'text');
+  });
+  await test('POST /v1/messages without messages returns 400', async () => {
+    const r = await fetchPath('/v1/messages', {
+      method: 'POST',
+      headers: { 'x-agent-did': 'did:op:msg-test' },
+      body: { model: 'claude' }
+    });
+    assert.strictEqual(r.status, 400);
+  });
+  await test('GET /workbench renders interactive playground', async () => {
+    const r = await fetchPath('/workbench');
+    assert.strictEqual(r.status, 200);
+    assert.ok(/Workbench|User prompt|Run/.test(r.body));
+  });
+  await test('GET /cookbook renders recipes', async () => {
+    const r = await fetchPath('/cookbook');
+    assert.strictEqual(r.status, 200);
+    assert.ok(/Cookbook|streaming-inference|usdc/i.test(r.body));
+  });
+  await test('GET /cookbook.json returns recipes array', async () => {
+    const r = await fetchPath('/cookbook.json');
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(Array.isArray(j.recipes) && j.recipes.length >= 5);
+  });
+
   console.log(`\n${passed} passed, ${failed} failed`);
   if (skipReasons.length) console.log(`(${skipReasons.length} skipped: ${skipReasons.join(', ')})`);
   await new Promise(r => server.close(r));

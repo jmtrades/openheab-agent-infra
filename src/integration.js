@@ -113,7 +113,10 @@ const PRIMITIVE_NAMES = [
   'api_explorer', 'help_center',
   // Layer 46 — OpenAI-compatible drop-in (chat/completions, embeddings,
   // batches, models) + /whoami + /v1/me/requests inspector
-  'openai_compat'
+  'openai_compat',
+  // Layer 47 — Anthropic-compatible /v1/messages + /workbench interactive prompt
+  // builder + /cookbook recipes (the developer-experience triad Anthropic ships)
+  'anthropic_compat_workbench'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -396,7 +399,9 @@ const REGISTER_OVERRIDES = {
   api_explorer: 'registerApiExplorerRoutes',
   help_center: 'registerHelpCenterRoutes',
   // Layer 46 — OpenAI-compatible drop-in
-  openai_compat: 'registerOpenaiCompatRoutes'
+  openai_compat: 'registerOpenaiCompatRoutes',
+  // Layer 47 — Anthropic compat + workbench + cookbook
+  anthropic_compat_workbench: 'registerAnthropicCompatWorkbenchRoutes'
 };
 
 async function migrateAll(pool) {
