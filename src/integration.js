@@ -780,9 +780,10 @@ function registerAllRoutes(app, pool) {
     });
   }
 
-  const { listCrons } = require('./cron_auth');
+  const { listCrons, registerCronDispatcher } = require('./cron_auth');
+  registerCronDispatcher(app);
   const crons = listCrons();
-  console.log(`[openheab] ${registered} primitives + MCP server registered. ${crons.length} cron jobs.`);
+  console.log(`[openheab] ${registered} primitives + MCP server registered. ${crons.length} cron jobs + dispatcher.`);
 
   return { app, pool, auditChain, verifyAgentAuth, verifyAdminAuth, primitives, registered, crons };
 }

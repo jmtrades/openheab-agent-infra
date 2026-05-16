@@ -79,12 +79,17 @@ async function provisionEverything(pool, auditChain, body) {
   const tokenHash = cryptoLib.createHash('sha256').update(apiKey).digest('hex');
   await pool.query(`INSERT INTO api_keys (token_hash, agent_did) VALUES ($1, $2)`, [tokenHash, did]);
 
-  // 2. Provision USDC wallet (idempotent, per bank_chain)
+  // 2. Provision USDC wallet (idempotent, per bank_chain). Best-effort —
+  // partial signups still return a usable DID + API key. Failures are
+  // surfaced in the response under `warnings` so the caller can retry.
   let wallet = null;
+  const warnings = [];
   try {
     const bc = require('./bank_chain');
     wallet = await bc.provisionWallet(pool, auditChain, did);
-  } catch {}
+  } catch (e) {
+    warnings.push({ component: 'wallet', error: e.message });
+  }
 
   // 3. Create org
   const orgId = newId('org');
@@ -119,7 +124,7 @@ async function provisionEverything(pool, auditChain, body) {
     }).catch(() => {});
   }
 
-  return { did, public_key: pubPem, private_key: privPem, api_key: apiKey, org_id: orgId, wallet };
+  return { did, public_key: pubPem, private_key: privPem, api_key: apiKey, org_id: orgId, wallet, warnings };
 }
 
 async function makeStripeCheckout(stripe, body, identifiers, baseUrl) {

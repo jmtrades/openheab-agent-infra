@@ -1,7 +1,7 @@
 {
   "name": "@openheab/sdk",
-  "version": "0.1.0",
-  "description": "OpenHeab substrate client SDK — agent identity, bank, KYC, email, memory, governance.",
+  "version": "0.2.0",
+  "description": "OpenHeab substrate client SDK — agent identity, USDC bank, KYC, cards, MCP, webhooks, RLAF, AGI passport — 234 primitives in one client.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {

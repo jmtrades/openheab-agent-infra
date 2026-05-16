@@ -6,13 +6,43 @@
 // ============================================================================
 const crypto = require('crypto');
 
-async function migrate(pool) {}
+async function migrate(pool) {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS admin_access_log (
+      log_id      TEXT PRIMARY KEY,
+      action      TEXT NOT NULL,
+      ip_hash     TEXT,
+      ua_hash     TEXT,
+      path        TEXT,
+      result      TEXT NOT NULL,
+      created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+    CREATE INDEX IF NOT EXISTS idx_admin_access_recent ON admin_access_log (created_at DESC);
+  `);
+}
 
 function isAdmin(req) {
   const token = process.env.OPERATOR_ADMIN_TOKEN || process.env.INTERNAL_API_KEY;
   if (!token) return process.env.NODE_ENV !== 'production'; // dev mode: open
   const provided = req.headers['x-admin-token'] || req.query?.admin_token;
-  return provided === token;
+  if (!provided) return false;
+  // Constant-time comparison to prevent timing attacks
+  try {
+    const a = Buffer.from(provided);
+    const b = Buffer.from(token);
+    return a.length === b.length && crypto.timingSafeEqual(a, b);
+  } catch { return false; }
+}
+
+async function logAccess(pool, req, action, result) {
+  try {
+    const ipHash = crypto.createHash('sha256').update(String(req.ip || req.headers['x-forwarded-for'] || 'anon')).digest('hex').slice(0, 16);
+    const uaHash = crypto.createHash('sha256').update(String(req.headers['user-agent'] || 'anon')).digest('hex').slice(0, 16);
+    await pool.query(
+      `INSERT INTO admin_access_log (log_id, action, ip_hash, ua_hash, path, result) VALUES ($1,$2,$3,$4,$5,$6)`,
+      ['adm_' + crypto.randomBytes(8).toString('hex'), action, ipHash, uaHash, req.path, result]
+    ).catch(() => {});
+  } catch {}
 }
 
 async function gatherAdminState(pool) {
@@ -249,6 +279,7 @@ async function triggerBackup() {
 function registerAdminUiRoutes(app, pool) {
   app.get('/admin', async (req, res) => {
     if (!isAdmin(req)) {
+      await logAccess(pool, req, 'admin_ui.access', 'denied');
       res.set('content-type', 'text/html');
       return res.status(401).send(`<!doctype html><html><head><title>Admin</title>
 <style>body{font-family:-apple-system,sans-serif;background:#0a0a0f;color:#e7e7ee;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0}
@@ -261,6 +292,7 @@ input:focus{border-color:#4f46e5}button{padding:12px 24px;background:#4f46e5;col
 </div></body></html>`);
     }
     try {
+      await logAccess(pool, req, 'admin_ui.access', 'allowed');
       const data = await gatherAdminState(pool);
       res.set('content-type', 'text/html; charset=utf-8');
       res.set('cache-control', 'private, no-store');
@@ -270,8 +302,19 @@ input:focus{border-color:#4f46e5}button{padding:12px 24px;background:#4f46e5;col
     }
   });
 
+  // Admin access log viewer — see who's tried to access /admin
+  app.get('/v1/admin/access-log', async (req, res) => {
+    if (!isAdmin(req)) return res.status(401).json({ error: 'admin_required' });
+    const r = await pool.query(
+      `SELECT log_id, action, ip_hash, ua_hash, path, result, created_at
+       FROM admin_access_log ORDER BY created_at DESC LIMIT 200`
+    ).catch(() => ({ rows: [] }));
+    res.json({ access_log: r.rows });
+  });
+
   app.get('/admin.json', async (req, res) => {
     if (!isAdmin(req)) return res.status(401).json({ error: 'admin_required' });
+    await logAccess(pool, req, 'admin_ui.json', 'allowed');
     const data = await gatherAdminState(pool);
     res.json(data);
   });

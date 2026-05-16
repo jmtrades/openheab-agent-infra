@@ -34,12 +34,32 @@ done
 ok "Required env vars set"
 
 step "Step 2 — Local tests"
-BANK_MASTER_KEK="${BANK_MASTER_KEK:-$IDENTITY_MASTER_KEK}" \
-SECRETS_MASTER_KEK="${SECRETS_MASTER_KEK:-$IDENTITY_MASTER_KEK}" \
-STRIPE_SECRET_KEY="${STRIPE_SECRET_KEY:-sk_test_dummy}" \
-STRIPE_WEBHOOK_SECRET="${STRIPE_WEBHOOK_SECRET:-whsec_dummy}" \
-STRIPE_PRICE_PRO_MONTHLY="${STRIPE_PRICE_PRO_MONTHLY:-price_dummy}" \
-node test/unit.js 2>&1 | tail -3 || warn "unit tests had issues"
+COMMON_ENV=(
+  "BANK_MASTER_KEK=${BANK_MASTER_KEK:-$IDENTITY_MASTER_KEK}"
+  "SECRETS_MASTER_KEK=${SECRETS_MASTER_KEK:-$IDENTITY_MASTER_KEK}"
+  "STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-sk_test_dummy}"
+  "STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET:-whsec_dummy}"
+  "STRIPE_PRICE_PRO_MONTHLY=${STRIPE_PRICE_PRO_MONTHLY:-price_dummy}"
+)
+env "${COMMON_ENV[@]}" node test/unit.js 2>&1 | tail -3 || warn "unit tests had issues"
+env "${COMMON_ENV[@]}" node test/boot.js 2>&1 | tail -3 || warn "boot test had issues"
+env "${COMMON_ENV[@]}" node test/bank_lifecycle.js 2>&1 | tail -3 || warn "bank tests had issues"
+env "${COMMON_ENV[@]}" node test/e2e.js 2>&1 | tail -3 || warn "e2e tests had issues"
+env "${COMMON_ENV[@]}" node test/route_smoke.js 2>&1 | tail -3 || warn "smoke test had issues"
+
+step "Step 2.5 — Stripe price-ID sanity check"
+if [ -n "${STRIPE_SECRET_KEY:-}" ] && [ "${STRIPE_SECRET_KEY}" != "sk_test_dummy" ]; then
+  for price_var in STRIPE_PRICE_PRO_MONTHLY STRIPE_PRICE_TEAM_MONTHLY STRIPE_PRICE_ENTERPRISE_MONTHLY; do
+    price_id="${!price_var:-}"
+    if [ -n "$price_id" ] && [ "$price_id" != "price_dummy" ]; then
+      curl -fsS -u "${STRIPE_SECRET_KEY}:" "https://api.stripe.com/v1/prices/${price_id}" >/dev/null 2>&1 \
+        && ok "Stripe price OK: $price_var" \
+        || warn "Stripe price NOT FOUND: $price_var=$price_id — paid signup will fail"
+    fi
+  done
+else
+  warn "Stripe in dummy/test mode — paid plans will not work in production"
+fi
 
 step "Step 3 — Migrate database"
 if [ -z "${SKIP_MIGRATE:-}" ]; then

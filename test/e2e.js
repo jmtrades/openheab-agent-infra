@@ -349,6 +349,28 @@ async function run() {
     assert.ok(Array.isArray(j.steps) && j.steps.length >= 5);
   });
 
+  console.log('\n== e2e: production-readiness gap fixes ==');
+  await test('GET /solutions renders index of solution use-cases', async () => {
+    const r = await fetchPath('/solutions');
+    assert.strictEqual(r.status, 200);
+    assert.ok(/Solutions|fintech|compliance|sales/i.test(r.body));
+  });
+  await test('GET /changelog renders rendered markdown', async () => {
+    const r = await fetchPath('/changelog');
+    assert.strictEqual(r.status, 200);
+    assert.ok(/Changelog|0\.2\.0|primitives/i.test(r.body));
+  });
+  await test('POST /v1/_jobs/_dispatcher without secret returns 401', async () => {
+    const r = await fetchPath('/v1/_jobs/_dispatcher', { method: 'POST' });
+    assert.strictEqual(r.status, 401);
+  });
+  await test('GET /v1/admin/access-log without admin token returns 401', async () => {
+    process.env.OPERATOR_ADMIN_TOKEN = 'test-admin-token-for-e2e';
+    const r = await fetchPath('/v1/admin/access-log');
+    assert.strictEqual(r.status, 401);
+    delete process.env.OPERATOR_ADMIN_TOKEN;
+  });
+
   console.log(`\n${passed} passed, ${failed} failed`);
   if (skipReasons.length) console.log(`(${skipReasons.length} skipped: ${skipReasons.join(', ')})`);
   await new Promise(r => server.close(r));

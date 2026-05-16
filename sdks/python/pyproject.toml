@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "openheab"
-version = "0.1.0"
-description = "OpenHeab substrate client — agent identity, bank (USDC), email, KYC, memory."
+version = "0.2.0"
+description = "OpenHeab substrate client — agent identity, USDC bank, KYC, cards, MCP, webhooks, RLAF, AGI passport — 234 primitives."
 readme = "README.md"
 license = { text = "Apache-2.0" }
 authors = [{ name = "Junior Martin" }]

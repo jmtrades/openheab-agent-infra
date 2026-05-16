@@ -317,6 +317,24 @@ ${[
     });
   }
 
+  // /solutions — index of all solution use-cases
+  app.get('/solutions', (req, res) => {
+    res.setHeader('content-type', 'text/html; charset=utf-8');
+    const cards = SOLUTIONS_PAGES.map(([slug, name, blurb]) => `
+      <a href="/solutions/${slug}" style="display:block;background:#14141c;border:1px solid #1f1f2a;padding:24px;border-radius:12px;text-decoration:none;color:inherit;transition:border-color 0.15s">
+        <h3 style="color:#fff;font-size:18px;margin-bottom:8px">${escapeHtml(name)}</h3>
+        <p style="color:#aaa;font-size:14px;line-height:1.55">${escapeHtml(blurb)}</p>
+      </a>`).join('');
+    res.send(head('OpenHeab Solutions — by use case',
+      'OpenHeab adapts to fintech, compliance, sales, devops, e-commerce, media, research, and government use cases.',
+      (process.env.OPERATOR_PUBLIC_URL || '') + '/solutions') + NAV_HTML() + `<main>
+<div class=crumb><a href="/">Home</a> · Solutions</div>
+<h1 style="font-size:36px;letter-spacing:-1px;margin-bottom:14px">Solutions</h1>
+<p style="color:var(--dim2);font-size:18px;line-height:1.65;margin-bottom:32px">One substrate, many shapes. Pick a use case to see the primitives most relevant to it.</p>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px">${cards}</div>
+</main>` + FOOTER_HTML());
+  });
+
   // /solutions/[use_case]
   for (const [slug, name, blurb] of SOLUTIONS_PAGES) {
     app.get('/solutions/' + slug, (req, res) => {
@@ -435,16 +453,25 @@ ${['API', 'MCP server', 'Audit chain', 'USDC wallet', 'Cards', 'Email', 'Cron jo
 </main>` + FOOTER_HTML());
   });
 
-  // /changelog (read CHANGELOG.md if present, else show empty)
+  // /changelog (read CHANGELOG.md from repo root — works on Vercel + local)
   app.get('/changelog', async (req, res) => {
     const fs = require('fs');
+    const path = require('path');
     let body = '';
-    try { body = fs.readFileSync('/home/user/openheab-agent-infra/CHANGELOG.md', 'utf8'); } catch {}
+    // Try a few candidate paths so this works in serverless (process.cwd is often /var/task)
+    const candidates = [
+      path.join(process.cwd(), 'CHANGELOG.md'),
+      path.resolve(__dirname, '../../CHANGELOG.md'),
+      '/var/task/CHANGELOG.md'
+    ];
+    for (const p of candidates) {
+      try { body = fs.readFileSync(p, 'utf8'); if (body) break; } catch {}
+    }
     res.setHeader('content-type', 'text/html; charset=utf-8');
     res.send(head('Changelog — OpenHeab', 'Every release of OpenHeab.', (process.env.OPERATOR_PUBLIC_URL || '') + '/changelog', null) +
       NAV_HTML() + `<main>
 <h1 style="font-size:32px;letter-spacing:-1px;margin-bottom:24px">Changelog</h1>
-<article style="font-size:14px;color:var(--dim2)">${body ? blog.md(body) : '<p>No changelog entries yet.</p>'}</article>
+<article style="font-size:14px;color:var(--dim2);line-height:1.7">${body ? blog.md(body) : '<p>No changelog entries yet.</p>'}</article>
 </main>` + FOOTER_HTML());
   });
 
