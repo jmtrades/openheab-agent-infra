@@ -119,7 +119,11 @@ const PRIMITIVE_NAMES = [
   'anthropic_compat_workbench',
   // Layer 48 — per-tier rate limiting (token-bucket per agent) + feedback
   // capture (/v1/feedback + /feedback form) + /v1/me/quotas + /v1/me/rate-check
-  'tier_rate_feedback'
+  'tier_rate_feedback',
+  // Layer 49 — Production-critical: SSE streaming for compat endpoints,
+  // OpenAI-compat /v1/files family + /v1/usage/daily, live event /inspector
+  // + /marketplace consumer storefront + /developer console
+  'streaming_compat', 'files_usage_api', 'inspector_marketplace_console'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -406,7 +410,11 @@ const REGISTER_OVERRIDES = {
   // Layer 47 — Anthropic compat + workbench + cookbook
   anthropic_compat_workbench: 'registerAnthropicCompatWorkbenchRoutes',
   // Layer 48 — Per-tier rate limiting + feedback capture
-  tier_rate_feedback: 'registerTierRateFeedbackRoutes'
+  tier_rate_feedback: 'registerTierRateFeedbackRoutes',
+  // Layer 49 — Streaming + files + inspector/marketplace/console
+  streaming_compat: 'registerStreamingCompatRoutes',
+  files_usage_api: 'registerFilesUsageApiRoutes',
+  inspector_marketplace_console: 'registerInspectorMarketplaceConsoleRoutes'
 };
 
 async function migrateAll(pool) {

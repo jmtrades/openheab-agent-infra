@@ -738,6 +738,93 @@ async function run() {
     assert.strictEqual(r.status, 401);
   });
 
+  console.log('\n== e2e: layer 49 — streaming + files + inspector + marketplace ==');
+  await test('POST /v1/chat/completions/stream without auth returns 401', async () => {
+    const r = await fetchPath('/v1/chat/completions/stream', {
+      method: 'POST',
+      body: { model: 'demo', messages: [{ role: 'user', content: 'hi' }] }
+    });
+    assert.strictEqual(r.status, 401);
+  });
+  await test('POST /v1/chat/completions/stream returns SSE content-type', async () => {
+    delete process.env.OPENAI_API_KEY;
+    const r = await fetchPath('/v1/chat/completions/stream', {
+      method: 'POST',
+      headers: { 'x-agent-did': 'did:op:stream-test' },
+      body: { model: 'demo', messages: [{ role: 'user', content: 'hi' }] }
+    });
+    assert.strictEqual(r.status, 200);
+    assert.ok(r.headers['content-type']?.includes('event-stream'));
+    assert.ok(/data: \[DONE\]/.test(r.body));
+  });
+  await test('POST /v1/messages/stream returns Anthropic SSE shape', async () => {
+    delete process.env.ANTHROPIC_API_KEY;
+    const r = await fetchPath('/v1/messages/stream', {
+      method: 'POST',
+      headers: { 'x-agent-did': 'did:op:anth-stream' },
+      body: { model: 'claude-haiku', messages: [{ role: 'user', content: 'hi' }] }
+    });
+    assert.strictEqual(r.status, 200);
+    assert.ok(/event: message_start|event: content_block_delta/.test(r.body));
+  });
+  await test('POST /v1/files JSON upload returns OpenAI-shape file', async () => {
+    const content = Buffer.from('test content').toString('base64');
+    const r = await fetchPath('/v1/files', {
+      method: 'POST',
+      headers: { 'x-agent-did': 'did:op:file-test', 'content-type': 'application/json' },
+      body: { filename: 'test.txt', purpose: 'batch', content }
+    });
+    assert.strictEqual(r.status, 201);
+    const j = JSON.parse(r.body);
+    assert.strictEqual(j.object, 'file');
+    assert.ok(j.id && j.id.startsWith('file_'));
+    assert.strictEqual(j.bytes, 12);
+  });
+  await test('POST /v1/files with empty content returns 400', async () => {
+    const r = await fetchPath('/v1/files', {
+      method: 'POST',
+      headers: { 'x-agent-did': 'did:op:file-test', 'content-type': 'application/json' },
+      body: { filename: 'empty.txt' }
+    });
+    assert.strictEqual(r.status, 400);
+  });
+  await test('GET /v1/files lists files', async () => {
+    const r = await fetchPath('/v1/files', { headers: { 'x-agent-did': 'did:op:file-test' } });
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.strictEqual(j.object, 'list');
+  });
+  await test('GET /v1/usage/daily returns chart-ready series', async () => {
+    const r = await fetchPath('/v1/usage/daily?days=7', {
+      headers: { 'x-agent-did': 'did:op:usage-test' }
+    });
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(Array.isArray(j.series) && j.series.length === 7);
+    assert.ok(j.series[0].date && typeof j.series[0].calls === 'number');
+  });
+  await test('GET /v1/usage/summary returns per-period totals', async () => {
+    const r = await fetchPath('/v1/usage/summary', { headers: { 'x-agent-did': 'did:op:usage-test' } });
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(j.periods?.today && j.periods?.week && j.periods?.month);
+  });
+  await test('GET /inspector renders SSE event viewer', async () => {
+    const r = await fetchPath('/inspector');
+    assert.strictEqual(r.status, 200);
+    assert.ok(/Inspector|EventSource|live/.test(r.body));
+  });
+  await test('GET /marketplace renders storefront with extensions/prompts/datasets', async () => {
+    const r = await fetchPath('/marketplace');
+    assert.strictEqual(r.status, 200);
+    assert.ok(/Marketplace|Extensions|Prompts|Datasets/.test(r.body));
+  });
+  await test('GET /developer renders developer console', async () => {
+    const r = await fetchPath('/developer');
+    assert.strictEqual(r.status, 200);
+    assert.ok(/Developer Console|API Keys|Recent Requests/.test(r.body));
+  });
+
   console.log(`\n${passed} passed, ${failed} failed`);
   if (skipReasons.length) console.log(`(${skipReasons.length} skipped: ${skipReasons.join(', ')})`);
   await new Promise(r => server.close(r));
