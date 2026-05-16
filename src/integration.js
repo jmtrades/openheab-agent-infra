@@ -116,7 +116,10 @@ const PRIMITIVE_NAMES = [
   'openai_compat',
   // Layer 47 — Anthropic-compatible /v1/messages + /workbench interactive prompt
   // builder + /cookbook recipes (the developer-experience triad Anthropic ships)
-  'anthropic_compat_workbench'
+  'anthropic_compat_workbench',
+  // Layer 48 — per-tier rate limiting (token-bucket per agent) + feedback
+  // capture (/v1/feedback + /feedback form) + /v1/me/quotas + /v1/me/rate-check
+  'tier_rate_feedback'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -401,7 +404,9 @@ const REGISTER_OVERRIDES = {
   // Layer 46 — OpenAI-compatible drop-in
   openai_compat: 'registerOpenaiCompatRoutes',
   // Layer 47 — Anthropic compat + workbench + cookbook
-  anthropic_compat_workbench: 'registerAnthropicCompatWorkbenchRoutes'
+  anthropic_compat_workbench: 'registerAnthropicCompatWorkbenchRoutes',
+  // Layer 48 — Per-tier rate limiting + feedback capture
+  tier_rate_feedback: 'registerTierRateFeedbackRoutes'
 };
 
 async function migrateAll(pool) {

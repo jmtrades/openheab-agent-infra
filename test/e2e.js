@@ -697,6 +697,47 @@ async function run() {
     assert.ok(Array.isArray(j.recipes) && j.recipes.length >= 5);
   });
 
+  console.log('\n== e2e: layer 48 — tier rate limits + feedback ==');
+  await test('GET /v1/me/quotas returns tier + bucket info', async () => {
+    const r = await fetchPath('/v1/me/quotas', { headers: { 'x-agent-did': 'did:op:quota-test' } });
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(j.tier && typeof j.bucket_capacity === 'number');
+  });
+  await test('POST /v1/me/rate-check consumes a token', async () => {
+    const r = await fetchPath('/v1/me/rate-check', {
+      method: 'POST',
+      headers: { 'x-agent-did': 'did:op:rate-test' },
+      body: { cost: 1 }
+    });
+    assert.ok([200, 429].includes(r.status));
+    const j = JSON.parse(r.body);
+    assert.ok(j.tier && typeof j.remaining === 'number');
+  });
+  await test('GET /feedback renders form', async () => {
+    const r = await fetchPath('/feedback');
+    assert.strictEqual(r.status, 200);
+    assert.ok(/Tell us what's wrong|Type|Send feedback/.test(r.body));
+  });
+  await test('POST /v1/feedback without title returns 400', async () => {
+    const r = await fetchPath('/v1/feedback', { method: 'POST', body: { body: 'just body, no title' } });
+    assert.strictEqual(r.status, 400);
+  });
+  await test('POST /v1/feedback with title+body returns 201', async () => {
+    const r = await fetchPath('/v1/feedback', {
+      method: 'POST',
+      body: { title: 'Test feedback', body: 'This is a test', kind: 'bug', severity: 'low' }
+    });
+    assert.strictEqual(r.status, 201);
+    const j = JSON.parse(r.body);
+    assert.ok(j.feedback_id && j.feedback_id.startsWith('fb_'));
+  });
+  await test('GET /v1/admin/feedback requires admin', async () => {
+    delete process.env.OPERATOR_ADMIN_TOKEN;
+    const r = await fetchPath('/v1/admin/feedback');
+    assert.strictEqual(r.status, 401);
+  });
+
   console.log(`\n${passed} passed, ${failed} failed`);
   if (skipReasons.length) console.log(`(${skipReasons.length} skipped: ${skipReasons.join(', ')})`);
   await new Promise(r => server.close(r));
