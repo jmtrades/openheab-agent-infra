@@ -825,6 +825,45 @@ async function run() {
     assert.ok(/Developer Console|API Keys|Recent Requests/.test(r.body));
   });
 
+  console.log('\n== e2e: layer 50 — enterprise assurance ==');
+  await test('GET /trust renders trust center with cert grid', async () => {
+    const r = await fetchPath('/trust');
+    assert.strictEqual(r.status, 200);
+    assert.ok(/Trust Center|SOC 2|GDPR|Ed25519/.test(r.body));
+  });
+  await test('GET /sla renders SLA tiers', async () => {
+    const r = await fetchPath('/sla');
+    assert.strictEqual(r.status, 200);
+    assert.ok(/Service Level Agreement|99\.9|Enterprise/.test(r.body));
+  });
+  await test('GET /sla.json returns tiers array', async () => {
+    const r = await fetchPath('/sla.json');
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(Array.isArray(j.tiers) && j.tiers.length === 5);
+  });
+  await test('GET /security/disclosure renders bounty + safe harbor', async () => {
+    const r = await fetchPath('/security/disclosure');
+    assert.strictEqual(r.status, 200);
+    assert.ok(/bug bounty|Safe harbor|Severity/i.test(r.body));
+  });
+  await test('GET /v1/me/invoices without auth returns 401', async () => {
+    const r = await fetchPath('/v1/me/invoices');
+    assert.strictEqual(r.status, 401);
+  });
+  await test('GET /v1/me/invoices with auth returns invoices list', async () => {
+    const r = await fetchPath('/v1/me/invoices', { headers: { 'x-agent-did': 'did:op:inv-test' } });
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(Array.isArray(j.invoices));
+  });
+  await test('GET /v1/me/billing/usage returns current period breakdown', async () => {
+    const r = await fetchPath('/v1/me/billing/usage', { headers: { 'x-agent-did': 'did:op:bill-test' } });
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(j.period_start && j.totals && j.by_provider);
+  });
+
   console.log(`\n${passed} passed, ${failed} failed`);
   if (skipReasons.length) console.log(`(${skipReasons.length} skipped: ${skipReasons.join(', ')})`);
   await new Promise(r => server.close(r));

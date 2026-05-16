@@ -123,7 +123,10 @@ const PRIMITIVE_NAMES = [
   // Layer 49 — Production-critical: SSE streaming for compat endpoints,
   // OpenAI-compat /v1/files family + /v1/usage/daily, live event /inspector
   // + /marketplace consumer storefront + /developer console
-  'streaming_compat', 'files_usage_api', 'inspector_marketplace_console'
+  'streaming_compat', 'files_usage_api', 'inspector_marketplace_console',
+  // Layer 50 — Enterprise readiness: /trust + /sla + /security/disclosure
+  // + /v1/me/invoices + /v1/me/billing/usage (procurement-ready)
+  'enterprise_assurance'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -414,7 +417,9 @@ const REGISTER_OVERRIDES = {
   // Layer 49 — Streaming + files + inspector/marketplace/console
   streaming_compat: 'registerStreamingCompatRoutes',
   files_usage_api: 'registerFilesUsageApiRoutes',
-  inspector_marketplace_console: 'registerInspectorMarketplaceConsoleRoutes'
+  inspector_marketplace_console: 'registerInspectorMarketplaceConsoleRoutes',
+  // Layer 50 — Enterprise procurement surfaces
+  enterprise_assurance: 'registerEnterpriseAssuranceRoutes'
 };
 
 async function migrateAll(pool) {
