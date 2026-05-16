@@ -7,6 +7,10 @@
 
 async function migrate(pool) {}
 
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+
 async function gatherActivity(pool, limit = 50) {
   const r = await pool.query(
     `SELECT length, hash, prev_hash, entry, created_at FROM audit_chain ORDER BY length DESC LIMIT $1`,
@@ -49,19 +53,20 @@ function timeAgo(timestamp) {
 function renderActivityHtml(data) {
   const rows = data.events.map(e => {
     let entry = {};
-    try { entry = typeof e.entry === 'string' ? JSON.parse(e.entry) : e.entry; } catch { entry = {}; }
+    try { entry = typeof e.entry === 'string' ? JSON.parse(e.entry) : (e.entry || {}); } catch { entry = {}; }
     const eventType = entry.event_type || 'unknown';
     const tag = eventEmoji(eventType);
+    // XSS guard: every value from audit_chain (DB-stored, agent-controlled) escaped before HTML
     const detail = Object.entries(entry)
       .filter(([k]) => k !== 'event_type' && k !== 'nonce')
       .slice(0, 4)
-      .map(([k, v]) => `<span class="kv"><b>${k}</b>:${String(v).slice(0, 40)}</span>`)
+      .map(([k, v]) => `<span class="kv"><b>${escapeHtml(k)}</b>:${escapeHtml(String(v).slice(0, 40))}</span>`)
       .join(' ');
     return `
       <div class="event">
-        <span class="tag">${tag}</span>
+        <span class="tag">${escapeHtml(tag)}</span>
         <div class="event-body">
-          <div class="event-head"><span class="event-type">${eventType}</span><span class="event-time">${timeAgo(e.created_at)}</span></div>
+          <div class="event-head"><span class="event-type">${escapeHtml(eventType)}</span><span class="event-time">${escapeHtml(timeAgo(e.created_at))}</span></div>
           <div class="event-detail">${detail}</div>
         </div>
         <span class="event-len">#${e.length}</span>
@@ -133,7 +138,7 @@ function registerActivityFeedRoutes(app, pool) {
       res.set('cache-control', 'no-store');
       res.send(renderActivityHtml(data));
     } catch (e) {
-      res.status(500).set('content-type', 'text/html').send('<h1>Activity feed unavailable</h1><pre>' + e.message + '</pre>');
+      res.status(500).set('content-type', 'text/html').send('<h1>Activity feed unavailable</h1><pre>' + String(e.message).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</pre>');
     }
   });
 

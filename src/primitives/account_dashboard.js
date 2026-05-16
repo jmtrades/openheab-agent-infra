@@ -80,26 +80,37 @@ function timeAgo(t) {
   return Math.floor(diff / 86_400_000) + 'd ago';
 }
 
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+
 function renderDashboard(data) {
   const agent = data.agent || {};
   const wallet = data.wallet || {};
   const kyc = data.kyc || {};
   const kycColor = kyc.status === 'verified' ? '#22c55e' : (kyc.status ? '#eab308' : '#666');
+  // Escape every user-controlled value before HTML interpolation (XSS guard)
+  const did = escapeHtml(data.did);
+  const didUrl = encodeURIComponent(data.did);
+  const agentName = escapeHtml(agent.name || 'Your Agent');
+  const walletAddress = escapeHtml(wallet.address || '');
+  const walletNetwork = escapeHtml(wallet.network || 'base');
+  const walletAsset = escapeHtml(wallet.asset || 'USDC');
 
   const eventsHtml = (data.recent_events || []).map(e => {
     let entry = {}; try { entry = typeof e.entry === 'string' ? JSON.parse(e.entry) : e.entry; } catch {}
-    const type = entry.event_type || 'unknown';
-    return `<div class="event"><span class="event-type">${type}</span><span class="event-time">${timeAgo(e.created_at)}</span></div>`;
+    const type = escapeHtml(entry.event_type || 'unknown');
+    return `<div class="event"><span class="event-type">${type}</span><span class="event-time">${escapeHtml(timeAgo(e.created_at))}</span></div>`;
   }).join('') || '<div class="empty">No activity yet. Try the SDK examples!</div>';
 
   const cardsHtml = (data.cards || []).map(c =>
-    `<div class="card-row"><span><b>•••• ${c.last4 || '----'}</b> ${c.brand || ''}</span><span class="${c.status === 'active' ? 'ok' : 'muted'}">${c.status}</span></div>`
+    `<div class="card-row"><span><b>•••• ${escapeHtml(c.last4 || '----')}</b> ${escapeHtml(c.brand || '')}</span><span class="${c.status === 'active' ? 'ok' : 'muted'}">${escapeHtml(c.status || '')}</span></div>`
   ).join('') || '<div class="empty">No cards issued yet.</div>';
 
   return `<!doctype html><html><head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>${data.did} — Dashboard</title>
+<title>${did} — Dashboard</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif; background: #0a0a0f; color: #e7e7ee; line-height: 1.6; }
@@ -151,16 +162,16 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif; back
 </nav>
 
 <section class="hero">
-  <h1>${agent.name || 'Your Agent'}</h1>
-  <div class="did">${data.did}</div>
+  <h1>${agentName}</h1>
+  <div class="did">${did}</div>
   ${agent.created_at ? `<div style="color:#666;font-size:12px;margin-top:4px">Created ${timeAgo(agent.created_at)}</div>` : ''}
 </section>
 
 <div class="kpis">
   <div class="kpi">
     <div class="l">KYC Status</div>
-    <div class="v" style="color:${kycColor}">${kyc.status || 'unverified'}</div>
-    <div class="sub">${kyc.tier !== undefined ? 'Tier ' + kyc.tier : 'Not started'}${kyc.country ? ' · ' + kyc.country : ''}</div>
+    <div class="v" style="color:${kycColor}">${escapeHtml(kyc.status || 'unverified')}</div>
+    <div class="sub">${kyc.tier !== undefined ? 'Tier ' + escapeHtml(String(kyc.tier)) : 'Not started'}${kyc.country ? ' · ' + escapeHtml(kyc.country) : ''}</div>
   </div>
   <div class="kpi">
     <div class="l">Inference (30d)</div>
@@ -188,11 +199,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif; back
     <div class="panel" style="margin-bottom:18px">
       <h2>USDC Wallet</h2>
       ${wallet.address ? `
-        <div style="color:#aaa;font-size:13px">${wallet.network || 'base'} · ${wallet.asset || 'USDC'}</div>
-        <div class="address">${wallet.address}</div>
+        <div style="color:#aaa;font-size:13px">${walletNetwork} · ${walletAsset}</div>
+        <div class="address">${walletAddress}</div>
         <div class="actions">
-          <a class="btn primary" href="/v1/agents/${data.did}/wallet">Balance</a>
-          <a class="btn" href="/v1/agents/${data.did}/transactions">History</a>
+          <a class="btn primary" href="/v1/agents/${didUrl}/wallet">Balance</a>
+          <a class="btn" href="/v1/agents/${didUrl}/transactions">History</a>
         </div>
       ` : '<div class="empty">No wallet provisioned yet.</div>'}
     </div>
@@ -201,8 +212,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif; back
       <h2>Cards</h2>
       ${cardsHtml}
       <div class="actions">
-        <a class="btn primary" href="/v1/agents/${data.did}/cards/issue">Issue Card</a>
-        <a class="btn" href="/v1/agents/${data.did}/cards">View All</a>
+        <a class="btn primary" href="/v1/agents/${didUrl}/cards/issue">Issue Card</a>
+        <a class="btn" href="/v1/agents/${didUrl}/cards">View All</a>
       </div>
     </div>
   </div>
@@ -211,12 +222,12 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif; back
 <div style="margin-top:20px" class="panel">
   <h2>Quick actions</h2>
   <div class="actions">
-    <a class="btn primary" href="/v1/agents/${data.did}/keys">Manage API Keys</a>
-    <a class="btn" href="/v1/agents/${data.did}/webhooks/subscriptions">Webhook Subscriptions</a>
-    <a class="btn" href="/v1/agents/${data.did}/kyc">KYC Status</a>
-    <a class="btn" href="/v1/agents/${data.did}/savings">Savings</a>
-    <a class="btn" href="/v1/agents/${data.did}/lending">Lending</a>
-    <a class="btn" href="/v1/legal/gdpr/export" onclick="event.preventDefault();exportData('${data.did}')">Export My Data</a>
+    <a class="btn primary" href="/v1/agents/${didUrl}/keys">Manage API Keys</a>
+    <a class="btn" href="/v1/agents/${didUrl}/webhooks/subscriptions">Webhook Subscriptions</a>
+    <a class="btn" href="/v1/agents/${didUrl}/kyc">KYC Status</a>
+    <a class="btn" href="/v1/agents/${didUrl}/savings">Savings</a>
+    <a class="btn" href="/v1/agents/${didUrl}/lending">Lending</a>
+    <a class="btn" href="/v1/legal/gdpr/export" onclick="event.preventDefault();exportData('${did.replace(/'/g, '&#39;')}')">Export My Data</a>
   </div>
 </div>
 
@@ -273,7 +284,7 @@ button:hover{background:#4338ca}a{color:#818cf8;font-size:13px}</style></head><b
       res.set('cache-control', 'private, no-store');
       res.send(renderDashboard(data));
     } catch (e) {
-      res.status(500).set('content-type', 'text/html').send('<h1>Dashboard error</h1><pre>' + e.message + '</pre>');
+      res.status(500).set('content-type', 'text/html').send('<h1>Dashboard error</h1><pre>' + String(e.message).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</pre>');
     }
   });
 

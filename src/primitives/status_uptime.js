@@ -228,7 +228,7 @@ function registerStatusUptimeRoutes(app, pool, verifyAgentAuth, auditChain) {
       res.set('cache-control', 'public, max-age=30');
       res.send(renderStatusHtml(data));
     } catch (e) {
-      res.status(500).set('content-type', 'text/html').send('<h1>Status page error</h1><pre>' + e.message + '</pre>');
+      res.status(500).set('content-type', 'text/html').send('<h1>Status page error</h1><pre>' + String(e.message).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</pre>');
     }
   });
 

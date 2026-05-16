@@ -401,6 +401,37 @@ async function run() {
     assert.ok(r.status < 500, `expected non-5xx, got ${r.status}`);
   });
 
+  console.log('\n== e2e: security hardening ==');
+  await test('GET /dashboard?did=<script> escapes XSS payload', async () => {
+    const r = await fetchPath('/dashboard?did=' + encodeURIComponent('<script>alert(1)</script>'));
+    assert.strictEqual(r.status, 200);
+    // Should not contain raw <script>alert(1)</script>
+    assert.ok(!/<script>alert\(1\)<\/script>/.test(r.body), 'unescaped XSS payload found');
+    // Should contain HTML-encoded version
+    assert.ok(/&lt;script&gt;|&amp;lt;script/.test(r.body), 'expected escaped payload');
+  });
+  await test('GET /admin without OPERATOR_ADMIN_TOKEN returns 401 (not 200 dev-open)', async () => {
+    // Ensure no token set
+    const prev = process.env.OPERATOR_ADMIN_TOKEN;
+    delete process.env.OPERATOR_ADMIN_TOKEN;
+    delete process.env.INTERNAL_API_KEY;
+    const r = await fetchPath('/admin');
+    assert.strictEqual(r.status, 401);
+    if (prev) process.env.OPERATOR_ADMIN_TOKEN = prev;
+  });
+  await test('POST /v1/_jobs/_dispatcher with secret fires all due crons', async () => {
+    process.env.CRON_SECRET = 'test-dispatcher-secret';
+    const r = await fetchPath('/v1/_jobs/_dispatcher', {
+      method: 'POST',
+      headers: { 'x-cron-secret': 'test-dispatcher-secret' }
+    });
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(typeof j.fired === 'object' && Array.isArray(j.fired));
+    assert.ok(j.total_registered >= 70, `expected ≥70 registered crons, got ${j.total_registered}`);
+    delete process.env.CRON_SECRET;
+  });
+
   console.log(`\n${passed} passed, ${failed} failed`);
   if (skipReasons.length) console.log(`(${skipReasons.length} skipped: ${skipReasons.join(', ')})`);
   await new Promise(r => server.close(r));

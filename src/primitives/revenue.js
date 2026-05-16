@@ -165,7 +165,7 @@ async function takeArrSnapshot(pool) {
     ON CONFLICT (snapshot_date) DO UPDATE
     SET mrr_cents = $2, arr_cents = $3, paying_orgs = $4, paying_agents = $5,
         layer_breakdown = $6, growth_rate_pct = $7, taken_at = NOW()
-  `, [ymd, arr.mrr_cents, arr.arr_cents, orgs.rows[0].c, agents.rows[0].c,
+  `, [ymd, arr.mrr_cents, arr.arr_cents, orgs.rows[0]?.c || 0, agents.rows[0]?.c || 0,
       JSON.stringify(arr.by_layer), growthPct]).catch(() => {});
 
   return { snapshot_date: ymd, mrr_cents: arr.mrr_cents, arr_cents: arr.arr_cents, growth_rate_pct: growthPct };

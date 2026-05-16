@@ -23,7 +23,11 @@ async function migrate(pool) {
 
 function isAdmin(req) {
   const token = process.env.OPERATOR_ADMIN_TOKEN || process.env.INTERNAL_API_KEY;
-  if (!token) return process.env.NODE_ENV !== 'production'; // dev mode: open
+  // SECURITY: always require an explicit token. The substrate refuses to
+  // grant admin access when no token is configured, regardless of NODE_ENV.
+  // Previous behaviour ("dev mode: open") was a foot-gun for operators who
+  // deployed without setting NODE_ENV=production explicitly.
+  if (!token) return false;
   const provided = req.headers['x-admin-token'] || req.query?.admin_token;
   if (!provided) return false;
   // Constant-time comparison to prevent timing attacks
@@ -129,17 +133,18 @@ function renderAdminPage(data) {
   const adapterCount = Object.values(adapters).filter(Boolean).length;
   const adapterTotal = Object.keys(adapters).length;
 
-  const recent = (data.recent_events || []).map(e => {
-    let entry = {}; try { entry = typeof e.entry === 'string' ? JSON.parse(e.entry) : e.entry; } catch {}
-    return `<tr><td class="mono">${entry.event_type || 'unknown'}</td><td class="mono small">${(entry.agent_did || entry.did || '').slice(0,32)}</td><td class="muted right">${timeAgo(e.created_at)}</td></tr>`;
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+  const recent = (data.recent_events || []).filter(e => e).map(e => {
+    let entry = {}; try { entry = typeof e.entry === 'string' ? JSON.parse(e.entry) : (e.entry || {}); } catch {}
+    return `<tr><td class="mono">${esc(entry.event_type || 'unknown')}</td><td class="mono small">${esc(String(entry.agent_did || entry.did || '').slice(0,32))}</td><td class="muted right">${timeAgo(e.created_at)}</td></tr>`;
   }).join('') || '<tr><td colspan="3" class="muted center">No events yet</td></tr>';
 
-  const signups = (data.recent_signups || []).map(s =>
-    `<tr><td>${s.name || '—'}</td><td class="mono small">${s.did.slice(0,32)}</td><td class="muted right">${timeAgo(s.created_at)}</td></tr>`
+  const signups = (data.recent_signups || []).filter(s => s && s.did).map(s =>
+    `<tr><td>${esc(s.name || '—')}</td><td class="mono small">${esc(String(s.did || '').slice(0,32))}</td><td class="muted right">${timeAgo(s.created_at)}</td></tr>`
   ).join('') || '<tr><td colspan="3" class="muted center">No signups yet</td></tr>';
 
-  const spenders = (data.top_spenders || []).map(s =>
-    `<tr><td class="mono small">${s.agent_did.slice(0,32)}</td><td class="right">${fmt(s.calls)}</td><td class="right">${fmtCents(s.spend_cents)}</td></tr>`
+  const spenders = (data.top_spenders || []).filter(s => s && s.agent_did).map(s =>
+    `<tr><td class="mono small">${esc(String(s.agent_did || '').slice(0,32))}</td><td class="right">${fmt(s.calls)}</td><td class="right">${fmtCents(s.spend_cents)}</td></tr>`
   ).join('') || '<tr><td colspan="3" class="muted center">No usage yet</td></tr>';
 
   const kycTiers = (data.kyc_by_tier || []).map(k =>
@@ -298,7 +303,7 @@ input:focus{border-color:#4f46e5}button{padding:12px 24px;background:#4f46e5;col
       res.set('cache-control', 'private, no-store');
       res.send(renderAdminPage(data));
     } catch (e) {
-      res.status(500).set('content-type', 'text/html').send('<h1>Admin error</h1><pre>' + e.message + '</pre>');
+      res.status(500).set('content-type', 'text/html').send('<h1>Admin error</h1><pre>' + String(e.message).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</pre>');
     }
   });
 

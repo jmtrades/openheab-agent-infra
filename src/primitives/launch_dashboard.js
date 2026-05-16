@@ -169,7 +169,8 @@ function registerLaunchDashboardRoutes(app, pool, verifyAgentAuth, auditChain, i
       res.set('cache-control', 'no-store');
       res.send(renderHtml(data));
     } catch (e) {
-      res.status(500).set('content-type', 'text/html').send(`<h1>Dashboard error</h1><pre>${e.message}</pre>`);
+      const safe = String(e.message).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      res.status(500).set('content-type', 'text/html').send(`<h1>Dashboard error</h1><pre>${safe}</pre>`);
     }
   });
 

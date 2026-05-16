@@ -219,7 +219,8 @@ function registerE2eDemoRoutes(app, pool, verifyAgentAuth, auditChain, integrati
       res.set('cache-control', 'no-store');
       res.send(renderDemoHtml(agent, integration));
     } catch (e) {
-      res.status(500).set('content-type', 'text/html').send(`<h1>Demo provisioning failed</h1><pre>${e.message}</pre>`);
+      const safe = String(e.message).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      res.status(500).set('content-type', 'text/html').send(`<h1>Demo provisioning failed</h1><pre>${safe}</pre>`);
     }
   });
 
