@@ -259,9 +259,9 @@ p{color:#888;margin-bottom:24px}input{width:100%;padding:12px 14px;background:#1
 input:focus{border-color:#4f46e5}button{padding:12px 24px;background:#4f46e5;color:#fff;border:0;border-radius:8px;font-weight:600;cursor:pointer;width:100%}
 button:hover{background:#4338ca}a{color:#818cf8;font-size:13px}</style></head><body>
 <div class="box"><h1>Open your agent dashboard</h1>
-<p>Enter your DID or sign in with your API key</p>
-<form onsubmit="event.preventDefault();window.location='/dashboard?did='+encodeURIComponent(document.getElementById('did').value)">
-  <input id="did" placeholder="did:op:..." autofocus required/>
+<p>Paste your DID (or send a Bearer API key request to <code style="background:#14141c;padding:2px 6px;border-radius:4px;font-size:12px">/dashboard</code>)</p>
+<form onsubmit="event.preventDefault();const v=document.getElementById('did').value.trim();if(v.startsWith('opk_')||v.startsWith('oh_live_')){fetch('/dashboard',{headers:{authorization:'Bearer '+v}}).then(r=>r.text()).then(html=>{document.open();document.write(html);document.close()})}else{window.location='/dashboard?did='+encodeURIComponent(v)}">
+  <input id="did" placeholder="did:op:... or opk_/oh_live_ API key" autofocus required/>
   <button>Open dashboard</button>
 </form>
 <p style="margin-top:24px"><a href="/signup">Don't have an account? Sign up</a> · <a href="/demo">Try the demo</a></p>

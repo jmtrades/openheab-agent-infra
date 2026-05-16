@@ -110,7 +110,7 @@ const CAPABILITIES = [
     name: 'List MCP tools', primitive: 'mcp_server',
     method: 'GET', path: '/mcp/manifest',
     cost_cents: 0, latency_ms_p50: 100, sla_uptime_pct: 99.99,
-    description: '145+ MCP tools exposed for Claude/OpenAI/Cursor.', auth: 'public' },
+    description: '150+ MCP tools exposed for Claude/OpenAI/Cursor.', auth: 'public' },
   { slug: 'reserve.check', category: 'trust',
     name: 'Public proof of reserves', primitive: 'bank_core',
     method: 'GET', path: '/v1/bank-core/reserve-ratio',

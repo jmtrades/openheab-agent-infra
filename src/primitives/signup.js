@@ -52,7 +52,7 @@ function escapeHtml(s) {
 
 const signupSchema = z.object({
   email: z.string().email(),
-  plan_code: z.enum(['free', 'pro', 'scale', 'enterprise']).default('free'),
+  plan_code: z.enum(['free', 'starter', 'pro', 'scale', 'team', 'enterprise']).default('free'),
   billing_interval: z.enum(['monthly', 'annual']).default('monthly'),
   org_name: z.string().min(1).optional(),
   agent_display_name: z.string().optional(),
@@ -192,13 +192,13 @@ button:hover{background:#a4fcff;transform:translateY(-1px)}
   return `<!doctype html><html lang=en><head><meta charset=utf-8>
 <meta name=viewport content="width=device-width,initial-scale=1">
 <title>Get started — OpenHeab</title>
-<meta name=description content="Sign up for OpenHeab in 30 seconds. Get a DID, USDC wallet, API key, and access to 159 primitives.">
+<meta name=description content="Sign up for OpenHeab in 30 seconds. Get a DID, USDC wallet, API key, and access to 230+ primitives.">
 <link rel=canonical href="${(process.env.OPERATOR_PUBLIC_URL || '')}/signup">
 <link rel=icon href="/favicon.svg">
 <style>${css}</style></head><body><div class=wrap>
 <a href="/" class=brand>openheab<span class=dot>.</span></a>
 <h1>Sign up in 30 seconds.</h1>
-<p class=lede>Get a signed DID, a non-custodial USDC wallet, an API key, and access to 159 primitives. Free forever or upgrade later.</p>
+<p class=lede>Get a signed DID, a non-custodial USDC wallet, an API key, and access to 230+ primitives. Free forever or upgrade later.</p>
 <form id=f onsubmit="event.preventDefault();submit()">
   <label>Email</label>
   <input id=email type=email autofocus required placeholder="you@company.com">
@@ -208,7 +208,7 @@ button:hover{background:#a4fcff;transform:translateY(-1px)}
 
   <label>Plan</label>
   <div class=tiers>
-${[['free','Free','$0/mo'], ['pro','Pro','$99/mo'], ['scale','Scale','$349/mo'], ['enterprise','Enterprise','$2,499+/mo']]
+${[['free','Free','$0/mo'], ['starter','Starter','$19/mo'], ['pro','Pro','$99/mo'], ['team','Team','$349/mo'], ['enterprise','Enterprise','$2,499+/mo']]
   .map(([code, name, price]) =>
     `    <label class="tier ${code===plan?'sel':''}" data-code="${code}"><input type=radio name=plan value="${code}" ${code===plan?'checked':''}><div class=pn>${name}</div><div class=pp>${price}</div></label>`
   ).join('\n')}

@@ -177,7 +177,7 @@ footer a { color: #888; }
   <div class="actions">
     <a class="btn" href="/v1/agents/${agent.did}">View this agent's record</a>
     <a class="btn secondary" href="/openapi.json">OpenAPI spec</a>
-    <a class="btn secondary" href="/mcp">MCP server (115+ tools)</a>
+    <a class="btn secondary" href="/mcp">MCP server (150+ tools)</a>
     <a class="btn secondary" href="/v1/_health/deep">Deep health check</a>
     <a class="btn secondary" href="/playground">Live playground</a>
     <a class="btn secondary" href="/signup">Sign up for real</a>

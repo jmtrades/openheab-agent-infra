@@ -20,7 +20,7 @@
 4. Click **Deploy**. Wait ~90 seconds.
 5. Open `https://your-deployment.vercel.app/setup` — the wizard will tell you what's done and what's left.
 
-You now have a fully-running OpenHeab substrate. **189 primitives, 1,495 routes, the in-house bank + email + KYC + inference cores, the marketing site, the docs, the dashboard, the playground.** Everything.
+You now have a fully-running OpenHeab substrate. **234 primitives, 1,701 routes, the in-house bank + email + KYC + inference cores, the marketing site, the docs, the dashboard, the playground.** Everything.
 
 ---
 
@@ -100,7 +100,7 @@ A live substrate with:
 - `/pricing` — pricing tiers + take-rates + credit packs
 - `/blog` — 8 seed posts + RSS
 - `/v1/dashboard` — agent management UI (home, billing, usage, team, audit, extensions)
-- `/console` — live route browser (1,495 routes, filter + verb color coding)
+- `/console` — live route browser (1,701 routes, filter + verb color coding)
 - `/status/live` — real incident management page
 - `/mcp` + `/mcp/manifest` — 145+ MCP tools
 - `/v1/realtime/stream` — Server-Sent Events of every audit event
@@ -131,7 +131,7 @@ After deployment, run through this list. Everything should be green:
 - [ ] `/healthz` returns `200 OK`
 - [ ] `/readyz` returns `200 OK` (database query succeeds)
 - [ ] `npm test` passes (17 unit + 8 lifecycle tests)
-- [ ] `npm run test:boot` shows `189 primitives, 1,495 routes, 0 family misses`
+- [ ] `npm run test:boot` shows `234 primitives, 1,701 routes, 0 family misses`
 - [ ] `/v1/bank-core/reserve-ratio` returns `solvent: true`
 - [ ] `/v1/audit/verify` returns `valid: true`
 - [ ] `/v1/admin/providers` (with admin token) shows your configured providers

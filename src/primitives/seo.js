@@ -47,7 +47,7 @@ function faqJsonLd() {
     ['What is OpenHeab?', 'OpenHeab is the open agent-native infrastructure substrate — 156 primitives across 25 layers covering identity, USDC bank, KYC, marketplaces, cognition, real-time events, and everything else AI agents and AGI need to act on the internet.'],
     ['Is OpenHeab open source?', 'Yes. Apache-2.0. Self-hostable on Vercel + Neon for free. Hosted plans from $0/mo (Free) to $2,499/mo (Enterprise).'],
     ['How do I get started?', 'Run `curl -X POST https://openheab.com/v1/identities -H "content-type: application/json" -d \'{"display_name":"my-agent"}\'`. You get a DID, Ed25519 keypair, API key, and USDC wallet on Base in one call.'],
-    ['Does OpenHeab work with Claude / OpenAI / Cursor / VS Code?', 'Yes. We expose 145+ tools as an MCP server at /mcp. Any agent that speaks MCP can use the full substrate.'],
+    ['Does OpenHeab work with Claude / OpenAI / Cursor / VS Code?', 'Yes. We expose 150+ tools as an MCP server at /mcp. Any agent that speaks MCP can use the full substrate.'],
     ['What are your take rates?', '1% on USDC transfers (FeeSplitter), 2% card interchange (Stripe Issuing), 30% marketplace cut, 10% inference markup, 0.5% A2H fiat payouts.'],
     ['Are you SOC 2 compliant?', 'SOC 2 Type II in progress. Continuous evidence collection via the compliance_pack primitive covers SOC 2 / GDPR / HIPAA / PCI / ISO 27001 / FedRAMP Moderate.'],
     ['What about AGI?', 'OpenHeab is designed to be the infrastructure AGI runs on. See AGI_STRATEGY.md for the full plan.'],
@@ -240,7 +240,7 @@ KYC against 5 sanctions sources, marketplaces, cognition, real-time event stream
 
 API base: ${pubUrl()}
 Quickstart: POST ${pubUrl()}/v1/identities to create an agent + USDC wallet.
-MCP: ${pubUrl()}/mcp (145+ tools)
+MCP: ${pubUrl()}/mcp (150+ tools)
 OpenAPI: ${pubUrl()}/openapi.json
 Docs: ${pubUrl()}/docs
 Pricing: ${pubUrl()}/pricing
@@ -295,7 +295,7 @@ embed, public_directory, partnerships, whitelabel, ach, quotes, realtime, blog, 
 - POST /v1/orgs — create multi-agent organization
 - POST /v1/orgs/:id/subscription — Stripe-billed subscription (Free/Pro/Scale/Enterprise)
 - GET /openapi.json — full OpenAPI 3.1 spec
-- POST /mcp — JSON-RPC 2.0 (145+ tools)
+- POST /mcp — JSON-RPC 2.0 (150+ tools)
 - GET /mcp/manifest — MCP discovery doc
 
 ## Pricing

@@ -1,9 +1,9 @@
 # openheab-agent-infra
 
-**The agent-native infrastructure substrate.** Every AI agent that uses it gets a signed Ed25519 DID, a non-custodial USDC wallet on Base, KYC against 5 sanctions sources, virtual + physical debit cards, interest-bearing savings, lending, signed A2A messaging, structured + episodic + vector memory, marketplaces, insurance, escrow, multi-provider LLM inference, sandboxed code execution, headless browsers, voice (TTS/STT) + vision + video, planning + simulation + beliefs + goals + skills, DAOs, legal entities, contracts, courts, IP registry, real estate, prediction markets, AGI passport, RLAF, and 145+ MCP tools — all behind a Merkle-style SHA-256 audit chain signed with Ed25519.
+**The agent-native infrastructure substrate.** Every AI agent that uses it gets a signed Ed25519 DID, a non-custodial USDC wallet on Base, KYC against 5 sanctions sources, virtual + physical debit cards, interest-bearing savings, lending, signed A2A messaging, structured + episodic + vector memory, marketplaces, insurance, escrow, multi-provider LLM inference, sandboxed code execution, headless browsers, voice (TTS/STT) + vision + video, planning + simulation + beliefs + goals + skills, DAOs, legal entities, contracts, courts, IP registry, real estate, prediction markets, AGI passport, RLAF, and 150+ MCP tools — all behind a Merkle-style SHA-256 audit chain signed with Ed25519.
 
 ```
-228 primitives · 1,676+ routes · 39 layers · 145+ MCP tools · Apache 2.0
+234 primitives · 1,701+ routes · 42 layers · 150+ MCP tools · Apache 2.0
 ```
 
 | Try it | Endpoint |
@@ -16,7 +16,7 @@
 | Pricing | `/pricing` |
 | Activity feed (live audit chain) | `/activity` |
 | OpenAPI 3.1 spec | `/openapi.json` |
-| MCP server (145+ tools) | `/mcp` |
+| MCP server (150+ tools) | `/mcp` |
 
 ## Why this exists
 
@@ -65,7 +65,7 @@ curl https://<host>/v1/audit/verify
 
 ## MCP server
 
-OpenHeab is also an MCP server. 34 tools at `https://<host>/mcp`. Add to Claude Desktop config:
+OpenHeab is also an MCP server. 150+ tools at `https://<host>/mcp`. Add to Claude Desktop config:
 
 ```json
 {
@@ -95,7 +95,7 @@ Required env vars: see `.env.example`. The cron jobs in `vercel.json` are auto-r
    ┌────────────────────────────────────────────────────────────┐
    │   express app (api/index.js | server.js)                   │
    │                                                            │
-   │   42 primitive routers, all auth-gated                     │
+   │   234 primitive routers, all auth-gated                    │
    │   /v1/_webhooks/stripe   (raw body)                        │
    │   /v1/_jobs/*            (cron-only)                       │
    │   /v1/_admin/migrate     (admin token)                     │
@@ -108,7 +108,7 @@ Required env vars: see `.env.example`. The cron jobs in `vercel.json` are auto-r
                   │   audit_chain       │ ← every mutation appends
                   │   identities        │
                   │   api_keys          │
-                  │   <42 primitive     │
+                  │   <234 primitive    │
                   │    schemas>         │
                   └─────────────────────┘
 ```

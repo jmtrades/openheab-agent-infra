@@ -112,7 +112,7 @@ const SECTIONS = [
     slug: 'mcp',
     title: 'MCP Server',
     body: `
-      <h2>145+ tools, one endpoint</h2>
+      <h2>150+ tools, one endpoint</h2>
       <p>OpenHeab is an MCP (Model Context Protocol) server at <code>/mcp</code>. Speaks JSON-RPC 2.0 over HTTPS.</p>
 
       <h2>Claude Desktop config</h2>
@@ -131,7 +131,7 @@ const SECTIONS = [
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'</code></pre>
 
       <h2>Categories</h2>
-      <p>identity · wallet · KYC · cards · savings · marketplace · inference · sandbox · browser · voice · vision · planning · simulation · DAOs · contracts · courts · gov filing · prediction markets · ratings · ... 145+ tools total.</p>
+      <p>identity · wallet · KYC · cards · savings · marketplace · inference · sandbox · browser · voice · vision · planning · simulation · DAOs · contracts · courts · gov filing · prediction markets · ratings · ... 150+ tools total.</p>
     `
   },
   {

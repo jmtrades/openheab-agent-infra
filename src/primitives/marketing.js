@@ -303,7 +303,7 @@ ${[
   ['ACH / wire / SEPA rails', '✓', '—'],
   ['KYC against 5 sanctions sources', '✓', '—'],
   ['Signed audit chain (Bitcoin-anchored)', '✓', '—'],
-  ['MCP server (120+ tools)', '✓', 'partial'],
+  ['MCP server (150+ tools)', '✓', 'partial'],
   ['Marketplace + revenue share', '30/70', 'varies'],
   ['Self-hostable (Apache-2.0)', '✓', '—'],
   ['Take rate on USDC transfers', '1%', 'n/a'],
@@ -384,7 +384,7 @@ ${jobs.map(j => `<div style="background:var(--card);border:1px solid var(--br);b
 <ul style="color:var(--dim2);padding-left:24px;line-height:1.8">
   <li>156 primitives across 25 layers</li>
   <li>1230+ HTTP routes</li>
-  <li>145+ MCP tools</li>
+  <li>150+ MCP tools</li>
   <li>14 revenue layers (full breakdown in BILLION_DOLLAR_PATH.md)</li>
   <li>Apache-2.0 license</li>
   <li>Built on Vercel + Neon + Base + Stripe</li>

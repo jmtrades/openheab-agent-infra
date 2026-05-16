@@ -249,7 +249,7 @@ ${LAYERS.map(([code, name, prims]) => `    <div class="layer"><div class="ln">${
     <div class="card"><div class="icn">L3 SAVINGS</div><h3>4% APY interest-bearing accounts</h3><p>Daily accrual cron. Routes yield via Aave / Compound / Morpho. Auto-compound. Lock-up optional.</p></div>
     <div class="card"><div class="icn">L4 KYC</div><h3>5-source sanctions screening</h3><p>OFAC + UN + UK HMT + EU CFSP + OpenSanctions PEP. Tier 0-4. Refreshed daily.</p></div>
     <div class="card"><div class="icn">L4 BIOMETRICS</div><h3>Liveness + face-match</h3><p>Selfie + ID document. Liveness challenge. Returns confidence + risk band.</p></div>
-    <div class="card"><div class="icn">L5 MCP</div><h3>120+ MCP tools at /mcp</h3><p>Drop into Claude / OpenAI / Cursor / VS Code. JSON-RPC 2.0 over HTTP.</p></div>
+    <div class="card"><div class="icn">L5 MCP</div><h3>150+ MCP tools at /mcp</h3><p>Drop into Claude / OpenAI / Cursor / VS Code. JSON-RPC 2.0 over HTTP.</p></div>
     <div class="card"><div class="icn">L6 EMAIL</div><h3>your-agent@openheab.com</h3><p>Inbound + outbound. DKIM + SPF signed. Routes into agent inbox by DID.</p></div>
     <div class="card"><div class="icn">L7 PERCEPTION</div><h3>Sandbox · browser · voice · vision · video</h3><p>Headless browsers. Code sandboxes. TTS + STT. Image gen + analysis. Video gen.</p></div>
     <div class="card"><div class="icn">L11 COGNITION</div><h3>Planning · simulation · beliefs · goals</h3><p>Multi-step plans. World-model simulation. Probabilistic beliefs. Skill library.</p></div>
@@ -344,7 +344,7 @@ function renderDocs(app) {
     }
   }
 }</pre>
-  <p style="color:var(--dim2);margin:14px 0;font-size:14px">120+ tools available immediately. <a href="/mcp/manifest">View the manifest →</a></p>
+  <p style="color:var(--dim2);margin:14px 0;font-size:14px">150+ tools available immediately. <a href="/mcp/manifest">View the manifest →</a></p>
 
   <h3 style="margin:32px 0 10px;font-size:16px;font-weight:600">4. Use the SDK</h3>
   <pre class="code"><span class="c"># Python</span>
@@ -369,7 +369,7 @@ npm install @openheab/sdk</pre>
   <div class="grid">
     <div class="card"><h3><a href="/openapi.json">OpenAPI spec</a></h3><p>Full machine-readable spec. Import into Postman, Insomnia, Bruno.</p></div>
     <div class="card"><h3><a href="/console">Live route console</a></h3><p>Browse all live routes by primitive family. Filter by HTTP verb.</p></div>
-    <div class="card"><h3><a href="/mcp/manifest">MCP manifest</a></h3><p>120+ tools exposed for Claude / OpenAI / Cursor / VS Code clients.</p></div>
+    <div class="card"><h3><a href="/mcp/manifest">MCP manifest</a></h3><p>150+ tools exposed for Claude / OpenAI / Cursor / VS Code clients.</p></div>
     <div class="card"><h3><a href="https://github.com/jmtrades/openheab-agent-infra/blob/main/BILLION_DOLLAR_PATH.md">BILLION_DOLLAR_PATH.md</a></h3><p>The 7-year arc to $1B+ ARR. 14 revenue layers, capital plan, moats.</p></div>
     <div class="card"><h3><a href="https://github.com/jmtrades/openheab-agent-infra/blob/main/REVENUE_NOW.md">REVENUE_NOW.md</a></h3><p>The 90-day path to $10M ARR. Week-by-week execution plan.</p></div>
     <div class="card"><h3><a href="https://github.com/jmtrades/openheab-agent-infra/blob/main/CLAUDE.md">CLAUDE.md</a></h3><p>Project memory + architectural conventions. Auto-loaded by Claude Code.</p></div>

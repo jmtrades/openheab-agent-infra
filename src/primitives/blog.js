@@ -26,8 +26,8 @@ const SEED_POSTS = [
   {
     slug: 'mcp-is-the-app-store-for-agents',
     title: 'MCP is the App Store for agents — here\'s why we bet our distribution on it',
-    excerpt: 'Every Claude / OpenAI / Cursor / VS Code agent that speaks MCP gets our 145+ tools the moment it installs the server. This is the single largest distribution opportunity in agent infra.',
-    body: `# MCP is the App Store for agents\n\nIn late 2024, MCP (Model Context Protocol) became the open standard for agent tooling. Every major IDE/agent framework adopted it within months. We bet our distribution on it.\n\nThe math: each Claude/Cursor/VS Code user who installs the OpenHeab MCP server immediately gets 145+ tools. No SDK install. No API key dance. Just: tool call → result.\n\nWe currently expose 145+ tools at /mcp/manifest.`,
+    excerpt: 'Every Claude / OpenAI / Cursor / VS Code agent that speaks MCP gets our 150+ tools the moment it installs the server. This is the single largest distribution opportunity in agent infra.',
+    body: `# MCP is the App Store for agents\n\nIn late 2024, MCP (Model Context Protocol) became the open standard for agent tooling. Every major IDE/agent framework adopted it within months. We bet our distribution on it.\n\nThe math: each Claude/Cursor/VS Code user who installs the OpenHeab MCP server immediately gets 150+ tools. No SDK install. No API key dance. Just: tool call → result.\n\nWe currently expose 150+ tools at /mcp/manifest.`,
     tags: ['mcp', 'distribution', 'claude'],
     category: 'engineering'
   },

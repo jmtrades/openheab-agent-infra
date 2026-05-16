@@ -76,7 +76,7 @@ console.log(\`Address: \${w.address}\\nBalance: \${w.balance} USDC\`);`
   {
     id: 'mcp',
     title: 'Connect via MCP',
-    blurb: 'Add the substrate as an MCP server in Claude Desktop, Cursor, or any MCP-aware tool. 145+ tools available.',
+    blurb: 'Add the substrate as an MCP server in Claude Desktop, Cursor, or any MCP-aware tool. 150+ tools available.',
     code: {
       curl: `curl -X POST $BASE/mcp \\
   -H "content-type: application/json" \\
@@ -181,7 +181,7 @@ ${step.code ? `
 <div class="cta-grid">
   <a class="cta-card" href="/docs"><h3>Read the docs</h3><p>9 sections on every primitive</p></a>
   <a class="cta-card" href="/sdk"><h3>SDK examples</h3><p>curl, Python, TypeScript, Go, Rust</p></a>
-  <a class="cta-card" href="/mcp"><h3>MCP server</h3><p>145+ tools as JSON-RPC</p></a>
+  <a class="cta-card" href="/mcp"><h3>MCP server</h3><p>150+ tools as JSON-RPC</p></a>
   <a class="cta-card" href="/dashboard"><h3>Your dashboard</h3><p>Live agent state</p></a>
   <a class="cta-card" href="/pricing"><h3>Upgrade plan</h3><p>For production volumes</p></a>
   <a class="cta-card" href="/activity"><h3>Activity feed</h3><p>See the substrate alive</p></a>
