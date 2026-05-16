@@ -184,7 +184,7 @@ function registerRlafRoutes(app, pool, verifyAgentAuth, auditChain) {
       updated++;
     }
     res.json({ updated });
-  });
+  }, 'hourly');
 }
 
 module.exports = { migrate, registerRlafRoutes, compositeFromRubric };

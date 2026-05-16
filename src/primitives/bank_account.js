@@ -861,11 +861,14 @@ function registerBankAccountRoutes(app, pool, verifyAgentAuth, auditChain) {
 
   // Cron jobs
   registerCron(app, '/v1/_jobs/bank-deposit-sweep',
-    async (req, res) => res.json(await sweepDeposits(pool, auditChain)));
+    async (req, res) => res.json(await sweepDeposits(pool, auditChain)),
+    'every:5m');
   registerCron(app, '/v1/_jobs/bank-reconcile',
-    async (req, res) => res.json(await reconcileAll(pool, auditChain)));
+    async (req, res) => res.json(await reconcileAll(pool, auditChain)),
+    'hourly');
   registerCron(app, '/v1/_jobs/bank-snapshot',
-    async (req, res) => res.json(await snapshotAll(pool)));
+    async (req, res) => res.json(await snapshotAll(pool)),
+    'daily');
 }
 
 module.exports = {

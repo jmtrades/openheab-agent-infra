@@ -278,7 +278,7 @@ function registerStatusUptimeRoutes(app, pool, verifyAgentAuth, auditChain) {
     await recordCheck(pool, 'api', 'ok', 1);
     await recordCheck(pool, 'audit_chain', 'ok', 1);
     res.json({ recorded: 3 });
-  });
+  }, 'every:5m');
 }
 
 module.exports = { migrate, registerStatusUptimeRoutes, gatherStatus, recordCheck, COMPONENTS };

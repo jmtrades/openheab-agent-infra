@@ -531,7 +531,7 @@ function registerInsuranceRoutes(app, pool, verifyAgentAuth, auditChain) {
     } catch (e) {
       res.status(500).json({ error: 'renewals_failed', message: e.message });
     }
-  });
+  }, 'daily');
 }
 
 module.exports = {

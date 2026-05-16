@@ -215,7 +215,8 @@ function registerSavingsRoutes(app, pool, verifyAgentAuth, auditChain) {
   app.get('/v1/agents/:did/savings/accounts/:id/transactions',
     (req, res) => handleGetTransactions(req, res, pool, verifyAgentAuth));
   registerCron(app, '/v1/_jobs/savings-accrue',
-    async (req, res) => res.json(await accrueInterest(pool, auditChain)));
+    async (req, res) => res.json(await accrueInterest(pool, auditChain)),
+    'daily');
 }
 
 module.exports = { migrate, registerSavingsRoutes, accrueInterest };

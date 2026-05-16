@@ -52,7 +52,7 @@ function escapeHtml(s) {
 
 const signupSchema = z.object({
   email: z.string().email(),
-  plan_code: z.enum(['free', 'starter', 'pro', 'scale', 'team', 'enterprise']).default('free'),
+  plan_code: z.enum(['free', 'starter', 'pro', 'team', 'enterprise']).default('free'),
   billing_interval: z.enum(['monthly', 'annual']).default('monthly'),
   org_name: z.string().min(1).optional(),
   agent_display_name: z.string().optional(),
