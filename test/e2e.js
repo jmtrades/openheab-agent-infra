@@ -864,6 +864,51 @@ async function run() {
     assert.ok(j.period_start && j.totals && j.by_provider);
   });
 
+  console.log('\n== e2e: layer 51 — growth surfaces ==');
+  await test('GET /referrals renders public referral page', async () => {
+    const r = await fetchPath('/referrals');
+    assert.strictEqual(r.status, 200);
+    assert.ok(/Earn 25%|recurring|referral/.test(r.body));
+  });
+  await test('GET /compare-models renders side-by-side compare', async () => {
+    const r = await fetchPath('/compare-models');
+    assert.strictEqual(r.status, 200);
+    assert.ok(/Compare Models|Model A|Model B/.test(r.body));
+  });
+  await test('POST /v1/referrals/generate creates a referral code', async () => {
+    const r = await fetchPath('/v1/referrals/generate', {
+      method: 'POST',
+      body: { referrer_did: 'did:op:ref-test-' + Date.now() }
+    });
+    assert.ok([200, 201].includes(r.status));
+    const j = JSON.parse(r.body);
+    assert.ok(j.ref_code && j.ref_code.length === 8);
+  });
+  await test('POST /v1/referrals/generate without DID returns 400', async () => {
+    const r = await fetchPath('/v1/referrals/generate', { method: 'POST', body: {} });
+    assert.strictEqual(r.status, 400);
+  });
+  await test('POST /v1/referrals/:code/click records', async () => {
+    const r = await fetchPath('/v1/referrals/TESTCODE/click', { method: 'POST', body: {} });
+    assert.strictEqual(r.status, 200);
+  });
+  await test('GET /v1/charts/sparkline.svg returns SVG', async () => {
+    const r = await fetchPath('/v1/charts/sparkline.svg?values=1,2,3,5,2,8,4');
+    assert.strictEqual(r.status, 200);
+    assert.ok(r.headers['content-type']?.includes('svg'));
+    assert.ok(/<polyline/.test(r.body));
+  });
+  await test('GET /v1/charts/bars.svg returns SVG', async () => {
+    const r = await fetchPath('/v1/charts/bars.svg?values=10,20,15,25,30');
+    assert.strictEqual(r.status, 200);
+    assert.ok(/<rect/.test(r.body));
+  });
+  await test('GET /v1/charts/donut.svg returns SVG with circle', async () => {
+    const r = await fetchPath('/v1/charts/donut.svg?slices=10:22c55e,20:4f46e5,30:eab308');
+    assert.strictEqual(r.status, 200);
+    assert.ok(/<path|<circle/.test(r.body));
+  });
+
   console.log(`\n${passed} passed, ${failed} failed`);
   if (skipReasons.length) console.log(`(${skipReasons.length} skipped: ${skipReasons.join(', ')})`);
   await new Promise(r => server.close(r));

@@ -126,7 +126,11 @@ const PRIMITIVE_NAMES = [
   'streaming_compat', 'files_usage_api', 'inspector_marketplace_console',
   // Layer 50 — Enterprise readiness: /trust + /sla + /security/disclosure
   // + /v1/me/invoices + /v1/me/billing/usage (procurement-ready)
-  'enterprise_assurance'
+  'enterprise_assurance',
+  // Layer 51 — Growth surfaces: /referrals (25% recurring commission),
+  // /compare-models (side-by-side LLM playground), /v1/charts/* (embeddable
+  // inline-SVG sparkline/bar/donut for /dashboard /admin /launch)
+  'growth_surfaces'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -419,7 +423,9 @@ const REGISTER_OVERRIDES = {
   files_usage_api: 'registerFilesUsageApiRoutes',
   inspector_marketplace_console: 'registerInspectorMarketplaceConsoleRoutes',
   // Layer 50 — Enterprise procurement surfaces
-  enterprise_assurance: 'registerEnterpriseAssuranceRoutes'
+  enterprise_assurance: 'registerEnterpriseAssuranceRoutes',
+  // Layer 51 — Growth: referrals + compare-models + chart widgets
+  growth_surfaces: 'registerGrowthSurfacesRoutes'
 };
 
 async function migrateAll(pool) {
