@@ -1075,6 +1075,95 @@ async function run() {
     assert.strictEqual(r.status, 403);
   });
 
+  console.log('\n== e2e: layer 55 — auto-provision + viral landing widgets ==');
+  await test('POST /v1/admin/setup/bootstrap on first-boot generates secrets', async () => {
+    // first-boot mode: no OPERATOR_ADMIN_TOKEN nor INTERNAL_API_KEY set
+    delete process.env.OPERATOR_ADMIN_TOKEN;
+    delete process.env.INTERNAL_API_KEY;
+    const r = await fetchPath('/v1/admin/setup/bootstrap', { method: 'POST', body: {} });
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(j.ok && j.generated);
+    assert.ok(j.generated.OPERATOR_ADMIN_TOKEN);
+    assert.ok(j.generated.IDENTITY_MASTER_KEK);
+  });
+  await test('POST /v1/admin/setup/bootstrap after first-boot requires admin', async () => {
+    process.env.OPERATOR_ADMIN_TOKEN = 'test-after-bootstrap';
+    process.env.INTERNAL_API_KEY = 'test-internal';
+    const r = await fetchPath('/v1/admin/setup/bootstrap', { method: 'POST', body: {} });
+    assert.strictEqual(r.status, 401);
+    delete process.env.OPERATOR_ADMIN_TOKEN;
+    delete process.env.INTERNAL_API_KEY;
+  });
+  await test('POST /v1/admin/setup/stripe without admin returns 401', async () => {
+    const r = await fetchPath('/v1/admin/setup/stripe', { method: 'POST', body: { secret_key: 'sk_test_x' } });
+    assert.strictEqual(r.status, 401);
+  });
+  await test('POST /v1/admin/setup/stripe with bad key returns 400', async () => {
+    process.env.OPERATOR_ADMIN_TOKEN = 'stripe-test-tok';
+    const r = await fetchPath('/v1/admin/setup/stripe', {
+      method: 'POST',
+      headers: { 'x-admin-token': 'stripe-test-tok' },
+      body: { secret_key: 'not-a-stripe-key' }
+    });
+    assert.strictEqual(r.status, 400);
+    delete process.env.OPERATOR_ADMIN_TOKEN;
+  });
+  await test('GET /v1/admin/setup/status requires admin', async () => {
+    delete process.env.OPERATOR_ADMIN_TOKEN;
+    const r = await fetchPath('/v1/admin/setup/status');
+    assert.strictEqual(r.status, 401);
+  });
+  await test('POST /v1/anon/try without body returns 400', async () => {
+    const r = await fetchPath('/v1/anon/try', { method: 'POST', body: {} });
+    assert.strictEqual(r.status, 400);
+  });
+  await test('POST /v1/anon/try returns OpenAI-shape with quota', async () => {
+    delete process.env.OPENAI_API_KEY;
+    const r = await fetchPath('/v1/anon/try', {
+      method: 'POST',
+      body: { model: 'demo', messages: [{ role: 'user', content: 'hi from anon' }] }
+    });
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(j.choices && j._quota);
+    assert.ok(j._quota.cap === 10);
+  });
+  await test('GET /v1/anon/quota returns remaining', async () => {
+    const r = await fetchPath('/v1/anon/quota');
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(typeof j.remaining === 'number');
+  });
+  await test('GET /embed/try-now.html renders iframe-able widget', async () => {
+    const r = await fetchPath('/embed/try-now.html');
+    assert.strictEqual(r.status, 200);
+    assert.ok(/Try OpenHeab|powered/i.test(r.body));
+  });
+  await test('GET /embed/try-now.js returns drop-in script', async () => {
+    const r = await fetchPath('/embed/try-now.js');
+    assert.strictEqual(r.status, 200);
+    assert.ok(r.headers['content-type']?.includes('javascript'));
+    assert.ok(/iframe|embed/i.test(r.body));
+  });
+  await test('GET /swarm renders live swarm page', async () => {
+    const r = await fetchPath('/swarm');
+    assert.strictEqual(r.status, 200);
+    assert.ok(/swarm|live|Spawn|agents/i.test(r.body));
+  });
+  await test('POST /v1/swarm/spawn creates N agents + emits events', async () => {
+    const r = await fetchPath('/v1/swarm/spawn', { method: 'POST', body: { count: 5 } });
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.strictEqual(j.spawned, 5);
+    assert.ok(j.events >= 5);
+  });
+  await test('GET /setup-wizard renders zero-config wizard', async () => {
+    const r = await fetchPath('/setup-wizard');
+    assert.strictEqual(r.status, 200);
+    assert.ok(/Bootstrap|Stripe|Current configuration/i.test(r.body));
+  });
+
   console.log(`\n${passed} passed, ${failed} failed`);
   if (skipReasons.length) console.log(`(${skipReasons.length} skipped: ${skipReasons.join(', ')})`);
   await new Promise(r => server.close(r));

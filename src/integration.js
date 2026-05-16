@@ -139,7 +139,13 @@ const PRIMITIVE_NAMES = [
   'auth_polish',
   // Layer 54 — OAuth providers (Google/GitHub/Microsoft) + /resources
   // sitemap + /v1/audit/filter compliance query
-  'oauth_resources_audit'
+  'oauth_resources_audit',
+  // Layer 55 — Zero-human-in-loop self-provisioning + viral conversion
+  // mechanics. auto_provision auto-creates Stripe products/prices/webhook +
+  // verifies SendGrid + persists OAuth creds + bootstrap-generates all KEKs.
+  // landing_widgets_swarm exposes /v1/anon/try (anonymous IP-rate-limited
+  // chat completion) + iframe-able /embed/try-now.html + viral /swarm page.
+  'auto_provision', 'landing_widgets_swarm'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -440,7 +446,10 @@ const REGISTER_OVERRIDES = {
   // Layer 53 — Auth UX polish (magic link + MFA + preferences + sessions)
   auth_polish: 'registerAuthPolishRoutes',
   // Layer 54 — OAuth + resources sitemap + audit filter
-  oauth_resources_audit: 'registerOauthResourcesAuditRoutes'
+  oauth_resources_audit: 'registerOauthResourcesAuditRoutes',
+  // Layer 55 — Auto-provision + landing widgets + swarm demo
+  auto_provision: 'registerAutoProvisionRoutes',
+  landing_widgets_swarm: 'registerLandingWidgetsSwarmRoutes'
 };
 
 async function migrateAll(pool) {
