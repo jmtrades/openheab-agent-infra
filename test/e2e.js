@@ -568,6 +568,86 @@ async function run() {
     assert.strictEqual(r.status, 401);
   });
 
+  console.log('\n== e2e: layer 46 — OpenAI-compatible drop-in ==');
+  await test('POST /v1/chat/completions without auth returns 401 OpenAI shape', async () => {
+    const r = await fetchPath('/v1/chat/completions', {
+      method: 'POST',
+      body: { model: 'claude-haiku', messages: [{ role: 'user', content: 'hi' }] }
+    });
+    assert.strictEqual(r.status, 401);
+    const j = JSON.parse(r.body);
+    assert.ok(j.error && j.error.type === 'invalid_request_error');
+  });
+  await test('POST /v1/chat/completions with auth returns OpenAI-shape completion', async () => {
+    delete process.env.OPENAI_API_KEY;
+    const r = await fetchPath('/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'x-agent-did': 'did:op:compat-test' },
+      body: { model: 'demo-model-1', messages: [{ role: 'user', content: 'hello' }] }
+    });
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.strictEqual(j.object, 'chat.completion');
+    assert.ok(Array.isArray(j.choices) && j.choices[0]?.message?.content);
+    assert.ok(j.usage?.prompt_tokens >= 0);
+  });
+  await test('POST /v1/chat/completions without messages returns 400', async () => {
+    const r = await fetchPath('/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'x-agent-did': 'did:op:compat-test' },
+      body: { model: 'demo' }
+    });
+    assert.strictEqual(r.status, 400);
+  });
+  await test('POST /v1/embeddings with auth returns OpenAI-shape embeddings', async () => {
+    delete process.env.OPENAI_API_KEY;
+    const r = await fetchPath('/v1/embeddings', {
+      method: 'POST',
+      headers: { 'x-agent-did': 'did:op:compat-test' },
+      body: { model: 'text-embedding-3-small', input: 'hello world' }
+    });
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.strictEqual(j.object, 'list');
+    assert.ok(j.data?.[0]?.embedding?.length === 1536);
+  });
+  await test('GET /v1/models returns OpenAI-shape list', async () => {
+    const r = await fetchPath('/v1/models');
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.strictEqual(j.object, 'list');
+    assert.ok(Array.isArray(j.data) && j.data.length >= 8);
+    assert.ok(j.data[0].id && j.data[0].owned_by);
+  });
+  await test('POST /v1/batches creates batch with status validating', async () => {
+    const r = await fetchPath('/v1/batches', {
+      method: 'POST',
+      headers: { 'x-agent-did': 'did:op:batch-test' },
+      body: { endpoint: '/v1/chat/completions', input_json: [{ model: 'demo' }] }
+    });
+    assert.strictEqual(r.status, 201);
+    const j = JSON.parse(r.body);
+    assert.strictEqual(j.object, 'batch');
+    assert.strictEqual(j.status, 'validating');
+  });
+  await test('GET /whoami without auth returns 401', async () => {
+    const r = await fetchPath('/whoami');
+    assert.strictEqual(r.status, 401);
+  });
+  await test('GET /whoami with auth returns agent context', async () => {
+    const r = await fetchPath('/whoami', { headers: { 'x-agent-did': 'did:op:whoami-test' } });
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.strictEqual(j.did, 'did:op:whoami-test');
+  });
+  await test('GET /v1/me/requests returns recent inference + audit events', async () => {
+    const r = await fetchPath('/v1/me/requests', { headers: { 'x-agent-did': 'did:op:req-test' } });
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(Array.isArray(j.inference_calls));
+    assert.ok(Array.isArray(j.audit_events));
+  });
+
   console.log(`\n${passed} passed, ${failed} failed`);
   if (skipReasons.length) console.log(`(${skipReasons.length} skipped: ${skipReasons.join(', ')})`);
   await new Promise(r => server.close(r));

@@ -110,7 +110,10 @@ const PRIMITIVE_NAMES = [
   // embeddable badges + Stripe customer portal endpoint
   'integrations_migrate',
   // Layer 45 — /explorer interactive OpenAPI browser + /help searchable knowledge base
-  'api_explorer', 'help_center'
+  'api_explorer', 'help_center',
+  // Layer 46 — OpenAI-compatible drop-in (chat/completions, embeddings,
+  // batches, models) + /whoami + /v1/me/requests inspector
+  'openai_compat'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -391,7 +394,9 @@ const REGISTER_OVERRIDES = {
   integrations_migrate: 'registerIntegrationsMigrateRoutes',
   // Layer 45 — Developer experience polish
   api_explorer: 'registerApiExplorerRoutes',
-  help_center: 'registerHelpCenterRoutes'
+  help_center: 'registerHelpCenterRoutes',
+  // Layer 46 — OpenAI-compatible drop-in
+  openai_compat: 'registerOpenaiCompatRoutes'
 };
 
 async function migrateAll(pool) {
