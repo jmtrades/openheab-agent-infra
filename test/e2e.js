@@ -1425,6 +1425,53 @@ async function run() {
     assert.ok(Array.isArray(j.leaderboard));
   });
 
+  console.log('\n== e2e: layer 60 — distributed tracing ==');
+  await test('POST /v1/traces without auth returns 401', async () => {
+    const r = await fetchPath('/v1/traces', { method: 'POST', body: { name: 'x' } });
+    assert.strictEqual(r.status, 401);
+  });
+  await test('POST /v1/traces creates a trace', async () => {
+    const did = 'did:op:trace-test-' + Date.now();
+    const start = await fetchPath('/v1/traces', {
+      method: 'POST',
+      headers: { 'x-agent-did': did },
+      body: { name: 'test-run', kind: 'agent_run', input: { prompt: 'hi' } }
+    });
+    assert.strictEqual(start.status, 201);
+    const startJ = JSON.parse(start.body);
+    assert.ok(startJ.trace_id && startJ.trace_id.startsWith('trc_'));
+    // Note: span/end/retrieve roundtrip needs a real pool with retained INSERTs
+    // (our mock pool doesn't preserve state). Production e2e against real DB
+    // covers that path.
+  });
+  await test('POST /v1/traces without name returns 400', async () => {
+    const r = await fetchPath('/v1/traces', {
+      method: 'POST',
+      headers: { 'x-agent-did': 'did:op:t' },
+      body: {}
+    });
+    assert.strictEqual(r.status, 400);
+  });
+  await test('GET /v1/traces lists agent traces', async () => {
+    const r = await fetchPath('/v1/traces', { headers: { 'x-agent-did': 'did:op:t-list' } });
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(Array.isArray(j.traces));
+  });
+  await test('POST /v1/traces/:id/spans on someone else trace returns 404', async () => {
+    const r = await fetchPath('/v1/traces/trc_nonexistent/spans', {
+      method: 'POST',
+      headers: { 'x-agent-did': 'did:op:other' },
+      body: { name: 'x', kind: 'y' }
+    });
+    assert.strictEqual(r.status, 404);
+  });
+  await test('GET /traces renders HTML viewer', async () => {
+    const r = await fetchPath('/traces');
+    assert.strictEqual(r.status, 200);
+    assert.ok(/Traces|trace|span/i.test(r.body));
+  });
+
   console.log(`\n${passed} passed, ${failed} failed`);
   if (skipReasons.length) console.log(`(${skipReasons.length} skipped: ${skipReasons.join(', ')})`);
   await new Promise(r => server.close(r));

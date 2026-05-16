@@ -162,7 +162,11 @@ const PRIMITIVE_NAMES = [
   // Layer 59 — Agent OS continuous goals (cron-driven multi-step) +
   // tournaments with USDC bounties (public competitions, RLAF-style
   // judging, /tournaments + /tournaments/:slug pages)
-  'agent_os_tournaments'
+  'agent_os_tournaments',
+  // Layer 60 — Distributed tracing for multi-step agent runs (LangSmith-
+  // style observability). Every span gets parent linking + latency +
+  // tokens + cost rolled up to the trace.
+  'tracing'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -474,7 +478,9 @@ const REGISTER_OVERRIDES = {
   // Layer 58 — Revenue + retention
   revenue_engine: 'registerRevenueEngineRoutes',
   // Layer 59 — Agent OS + tournaments
-  agent_os_tournaments: 'registerAgentOsTournamentsRoutes'
+  agent_os_tournaments: 'registerAgentOsTournamentsRoutes',
+  // Layer 60 — Distributed tracing
+  tracing: 'registerTracingRoutes'
 };
 
 async function migrateAll(pool) {

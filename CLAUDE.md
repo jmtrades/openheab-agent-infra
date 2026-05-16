@@ -12,12 +12,12 @@ Repo: `github.com/jmtrades/openheab-agent-infra`
 
 | Metric | Value |
 |---|---|
-| Primitive modules | **257** in `src/primitives/` |
-| HTTP routes | **1,854+** registered |
+| Primitive modules | **258** in `src/primitives/` |
+| HTTP routes | **1,860+** registered |
 | Cron jobs | 21 scheduled (84 wired via dispatcher) |
 | MCP tools | 149 at `/mcp` |
-| Architecture layers | 59 |
-| Tests | 231 passing + route smoke (0 5xx across 815+ GET routes) |
+| Architecture layers | 60 |
+| Tests | 237 passing + route smoke (0 5xx across 816+ GET routes) |
 | Revenue layers | 14 (see `BILLION_DOLLAR_PATH.md`) |
 
 ## The 135 primitives (19 layers)
