@@ -42,45 +42,26 @@ function isAdmin(req) {
 // ----------------------------------------------------------------------------
 // SHARED PAGE SHELL (uses /v1/design/tokens.css for consistent visuals)
 // ----------------------------------------------------------------------------
+const { head: dsHead, NAV_HTML, FOOTER_HTML } = require('../design_system');
+
 function page({ title, description, body, activeNav = '', extraStyle = '' }) {
-  const url = (process.env.OPERATOR_PUBLIC_URL || '');
-  return `<!doctype html><html lang=en><head><meta charset=utf-8>
-<meta name=viewport content="width=device-width,initial-scale=1">
-<title>${escapeHtml(title)} — OpenHeab</title>
-<meta name=description content="${escapeHtml(description || '')}">
-<link rel=canonical href="${url}">
-<link rel=icon type=image/svg+xml href=/favicon.svg>
-<link rel=stylesheet href=/v1/design/tokens.css>
-<meta name=theme-color content="#0a0a0a">
-<style>
-nav{display:flex;justify-content:space-between;align-items:center;padding:14px 28px;border-bottom:1px solid var(--br);position:sticky;top:0;background:rgba(10,10,10,.92);backdrop-filter:blur(10px);z-index:50}
-nav .brand{font:600 16px/1 var(--mono);letter-spacing:-0.5px}
-nav .brand .dot{color:var(--acc);font-weight:900}
-nav .links{display:flex;gap:22px;font-size:14px;align-items:center}
-nav .links a{color:var(--dim2)}nav .links a:hover{color:var(--fg)}
-nav .links a.active{color:var(--fg)}
-main{max-width:1080px;margin:0 auto;padding:48px 28px}
-h1{font-size:38px;letter-spacing:-1.5px;line-height:1.1;margin:0 0 14px}
-.lede{color:var(--dim2);font-size:18px;line-height:1.55;margin-bottom:36px;max-width:680px}
-.step{background:var(--card);border:1px solid var(--br);border-radius:var(--r-xl);padding:24px;margin-bottom:14px;position:relative}
-.step .n{position:absolute;left:-12px;top:24px;background:var(--bg);border:1px solid var(--br);color:var(--acc);width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:700 14px var(--mono)}
-.step h3{margin:0 0 10px;font-size:18px}
-.step p{color:var(--dim2);font-size:14px;line-height:1.6;margin:0 0 10px}
-.step pre{background:#070707;border:1px solid var(--br);border-radius:var(--r-md);padding:14px 16px;font-size:12px;line-height:1.55;overflow:auto;color:var(--dim2)}
-.step .done{position:absolute;right:14px;top:14px;color:var(--good);font:600 11px var(--mono);text-transform:uppercase;letter-spacing:1px}
-.pill{display:inline-block;padding:4px 10px;background:rgba(125,249,255,.08);border:1px solid var(--acc);color:var(--acc);border-radius:var(--r-full);font:500 11px var(--mono);letter-spacing:1px;text-transform:uppercase}
+  const extraHead = `<style>
+h1{font-size:38px;letter-spacing:-1.4px;line-height:1.1;margin:0 0 14px;font-weight:600}
+.lede{color:var(--fg-dim);font-size:17px;line-height:1.55;margin-bottom:36px;max-width:680px}
+.step{background:var(--bg-elev);border:1px solid var(--br);border-radius:12px;padding:22px 24px;margin-bottom:12px;position:relative;transition:border-color var(--t-fast) var(--ease-out)}
+.step:hover{border-color:var(--br-strong)}
+.step .n{position:absolute;left:-14px;top:22px;background:var(--bg-elev);border:1px solid var(--br);color:var(--acc);width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:600 13px var(--mono)}
+.step h3{margin:0 0 8px;font-size:16px;color:var(--fg);font-weight:600}
+.step p{color:var(--fg-dim);font-size:14px;line-height:1.6;margin:0 0 10px}
+.step pre{background:var(--bg);border:1px solid var(--br);border-radius:8px;padding:14px 16px;font:12px/1.6 var(--mono);overflow:auto;color:var(--fg-dim)}
+.step .done{position:absolute;right:14px;top:14px;color:var(--good);font:600 10.5px/1 var(--mono);text-transform:uppercase;letter-spacing:1.2px}
+.badge{padding:2px 8px;border-radius:4px;font:600 10.5px/1.4 var(--mono);letter-spacing:0.5px}
+.badge.b-good{background:rgba(52,211,153,0.12);color:var(--good);border:1px solid rgba(52,211,153,0.25)}
+.badge.b-bad{background:rgba(248,113,113,0.12);color:var(--bad);border:1px solid rgba(248,113,113,0.25)}
 ${extraStyle}
-</style></head><body><nav>
-<a href="/" class=brand>openheab<span class=dot>.</span></a>
-<div class=links>
-  <a href="/setup" class="${activeNav==='setup'?'active':''}">Setup</a>
-  <a href="/playground" class="${activeNav==='playground'?'active':''}">Playground</a>
-  <a href="/welcome" class="${activeNav==='welcome'?'active':''}">Tour</a>
-  <a href="/docs">Docs</a>
-  <a href="/v1/dashboard">Dashboard</a>
-  <a href="/console">Console</a>
-</div></nav>
-<main>${body}</main></body></html>`;
+</style>`;
+  return dsHead(`${title} — OpenHeab`, description || '', { path: '/' + (activeNav || ''), extraHead })
+    + NAV_HTML(activeNav) + `<main>${body}</main>` + FOOTER_HTML();
 }
 
 // ----------------------------------------------------------------------------

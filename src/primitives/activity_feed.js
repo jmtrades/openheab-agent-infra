@@ -50,84 +50,72 @@ function timeAgo(timestamp) {
   return Math.floor(diff / 86_400_000) + 'd ago';
 }
 
+const { head: dsHead, NAV_HTML, FOOTER_HTML } = require('../design_system');
+
 function renderActivityHtml(data) {
   const rows = data.events.map(e => {
     let entry = {};
     try { entry = typeof e.entry === 'string' ? JSON.parse(e.entry) : (e.entry || {}); } catch { entry = {}; }
     const eventType = entry.event_type || 'unknown';
     const tag = eventEmoji(eventType);
-    // XSS guard: every value from audit_chain (DB-stored, agent-controlled) escaped before HTML
     const detail = Object.entries(entry)
       .filter(([k]) => k !== 'event_type' && k !== 'nonce')
       .slice(0, 4)
       .map(([k, v]) => `<span class="kv"><b>${escapeHtml(k)}</b>:${escapeHtml(String(v).slice(0, 40))}</span>`)
       .join(' ');
-    return `
-      <div class="event">
-        <span class="tag">${escapeHtml(tag)}</span>
-        <div class="event-body">
-          <div class="event-head"><span class="event-type">${escapeHtml(eventType)}</span><span class="event-time">${escapeHtml(timeAgo(e.created_at))}</span></div>
-          <div class="event-detail">${detail}</div>
-        </div>
-        <span class="event-len">#${e.length}</span>
-      </div>`;
+    return `<div class="event">
+      <span class="tag">${escapeHtml(tag)}</span>
+      <div class="event-body">
+        <div class="event-head"><span class="event-type">${escapeHtml(eventType)}</span><span class="event-time">${escapeHtml(timeAgo(e.created_at))}</span></div>
+        <div class="event-detail">${detail}</div>
+      </div>
+      <span class="event-len">#${e.length}</span>
+    </div>`;
   }).join('');
 
-  return `<!doctype html><html><head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Activity — OpenHeab</title>
-<meta http-equiv="refresh" content="10"/>
-<style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif; background: #0a0a0f; color: #e7e7ee; line-height: 1.6; }
-.wrap { max-width: 1000px; margin: 0 auto; padding: 40px 24px 80px; }
-.header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 32px; }
-h1 { font-size: 32px; font-weight: 700; letter-spacing: -0.6px; }
-.live-dot { display: inline-block; width: 8px; height: 8px; background: #22c55e; border-radius: 50%; margin-right: 8px; animation: pulse 2s infinite; }
-@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-.stats { display: flex; gap: 24px; }
-.stat { text-align: right; }
-.stat .v { font-size: 22px; font-weight: 700; }
-.stat .l { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
-.empty { background: #14141c; border: 1px solid #1f1f2a; padding: 40px; border-radius: 12px; text-align: center; color: #888; }
-.event { display: flex; align-items: center; gap: 12px; background: #14141c; border: 1px solid #1a1a25; padding: 14px 18px; border-radius: 8px; margin-bottom: 6px; transition: border-color 0.15s; }
-.event:hover { border-color: #2a2a3a; }
-.tag { font-size: 10px; font-weight: 700; padding: 4px 8px; background: #1f1f2a; color: #818cf8; border-radius: 4px; letter-spacing: 0.5px; font-family: monospace; }
-.event-body { flex: 1; min-width: 0; }
-.event-head { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 3px; }
-.event-type { font-family: 'SF Mono', monospace; font-size: 13px; font-weight: 500; color: #fff; }
-.event-time { font-size: 12px; color: #666; flex-shrink: 0; }
-.event-detail { font-family: 'SF Mono', monospace; font-size: 11px; color: #888; word-break: break-all; }
-.kv { margin-right: 14px; }
-.kv b { color: #aaa; font-weight: 500; }
-.event-len { font-family: monospace; font-size: 11px; color: #444; flex-shrink: 0; }
-.footer { color: #555; font-size: 12px; margin-top: 32px; text-align: center; }
-.footer a { color: #888; margin: 0 8px; }
-</style></head><body>
-<div class="wrap">
-
-<div class="header">
+  const extraHead = `<meta http-equiv="refresh" content="10"/><style>
+.act-hero{padding:40px 0 22px;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:18px;border-bottom:1px solid var(--br);margin-bottom:24px}
+.act-hero h1{font-size:32px;letter-spacing:-1px;font-weight:600;margin:0}
+.act-hero .sub{color:var(--fg-dim);font-size:13px;margin-top:6px}
+.act-stats{display:flex;gap:24px}
+.act-stat{text-align:right}
+.act-stat .v{font:600 22px/1 var(--mono);letter-spacing:-1px;font-feature-settings:'tnum'}
+.act-stat .l{font:500 10.5px/1 var(--mono);color:var(--fg-dim2);text-transform:uppercase;letter-spacing:1.4px;margin-top:6px}
+.empty-card{background:var(--bg-elev);border:1px solid var(--br);padding:40px;border-radius:12px;text-align:center;color:var(--fg-dim);font-size:14px}
+.event{display:flex;align-items:center;gap:12px;background:var(--bg-elev);border:1px solid var(--br);padding:13px 18px;border-radius:9px;margin-bottom:6px;transition:border-color var(--t-fast) var(--ease-out),background-color var(--t-fast) var(--ease-out)}
+.event:hover{border-color:var(--br-strong);background:var(--bg-elev2)}
+.tag{font:600 10px/1 var(--mono);padding:4px 8px;background:var(--bg);color:var(--acc);border-radius:4px;letter-spacing:0.6px;border:1px solid var(--br)}
+.event-body{flex:1;min-width:0}
+.event-head{display:flex;justify-content:space-between;gap:12px;margin-bottom:3px}
+.event-type{font:500 13px/1 var(--mono);color:var(--fg)}
+.event-time{font-size:12px;color:var(--fg-dim2);flex-shrink:0}
+.event-detail{font:500 11.5px/1.45 var(--mono);color:var(--fg-dim2);word-break:break-all}
+.kv{margin-right:14px}
+.kv b{color:var(--fg-dim);font-weight:500}
+.event-len{font:500 11px/1 var(--mono);color:var(--fg-dim3);flex-shrink:0}
+</style>`;
+  return dsHead('Activity — OpenHeab', 'Live activity feed from the OpenHeab substrate. Every audit-chained event in chronological order.', { path: '/activity', extraHead })
+    + NAV_HTML('activity') + `<main>
+<div class="act-hero">
   <div>
     <h1>Activity</h1>
-    <div style="color:#888;font-size:13px;margin-top:4px"><span class="live-dot"></span>Live · refreshes every 10s · ${data.events.length} most recent events</div>
+    <div class="sub"><span class="pill" style="margin:0;padding:3px 8px;font-size:11px"><span class="live"></span> Live</span> &nbsp;refreshes every 10s · ${data.events.length} most recent events</div>
   </div>
-  <div class="stats">
-    <div class="stat"><div class="v">${data.stats?.events_1h || 0}</div><div class="l">Last hour</div></div>
-    <div class="stat"><div class="v">${data.stats?.events_24h || 0}</div><div class="l">Last 24h</div></div>
-    <div class="stat"><div class="v">${data.stats?.events_total || 0}</div><div class="l">All time</div></div>
+  <div class="act-stats">
+    <div class="act-stat"><div class="v">${data.stats?.events_1h || 0}</div><div class="l">Last hour</div></div>
+    <div class="act-stat"><div class="v">${data.stats?.events_24h || 0}</div><div class="l">Last 24h</div></div>
+    <div class="act-stat"><div class="v">${data.stats?.events_total || 0}</div><div class="l">All time</div></div>
   </div>
 </div>
 
 ${data.events.length === 0
-  ? '<div class="empty">No activity yet. Visit <a href="/demo" style="color:#818cf8">/demo</a> to generate a real event!</div>'
+  ? '<div class="empty-card">No activity yet. Visit <a href="/demo">/demo</a> to generate a real event.</div>'
   : rows}
 
-<div class="footer">
+<div style="color:var(--fg-dim2);font-size:12px;margin-top:32px;text-align:center">
   Every event is cryptographically chained · <a href="/v1/audit/chain">JSON feed</a> · <a href="/v1/audit/verify">Verify integrity</a> · <a href="/launch">Operator dashboard</a>
 </div>
-
-</div></body></html>`;
+</main>` + FOOTER_HTML();
 }
 
 function registerActivityFeedRoutes(app, pool) {

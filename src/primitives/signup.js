@@ -161,96 +161,107 @@ async function makeStripeCheckout(stripe, body, identifiers, baseUrl) {
   }
 }
 
+const { head: dsHead, NAV_HTML, FOOTER_HTML } = require('../design_system');
+
 function landingHTML(plan = 'pro') {
-  const css = `
-:root{--bg:#0a0a0a;--fg:#f0f0f0;--dim:#7a7a7a;--dim2:#bdbdbd;--acc:#7df9ff;--card:#0f0f0f;--br:#1a1a1a;--mono:ui-monospace,'SF Mono','JetBrains Mono',Menlo,Consolas,monospace;--sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,system-ui,sans-serif}
-*{box-sizing:border-box;margin:0;padding:0}
-body{font:15px/1.6 var(--sans);background:var(--bg);color:var(--fg)}
-.wrap{max-width:560px;margin:0 auto;padding:64px 24px}
-.brand{font:600 16px/1 var(--mono);letter-spacing:-0.5px;margin-bottom:48px;display:block;color:var(--fg);text-decoration:none}
-.brand .dot{color:var(--acc);font-weight:900}
-h1{font-size:36px;letter-spacing:-1.5px;margin-bottom:14px;line-height:1.1}
-.lede{color:var(--dim2);font-size:17px;margin-bottom:36px;line-height:1.55}
-form{background:var(--card);border:1px solid var(--br);border-radius:12px;padding:28px}
-label{display:block;font:500 12px/1 var(--mono);color:var(--dim);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:6px;margin-top:18px}
-label:first-child{margin-top:0}
-input,select{width:100%;background:#070707;color:var(--fg);border:1px solid var(--br);border-radius:7px;padding:12px 14px;font:500 14px/1 var(--mono);outline:none}
-input:focus,select:focus{border-color:var(--acc)}
-.tiers{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:12px}
-.tier{padding:14px;border:1px solid var(--br);border-radius:8px;cursor:pointer;background:#070707}
-.tier:hover{border-color:var(--dim)}
-.tier.sel{border-color:var(--acc);background:rgba(125,249,255,0.04)}
-.tier .pn{font:600 14px/1 var(--mono);margin-bottom:4px}
-.tier .pp{font:400 12px/1 var(--mono);color:var(--dim)}
-.tier input{display:none}
-button{width:100%;background:var(--acc);color:#001a1f;border:0;padding:14px 18px;border-radius:8px;font-weight:700;font-size:15px;cursor:pointer;font-family:var(--sans);margin-top:24px;transition:all .15s}
-button:hover{background:#a4fcff;transform:translateY(-1px)}
-.foot{color:var(--dim);font-size:13px;margin-top:18px;text-align:center}
-.foot a{color:var(--dim2)}
-.note{background:rgba(125,249,255,0.06);border:1px solid rgba(125,249,255,0.2);border-radius:7px;padding:12px 14px;margin-top:18px;color:var(--dim2);font-size:13px;line-height:1.5}
-`;
-  return `<!doctype html><html lang=en><head><meta charset=utf-8>
-<meta name=viewport content="width=device-width,initial-scale=1">
-<title>Get started — OpenHeab</title>
-<meta name=description content="Sign up for OpenHeab in 30 seconds. Get a DID, USDC wallet, API key, and access to 230+ primitives.">
-<link rel=canonical href="${(process.env.OPERATOR_PUBLIC_URL || '')}/signup">
-<link rel=icon href="/favicon.svg">
-<style>${css}</style></head><body><div class=wrap>
-<a href="/" class=brand>openheab<span class=dot>.</span></a>
-<h1>Sign up in 30 seconds.</h1>
-<p class=lede>Get a signed DID, a non-custodial USDC wallet, an API key, and access to 230+ primitives. Free forever or upgrade later.</p>
-<form id=f onsubmit="event.preventDefault();submit()">
-  <label>Email</label>
-  <input id=email type=email autofocus required placeholder="you@company.com">
+  const extraHead = `<style>
+.signup-shell{max-width:560px;margin:0 auto;padding:48px 0 64px}
+.signup-shell h1{font-size:36px;letter-spacing:-1.5px;line-height:1.1;margin-bottom:14px}
+.signup-shell .lede{font-size:17px;color:var(--fg-dim);margin-bottom:32px;line-height:1.55}
+.signup-form{background:var(--bg-elev);border:1px solid var(--br);border-radius:14px;padding:28px;animation:rise 500ms var(--ease-out) both}
+.signup-form label.field{display:block;font:500 11px/1 var(--mono);color:var(--fg-dim2);text-transform:uppercase;letter-spacing:1.4px;margin:18px 0 6px}
+.signup-form label.field:first-child{margin-top:0}
+.tiers{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-top:8px}
+.tier-opt{padding:13px;border:1px solid var(--br);border-radius:9px;cursor:pointer;background:var(--bg);transition:border-color var(--t-fast) var(--ease-out),background-color var(--t-fast) var(--ease-out)}
+.tier-opt:hover{border-color:var(--br-strong)}
+.tier-opt.sel{border-color:var(--acc);background:rgba(125,211,252,0.05)}
+.tier-opt .pn{font:600 13px/1 var(--mono);margin-bottom:4px;color:var(--fg);letter-spacing:-0.2px}
+.tier-opt .pp{font:500 11.5px/1 var(--mono);color:var(--fg-dim);font-feature-settings:'tnum'}
+.tier-opt input{display:none}
+.signup-form button.submit{
+  width:100%;background:var(--fg);color:var(--bg);border:0;
+  padding:13px 18px;border-radius:9px;font-weight:600;font-size:14.5px;
+  cursor:pointer;font-family:var(--sans);margin-top:24px;
+  transition:transform var(--t-fast) var(--ease-out),background-color var(--t-fast) var(--ease-out);
+  display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.signup-form button.submit:hover{background:#e4e4e7}
+.signup-form button.submit:active{transform:scale(0.98)}
+.signup-foot{color:var(--fg-dim2);font-size:12.5px;margin-top:16px;text-align:center}
+.signup-note{background:rgba(125,211,252,0.05);border:1px solid rgba(125,211,252,0.15);border-radius:9px;padding:14px 16px;margin-top:18px;color:var(--fg-dim);font-size:13px;line-height:1.55}
+.signup-note strong{color:var(--fg)}
+.signup-note code{background:var(--bg);padding:6px 10px;display:block;margin-top:8px;border-radius:6px;border:1px solid var(--br);font-size:11.5px;word-break:break-all;color:var(--acc)}
+</style>`;
+  return dsHead('Sign up — OpenHeab', 'Sign up for OpenHeab in 30 seconds. Get a DID, USDC wallet, API key, and access to 265+ primitives.', { path: '/signup', extraHead })
+    + NAV_HTML('signup') + `<main>
+<div class="signup-shell">
+  <h1>Sign up in 30 seconds.</h1>
+  <p class="lede">Get a signed DID, a non-custodial USDC wallet, an API key, and access to 265+ primitives. Free forever or upgrade later.</p>
+  <form id="f" class="signup-form" onsubmit="event.preventDefault();submit()">
+    <label class="field" for="email">Email</label>
+    <input id="email" type="email" autofocus required placeholder="you@company.com">
 
-  <label>Organization name</label>
-  <input id=org type=text placeholder="Acme Inc.">
+    <label class="field" for="org">Organization name</label>
+    <input id="org" type="text" placeholder="Acme Inc.">
 
-  <label>Plan</label>
-  <div class=tiers>
+    <label class="field">Plan</label>
+    <div class="tiers">
 ${[['free','Free','$0/mo'], ['starter','Starter','$19/mo'], ['pro','Pro','$99/mo'], ['team','Team','$349/mo'], ['enterprise','Enterprise','$2,499+/mo']]
   .map(([code, name, price]) =>
-    `    <label class="tier ${code===plan?'sel':''}" data-code="${code}"><input type=radio name=plan value="${code}" ${code===plan?'checked':''}><div class=pn>${name}</div><div class=pp>${price}</div></label>`
+    `      <label class="tier-opt ${code===plan?'sel':''}" data-code="${code}"><input type="radio" name="plan" value="${code}" ${code===plan?'checked':''}><div class="pn">${name}</div><div class="pp">${price}</div></label>`
   ).join('\n')}
-  </div>
+    </div>
 
-  <button type=submit>Create account →</button>
-  <div class=foot>By signing up you agree to our <a href="/legal/terms">Terms</a> and <a href="/legal/privacy">Privacy Policy</a>.</div>
-  <div class=note id=msg style="display:none"></div>
-</form>
+    <button type="submit" class="submit">Create account <span class="arr">→</span></button>
+    <div class="signup-foot">By signing up you agree to our <a href="/legal/terms">Terms</a> and <a href="/legal/privacy">Privacy Policy</a>.</div>
+    <div class="signup-note" id="msg" style="display:none"></div>
+  </form>
 </div>
+</main>
 <script>
-document.querySelectorAll('.tier').forEach(t => t.addEventListener('click', () => {
-  document.querySelectorAll('.tier').forEach(x => x.classList.remove('sel'));
+document.querySelectorAll('.tier-opt').forEach(t => t.addEventListener('click', () => {
+  document.querySelectorAll('.tier-opt').forEach(x => x.classList.remove('sel'));
   t.classList.add('sel');
 }));
-async function submit() {
+async function submit(){
   const u = new URL(location.href);
   const body = {
     email: document.getElementById('email').value,
     org_name: document.getElementById('org').value || undefined,
-    plan_code: document.querySelector('.tier.sel').dataset.code,
+    plan_code: document.querySelector('.tier-opt.sel').dataset.code,
     utm_source: u.searchParams.get('utm_source') || undefined,
     utm_campaign: u.searchParams.get('utm_campaign') || undefined
   };
-  const r = await fetch('/v1/signup', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+  const r = await fetch('/v1/signup', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(body) });
   const j = await r.json();
-  if (j.checkout_url) { location.href = j.checkout_url; return; }
-  if (j.api_key) {
+  if (j.checkout_url){ location.href = j.checkout_url; return; }
+  if (j.api_key){
     const m = document.getElementById('msg');
     m.style.display = 'block';
-    m.innerHTML = '<strong>Account created.</strong> Save your API key now (we cannot retrieve it later):<br><code style="display:block;margin-top:8px;font-size:11px;word-break:break-all">' + j.api_key + '</code><br><a href="/v1/dashboard?api_key=' + encodeURIComponent(j.api_key) + '">→ Open dashboard</a>';
+    m.innerHTML = '<strong>Account created.</strong> Save your API key — we cannot retrieve it later.<code>' + j.api_key + '</code><div style="margin-top:10px"><a href="/dashboard">→ Open dashboard</a></div>';
     return;
   }
-  if (j.error) { document.getElementById('msg').style.display='block'; document.getElementById('msg').textContent = 'Error: ' + j.error; }
+  if (j.error){ document.getElementById('msg').style.display='block'; document.getElementById('msg').textContent = 'Error: ' + j.error; }
 }
-</script></body></html>`;
+</script>` + FOOTER_HTML();
 }
 
 function successHTML(orgId) {
-  return `<!doctype html><html><head><meta charset=utf-8><title>Subscription active — OpenHeab</title>
-<style>body{font-family:-apple-system,system-ui;background:#0a0a0a;color:#f0f0f0;padding:64px 24px;text-align:center}h1{color:#7df9ff;font-size:32px}a{color:#7df9ff}</style>
-</head><body><h1>You&apos;re subscribed.</h1><p>Your subscription is active. <a href="/v1/dashboard">→ Open dashboard</a></p></body></html>`;
+  const extraHead = `<style>
+.success-shell{max-width:480px;margin:0 auto;padding:64px 0;text-align:center}
+.success-icon{width:56px;height:56px;border-radius:50%;background:rgba(52,211,153,0.12);border:1px solid var(--good);display:inline-flex;align-items:center;justify-content:center;margin-bottom:20px;color:var(--good);font-size:24px;animation:rise 500ms var(--ease-out) both}
+.success-shell h1{font-size:32px;letter-spacing:-1px;margin-bottom:10px}
+.success-shell p{color:var(--fg-dim);margin-bottom:28px}
+</style>`;
+  return dsHead('Subscription active — OpenHeab', 'Your OpenHeab subscription is active.', { path: '/signup/success', extraHead })
+    + NAV_HTML() + `<main>
+<div class="success-shell">
+  <div class="success-icon">✓</div>
+  <h1>You're subscribed.</h1>
+  <p>Your subscription is active. Your dashboard is ready.</p>
+  <a class="btn primary" href="/dashboard">Open dashboard <span class="arr">→</span></a>
+</div>
+</main>` + FOOTER_HTML();
 }
 
 function registerSignupRoutes(app, pool, _verifyAgentAuth, auditChain, stripe) {

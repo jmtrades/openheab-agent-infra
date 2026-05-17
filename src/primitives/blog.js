@@ -153,74 +153,12 @@ function md(text) {
   return '<p>' + h + '</p>';
 }
 
-const SHARED_CSS = `
-:root{--bg:#0a0a0a;--fg:#f0f0f0;--dim:#7a7a7a;--dim2:#bdbdbd;--acc:#7df9ff;--card:#0f0f0f;--br:#1a1a1a;--mono:ui-monospace,'SF Mono','JetBrains Mono',Menlo,Consolas,monospace;--sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,system-ui,sans-serif}
-*{box-sizing:border-box;margin:0;padding:0}
-body{font:16px/1.65 var(--sans);background:var(--bg);color:var(--fg);font-feature-settings:'cv11','ss01','ss03'}
-a{color:var(--acc);text-decoration:none}a:hover{text-decoration:underline;text-decoration-color:#3da3a8;text-decoration-thickness:2px;text-underline-offset:3px}
-code,pre{font-family:var(--mono);font-size:13px}
-nav{display:flex;justify-content:space-between;align-items:center;padding:14px 28px;border-bottom:1px solid var(--br);position:sticky;top:0;background:rgba(10,10,10,.92);backdrop-filter:blur(10px);z-index:50}
-nav .brand{font:600 16px/1 var(--mono);letter-spacing:-0.5px}
-nav .brand .dot{color:var(--acc);font-weight:900}
-nav .links{display:flex;gap:22px;font-size:14px;align-items:center}
-nav .links a{color:var(--dim2)}nav .links a:hover{color:var(--fg)}
-main{max-width:760px;margin:0 auto;padding:48px 28px}
-article h1{font-size:38px;letter-spacing:-1.5px;line-height:1.15;margin:0 0 14px}
-article .meta{color:var(--dim);font-size:13px;margin-bottom:32px;display:flex;gap:14px;flex-wrap:wrap}
-article .meta .tag{padding:2px 8px;border:1px solid var(--br);border-radius:99px;font:500 11px/1.4 var(--mono);color:var(--dim2)}
-article p{margin:0 0 18px;color:var(--dim2);font-size:17px;line-height:1.75}
-article h2{font-size:26px;margin:36px 0 14px;letter-spacing:-0.5px}
-article h3{font-size:20px;margin:28px 0 10px}
-article code{background:#0e0e0e;padding:2px 6px;border-radius:4px;border:1px solid var(--br)}
-article pre code{display:block;padding:14px 16px;overflow:auto}
-.subscribe{background:var(--card);border:1px solid var(--br);border-radius:10px;padding:24px;margin:48px 0}
-.subscribe h3{font-size:16px;margin-bottom:8px}
-.subscribe form{display:flex;gap:8px;margin-top:14px}
-.subscribe input{flex:1;background:#070707;color:var(--fg);border:1px solid var(--br);border-radius:6px;padding:10px 12px;font:500 14px/1 var(--mono);outline:none}
-.subscribe input:focus{border-color:var(--acc)}
-.subscribe button{background:var(--acc);color:#001a1f;border:0;padding:10px 18px;border-radius:6px;font-weight:600;font-size:13px;cursor:pointer;font-family:var(--sans)}
-.idx{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin:32px 0}
-.card{background:var(--card);border:1px solid var(--br);border-radius:10px;padding:22px;transition:border-color .15s}
-.card:hover{border-color:var(--dim)}
-.card .cat{font:500 10px/1 var(--mono);color:var(--acc);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:8px}
-.card h3{font-size:17px;line-height:1.3;margin:0 0 10px}.card h3 a{color:var(--fg)}
-.card p{color:var(--dim2);font-size:14px;line-height:1.55;margin:0 0 12px}
-.card .meta{font:500 11px/1 var(--mono);color:var(--dim);display:flex;gap:12px}
-footer{max-width:1080px;margin:60px auto 40px;padding:24px 28px;border-top:1px solid var(--br);color:var(--dim);font-size:12px}
-footer .l{display:flex;gap:18px;flex-wrap:wrap}footer a{color:var(--dim2)}
-.crumb{font-size:13px;color:var(--dim);margin-bottom:18px}.crumb a{color:var(--dim2)}
-@media (max-width:640px){nav{padding:12px 18px}main{padding:32px 18px}article h1{font-size:28px}article p{font-size:16px}}
-`;
-
-const NAV_HTML = (active = '') => `<nav>
-<a href="/" class="brand">openheab<span class="dot">.</span></a>
-<div class="links">
-  <a href="/blog" ${active==='blog'?'style="color:var(--fg)"':''}>Blog</a>
-  <a href="/docs">Docs</a>
-  <a href="/pricing">Pricing</a>
-  <a href="/customers">Customers</a>
-  <a href="/changelog">Changelog</a>
-  <a href="https://github.com/jmtrades/openheab-agent-infra">GitHub</a>
-</div></nav>`;
-
-const FOOTER_HTML = (publicUrl) => `<footer>
-<div class="l">
-  <a href="/blog">Blog</a>
-  <a href="/docs">Docs</a>
-  <a href="/pricing">Pricing</a>
-  <a href="/customers">Customers</a>
-  <a href="/about">About</a>
-  <a href="/jobs">Jobs</a>
-  <a href="/press">Press</a>
-  <a href="/security">Trust</a>
-  <a href="/legal/terms">Terms</a>
-  <a href="/legal/privacy">Privacy</a>
-  <a href="/changelog">Changelog</a>
-  <a href="/status">Status</a>
-  <a href="/openapi.json">API</a>
-</div>
-<span style="margin-top:12px;display:block">Apache-2.0 · open source · self-hostable · ${new Date().getFullYear()} OpenHeab Inc.</span>
-</footer></body></html>`;
+// Shared design system — head/nav/footer/CSS centralized in src/design_system.js
+const ds = require('../design_system');
+const SHARED_CSS = ds.SHARED_CSS;
+const NAV_HTML = ds.NAV_HTML;
+const FOOTER_HTML = ds.FOOTER_HTML;
+const head = ds.head;
 
 function postUrl(slug) {
   return `${(process.env.OPERATOR_PUBLIC_URL || '').replace(/\/$/, '')}/blog/${encodeURIComponent(slug)}`;
@@ -238,29 +176,6 @@ function renderPostJsonLd(post) {
     publisher: { '@type': 'Organization', name: 'OpenHeab', logo: { '@type': 'ImageObject', url: (process.env.OPERATOR_PUBLIC_URL || '') + '/favicon.ico' } },
     mainEntityOfPage: postUrl(post.slug)
   });
-}
-
-function head(title, description, canonical, jsonLd, ogImage) {
-  const url = canonical || (process.env.OPERATOR_PUBLIC_URL || '');
-  return `<!doctype html><html lang=en><head><meta charset=utf-8>
-<meta name=viewport content="width=device-width,initial-scale=1">
-<title>${escapeHtml(title)}</title>
-<meta name=description content="${escapeHtml(description || '')}">
-<link rel=canonical href="${escapeHtml(url)}">
-<meta property="og:title" content="${escapeHtml(title)}">
-<meta property="og:description" content="${escapeHtml(description || '')}">
-<meta property="og:type" content="article">
-<meta property="og:url" content="${escapeHtml(url)}">
-<meta property="og:site_name" content="OpenHeab">
-${ogImage ? `<meta property="og:image" content="${escapeHtml(ogImage)}">` : ''}
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="${escapeHtml(title)}">
-<meta name="twitter:description" content="${escapeHtml(description || '')}">
-<link rel="alternate" type="application/rss+xml" title="OpenHeab Blog" href="/blog/rss.xml">
-<meta name=theme-color content="#0a0a0a">
-<style>${SHARED_CSS}</style>
-${jsonLd ? `<script type="application/ld+json">${jsonLd}</script>` : ''}
-</head><body>`;
 }
 
 function registerBlogRoutes(app, pool, _verifyAgentAuth, auditChain) {

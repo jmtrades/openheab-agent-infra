@@ -161,35 +161,35 @@ curl -X POST https://api.openheab.com/mcp \\
   }
 ];
 
+const { head: dsHead, NAV_HTML, FOOTER_HTML } = require('../design_system');
+
 function renderSdkPage() {
   const flowsJson = JSON.stringify(SDK_FLOWS).replace(/</g, '\\u003c');
-  return `<!doctype html><html><head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>OpenHeab — SDK Examples</title>
-<style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif; background: #0a0a0f; color: #e7e7ee; line-height: 1.6; }
-.wrap { max-width: 1100px; margin: 0 auto; padding: 48px 24px; }
-h1 { font-size: 40px; font-weight: 700; letter-spacing: -1px; margin-bottom: 8px; }
-.subtitle { color: #888; font-size: 16px; margin-bottom: 40px; }
-.lang-picker { display: flex; gap: 4px; background: #14141c; border-radius: 8px; padding: 4px; margin-bottom: 32px; width: fit-content; }
-.lang-btn { padding: 8px 16px; border: none; background: transparent; color: #888; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.15s; }
-.lang-btn.active { background: #4f46e5; color: #fff; }
-.lang-btn:hover:not(.active) { color: #ccc; }
-.flow { background: #14141c; border-radius: 12px; padding: 28px; margin-bottom: 16px; border: 1px solid #20202a; }
-.flow h2 { font-size: 22px; margin-bottom: 6px; }
-.flow .desc { color: #888; font-size: 14px; margin-bottom: 20px; }
-.code-block { background: #0a0a12; border: 1px solid #1a1a25; border-radius: 8px; padding: 20px; font-family: 'SF Mono', 'Menlo', monospace; font-size: 13px; color: #c5c5d5; overflow-x: auto; position: relative; white-space: pre; }
-.copy-btn { position: absolute; top: 12px; right: 12px; background: #1a1a25; color: #aaa; border: 1px solid #2a2a3a; padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.15s; }
-.copy-btn:hover { background: #2a2a3a; color: #fff; }
-.footer { color: #555; font-size: 13px; margin-top: 48px; padding-top: 24px; border-top: 1px solid #1a1a25; text-align: center; }
-.footer a { color: #888; }
-.badge { display: inline-block; padding: 2px 8px; background: #1a1a25; border-radius: 4px; font-size: 11px; color: #aaa; margin-left: 8px; font-family: monospace; }
-</style></head><body><div class="wrap">
-
-<h1>OpenHeab SDK Examples</h1>
-<p class="subtitle">Copy-paste-ready snippets for every critical agent flow. Pick your language, run, ship.</p>
+  const extraHead = `<style>
+.sdk-hero{padding:40px 0 24px}
+.sdk-hero h1{font-size:38px;letter-spacing:-1.4px;font-weight:600;margin-bottom:8px}
+.sdk-hero p{color:var(--fg-dim);font-size:16px;margin-bottom:0;max-width:640px}
+.lang-picker{display:flex;gap:3px;background:var(--bg-elev);border-radius:9px;padding:4px;margin:28px 0 24px;width:fit-content;border:1px solid var(--br)}
+.lang-btn{padding:7px 14px;border:0;background:transparent;color:var(--fg-dim);border-radius:6px;cursor:pointer;font:500 13px/1 var(--sans);transition:background-color var(--t-fast) var(--ease-out),color var(--t-fast) var(--ease-out)}
+.lang-btn:hover{color:var(--fg)}
+.lang-btn.active{background:var(--fg);color:var(--bg)}
+.flow{background:var(--bg-elev);border-radius:12px;padding:24px;margin-bottom:14px;border:1px solid var(--br);transition:border-color var(--t-fast) var(--ease-out)}
+.flow:hover{border-color:var(--br-strong)}
+.flow h2{font-size:18px;margin-bottom:6px;color:var(--fg);font-weight:600;letter-spacing:-0.3px}
+.flow .desc{color:var(--fg-dim);font-size:13.5px;margin-bottom:16px}
+.sdk-block{background:var(--bg);border:1px solid var(--br);border-radius:9px;padding:18px;font:13px/1.6 var(--mono);color:var(--fg-dim);overflow-x:auto;position:relative;white-space:pre}
+.copy-btn{position:absolute;top:10px;right:10px;background:var(--bg-elev);color:var(--fg-dim);border:1px solid var(--br);padding:5px 11px;border-radius:6px;font-size:11.5px;cursor:pointer;font-family:var(--sans);transition:background-color var(--t-fast) var(--ease-out),color var(--t-fast) var(--ease-out)}
+.copy-btn:hover{background:var(--bg-elev2);color:var(--fg)}
+.copy-btn:active{transform:scale(0.97)}
+.badge{display:inline-block;padding:2px 7px;background:var(--bg-elev2);border-radius:4px;font:500 10.5px/1.6 var(--mono);color:var(--fg-dim);margin-left:8px;border:1px solid var(--br);vertical-align:middle}
+</style>`;
+  return dsHead('SDK Examples — OpenHeab', 'Copy-paste-ready snippets for every critical agent flow. curl, Python, TypeScript, Go, Rust.', { path: '/sdk', extraHead })
+    + NAV_HTML('sdk') + `<main>
+<section class="sdk-hero">
+  <span class="pill">developer reference</span>
+  <h1>SDK examples</h1>
+  <p>Copy-paste snippets for every critical agent flow. Pick your language, run, ship.</p>
+</section>
 
 <div class="lang-picker" id="lang-picker">
   <button class="lang-btn active" data-lang="curl">curl</button>
@@ -201,36 +201,31 @@ h1 { font-size: 40px; font-weight: 700; letter-spacing: -1px; margin-bottom: 8px
 
 <div id="flows"></div>
 
-<div class="footer">
-  <p>Full API spec: <a href="/openapi.json">openapi.json</a> · <a href="/mcp">MCP server</a> · <a href="/demo">Live demo</a></p>
+<div style="color:var(--fg-dim2);font-size:13px;margin-top:32px;text-align:center;padding-top:20px;border-top:1px solid var(--br)">
+  Full API spec: <a href="/openapi.json">openapi.json</a> · <a href="/mcp">MCP server</a> · <a href="/demo">Live demo</a>
 </div>
-
+</main>
 <script>
 const FLOWS = ${flowsJson};
 let currentLang = 'curl';
-
-function render() {
+function render(){
   document.getElementById('flows').innerHTML = FLOWS.map(f => \`
     <div class="flow">
       <h2>\${f.title}<span class="badge">\${f.id}</span></h2>
       <div class="desc">\${f.description}</div>
-      <div class="code-block"><button class="copy-btn" onclick="copyCode(this)">copy</button>\${escapeHtml(f.snippets[currentLang] || '// not yet provided in this language')}</div>
-    </div>
-  \`).join('');
+      <div class="sdk-block"><button class="copy-btn" onclick="copyCode(this)">Copy</button>\${escapeHtml(f.snippets[currentLang] || '// not yet provided in this language')}</div>
+    </div>\`).join('');
 }
-
-function escapeHtml(s) {
+function escapeHtml(s){
   return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
-
-function copyCode(btn) {
-  const code = btn.parentElement.textContent.replace('copy', '').trim();
+function copyCode(btn){
+  const code = btn.parentElement.textContent.replace(/^Copy/, '').trim();
   navigator.clipboard.writeText(code).then(() => {
-    btn.textContent = 'copied!';
-    setTimeout(() => btn.textContent = 'copy', 1500);
+    btn.textContent = 'Copied';
+    setTimeout(() => btn.textContent = 'Copy', 1500);
   });
 }
-
 document.getElementById('lang-picker').addEventListener('click', e => {
   if (!e.target.matches('.lang-btn')) return;
   document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
@@ -238,10 +233,8 @@ document.getElementById('lang-picker').addEventListener('click', e => {
   currentLang = e.target.dataset.lang;
   render();
 });
-
 render();
-</script>
-</div></body></html>`;
+</script>` + FOOTER_HTML();
 }
 
 function registerSdkExamplesRoutes(app, pool, verifyAgentAuth, auditChain) {

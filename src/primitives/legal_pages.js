@@ -24,29 +24,33 @@ async function migrate(pool) {
 
 function newId(p) { return p + '_' + crypto.randomBytes(10).toString('hex'); }
 
-const SHARED_CSS = `
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif; background: #0a0a0f; color: #e7e7ee; line-height: 1.7; }
-.wrap { max-width: 760px; margin: 0 auto; padding: 60px 24px 80px; }
-h1 { font-size: 36px; font-weight: 700; letter-spacing: -0.8px; margin-bottom: 8px; }
-.meta { color: #666; font-size: 13px; margin-bottom: 40px; }
-h2 { font-size: 22px; margin: 40px 0 16px; letter-spacing: -0.3px; }
-h3 { font-size: 16px; margin: 24px 0 12px; color: #ccc; }
-p, li { color: #c5c5d5; font-size: 15px; margin-bottom: 12px; }
-ul, ol { padding-left: 24px; margin-bottom: 16px; }
-a { color: #818cf8; }
-.callout { background: #14141c; border-left: 3px solid #4f46e5; padding: 14px 20px; margin: 24px 0; border-radius: 4px; font-size: 14px; color: #c5c5d5; }
-.nav { padding-bottom: 24px; margin-bottom: 32px; border-bottom: 1px solid #1a1a25; }
-.nav a { color: #888; margin-right: 20px; font-size: 13px; }
-.nav a:hover { color: #fff; }
-hr { border: 0; border-top: 1px solid #1a1a25; margin: 40px 0; }
-code { background: #14141c; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 13px; }
+const ds = require('../design_system');
+// Inject the design-system CSS so legal pages get full token coverage,
+// plus legal-specific overrides for narrower reading layout.
+const SHARED_CSS = ds.SHARED_CSS + `
+body{font-size:15px;line-height:1.7}
+.wrap{max-width:760px;margin:0 auto;padding:48px 24px 80px}
+.wrap h1{font-size:34px;letter-spacing:-1px;margin-bottom:8px;font-weight:600;color:var(--fg)}
+.meta{color:var(--fg-dim2);font-size:13px;margin-bottom:36px;font-family:var(--mono)}
+.wrap h2{font-size:21px;margin:36px 0 14px;letter-spacing:-0.4px;color:var(--fg);font-weight:600}
+.wrap h3{font-size:16px;margin:22px 0 10px;color:var(--fg);font-weight:600}
+.wrap p,.wrap li{color:var(--fg-dim);font-size:15px;margin-bottom:12px}
+.wrap ul,.wrap ol{padding-left:22px;margin-bottom:14px}
+.wrap a{color:var(--acc);transition:color var(--t-fast) var(--ease-out)}
+.wrap a:hover{color:var(--acc-strong)}
+.wrap .callout{background:var(--bg-elev);border:1px solid var(--br);border-left:3px solid var(--acc);padding:14px 18px;margin:22px 0;border-radius:8px;font-size:14px;color:var(--fg-dim);line-height:1.6}
+.wrap .callout b{color:var(--fg)}
+.legal-nav{padding-bottom:20px;margin-bottom:28px;border-bottom:1px solid var(--br);display:flex;gap:4px;flex-wrap:wrap}
+.legal-nav a{color:var(--fg-dim);font-size:13px;padding:6px 10px;border-radius:6px;text-decoration:none;transition:color var(--t-fast) var(--ease-out),background-color var(--t-fast) var(--ease-out)}
+.legal-nav a:hover{color:var(--fg);background:var(--bg-elev)}
+hr{border:0;border-top:1px solid var(--br);margin:36px 0}
+code{background:var(--bg-elev);padding:2px 6px;border-radius:4px;border:1px solid var(--br);font-family:var(--mono);font-size:13px}
 `;
 
 const TERMS_HTML = `<!doctype html><html><head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Terms of Service — OpenHeab</title><style>${SHARED_CSS}</style></head><body><div class="wrap">
-<div class="nav"><a href="/">Home</a><a href="/legal/terms">Terms</a><a href="/legal/privacy">Privacy</a><a href="/legal/acceptable-use">Acceptable Use</a><a href="/legal/cookies">Cookies</a><a href="/legal/gdpr">GDPR</a></div>
+<div class="legal-nav"><a href="/">Home</a><a href="/legal/terms">Terms</a><a href="/legal/privacy">Privacy</a><a href="/legal/acceptable-use">Acceptable Use</a><a href="/legal/cookies">Cookies</a><a href="/legal/gdpr">GDPR</a></div>
 <h1>Terms of Service</h1>
 <p class="meta">Effective May 15, 2026 · Version 2.0</p>
 
@@ -91,7 +95,7 @@ const TERMS_HTML = `<!doctype html><html><head>
 const PRIVACY_HTML = `<!doctype html><html><head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Privacy Policy — OpenHeab</title><style>${SHARED_CSS}</style></head><body><div class="wrap">
-<div class="nav"><a href="/">Home</a><a href="/legal/terms">Terms</a><a href="/legal/privacy">Privacy</a><a href="/legal/acceptable-use">Acceptable Use</a><a href="/legal/cookies">Cookies</a><a href="/legal/gdpr">GDPR</a></div>
+<div class="legal-nav"><a href="/">Home</a><a href="/legal/terms">Terms</a><a href="/legal/privacy">Privacy</a><a href="/legal/acceptable-use">Acceptable Use</a><a href="/legal/cookies">Cookies</a><a href="/legal/gdpr">GDPR</a></div>
 <h1>Privacy Policy</h1>
 <p class="meta">Effective May 15, 2026 · Version 2.0 · GDPR + CCPA compliant</p>
 
@@ -149,7 +153,7 @@ const PRIVACY_HTML = `<!doctype html><html><head>
 const ACCEPTABLE_USE_HTML = `<!doctype html><html><head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Acceptable Use Policy — OpenHeab</title><style>${SHARED_CSS}</style></head><body><div class="wrap">
-<div class="nav"><a href="/">Home</a><a href="/legal/terms">Terms</a><a href="/legal/privacy">Privacy</a><a href="/legal/acceptable-use">Acceptable Use</a><a href="/legal/cookies">Cookies</a><a href="/legal/gdpr">GDPR</a></div>
+<div class="legal-nav"><a href="/">Home</a><a href="/legal/terms">Terms</a><a href="/legal/privacy">Privacy</a><a href="/legal/acceptable-use">Acceptable Use</a><a href="/legal/cookies">Cookies</a><a href="/legal/gdpr">GDPR</a></div>
 <h1>Acceptable Use Policy</h1>
 <p class="meta">Effective May 15, 2026 · Version 2.0</p>
 
@@ -197,7 +201,7 @@ const ACCEPTABLE_USE_HTML = `<!doctype html><html><head>
 const COOKIES_HTML = `<!doctype html><html><head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Cookie Policy — OpenHeab</title><style>${SHARED_CSS}</style></head><body><div class="wrap">
-<div class="nav"><a href="/">Home</a><a href="/legal/terms">Terms</a><a href="/legal/privacy">Privacy</a><a href="/legal/acceptable-use">Acceptable Use</a><a href="/legal/cookies">Cookies</a><a href="/legal/gdpr">GDPR</a></div>
+<div class="legal-nav"><a href="/">Home</a><a href="/legal/terms">Terms</a><a href="/legal/privacy">Privacy</a><a href="/legal/acceptable-use">Acceptable Use</a><a href="/legal/cookies">Cookies</a><a href="/legal/gdpr">GDPR</a></div>
 <h1>Cookie Policy</h1>
 <p class="meta">Effective May 15, 2026</p>
 
@@ -229,7 +233,7 @@ const COOKIES_HTML = `<!doctype html><html><head>
 const GDPR_HTML = `<!doctype html><html><head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>GDPR Rights — OpenHeab</title><style>${SHARED_CSS}</style></head><body><div class="wrap">
-<div class="nav"><a href="/">Home</a><a href="/legal/terms">Terms</a><a href="/legal/privacy">Privacy</a><a href="/legal/acceptable-use">Acceptable Use</a><a href="/legal/cookies">Cookies</a><a href="/legal/gdpr">GDPR</a></div>
+<div class="legal-nav"><a href="/">Home</a><a href="/legal/terms">Terms</a><a href="/legal/privacy">Privacy</a><a href="/legal/acceptable-use">Acceptable Use</a><a href="/legal/cookies">Cookies</a><a href="/legal/gdpr">GDPR</a></div>
 <h1>Your GDPR Rights</h1>
 <p class="meta">Article 15-22 compliance · Effective May 15, 2026</p>
 

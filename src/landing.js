@@ -1,20 +1,10 @@
 // ============================================================================
 // Marketing landing + docs + pricing.
-// Server-rendered. Single CSS payload. No JS frameworks. Zero runtime deps.
-//
-// Design principles (Emil Kowalski):
-//   - Specific transition properties, never `all`
-//   - Custom easing curves (no flat ease-in)
-//   - :active scale(0.97) for instant press feedback
-//   - @starting-style + reduced-motion safe
-//   - Stagger entries 30-60ms; never block interaction on decoration
-//   - Numbers live — always re-derived from app + integration registry
+// Uses the shared design system from src/design_system.js.
+// Numbers are live — derived from collectRoutes(app) + primitive count.
 // ============================================================================
 const { collectRoutes } = require('./status_page');
-
-function publicUrl() {
-  return (process.env.OPERATOR_PUBLIC_URL || 'https://openheab.com').replace(/\/$/, '');
-}
+const { head, NAV_HTML, FOOTER_HTML, publicUrl } = require('./design_system');
 
 function primitiveCount() {
   try { return Object.keys(require('./integration').primitives).length; }
@@ -22,7 +12,6 @@ function primitiveCount() {
 }
 
 function layerCount() {
-  // Derived from CLAUDE.md layer numbering; bumped each ship.
   return 67;
 }
 
@@ -31,577 +20,7 @@ function mcpToolCount() {
 }
 
 // ----------------------------------------------------------------------------
-// CSS — one payload, ~7KB. Custom easing variables, no `all` transitions,
-// :active scale feedback, @starting-style enters, reduced-motion safe.
-// ----------------------------------------------------------------------------
-function head(title, description, opts = {}) {
-  const path = opts.path || '/';
-  const canonical = opts.canonical || `${publicUrl()}${path}`;
-  const ogImage = opts.ogImage || `${publicUrl()}/og.svg`;
-  const jsonLd = opts.jsonLd || '';
-  return `<!doctype html><html lang="en"><head>
-<meta charset="utf-8"><title>${title}</title>
-<meta name="description" content="${description}">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<link rel="canonical" href="${canonical}">
-<link rel="icon" type="image/svg+xml" href="/favicon.svg">
-<link rel="apple-touch-icon" href="/favicon.svg">
-<link rel="manifest" href="/site.webmanifest">
-<link rel="alternate" type="application/rss+xml" title="OpenHeab Blog" href="/blog/rss.xml">
-<meta property="og:title" content="${title}">
-<meta property="og:description" content="${description}">
-<meta property="og:type" content="website">
-<meta property="og:url" content="${canonical}">
-<meta property="og:site_name" content="OpenHeab">
-<meta property="og:image" content="${ogImage}">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:site" content="@openheab">
-<meta name="twitter:title" content="${title}">
-<meta name="twitter:description" content="${description}">
-<meta name="twitter:image" content="${ogImage}">
-<meta name="theme-color" content="#08090b">
-<meta name="color-scheme" content="dark">
-${jsonLd}
-<style>
-:root{
-  /* Surface */
-  --bg:#08090b;
-  --bg-elev:#0d0e10;
-  --bg-elev2:#111316;
-  --br:#1d1f23;
-  --br-strong:#2a2c31;
-
-  /* Text */
-  --fg:#f4f4f5;
-  --fg-dim:#a1a1aa;
-  --fg-dim2:#71717a;
-  --fg-dim3:#52525b;
-
-  /* Accent — calm cyan, used sparingly */
-  --acc:#7dd3fc;
-  --acc-strong:#38bdf8;
-  --acc-glow:rgba(125,211,252,0.18);
-  --acc-text:#03161f;
-
-  /* Semantic */
-  --good:#34d399;
-  --warn:#fbbf24;
-  --bad:#f87171;
-
-  /* Type */
-  --mono:ui-monospace,'SF Mono','JetBrains Mono',Menlo,Consolas,monospace;
-  --sans:-apple-system,BlinkMacSystemFont,'Inter','SF Pro Display','Segoe UI',system-ui,sans-serif;
-
-  /* Custom easings — stronger than the built-ins */
-  --ease-out:cubic-bezier(0.23, 1, 0.32, 1);
-  --ease-in-out:cubic-bezier(0.77, 0, 0.175, 1);
-  --ease-snap:cubic-bezier(0.32, 0.72, 0, 1);
-
-  /* Durations */
-  --t-fast:120ms;
-  --t-med:180ms;
-  --t-slow:280ms;
-}
-
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
-body{
-  font:15px/1.55 var(--sans);
-  background:var(--bg);
-  color:var(--fg);
-  font-feature-settings:'cv11','ss01','ss03';
-  background-image:radial-gradient(circle at 50% -200px,rgba(125,211,252,0.06),transparent 700px);
-  min-height:100vh;
-}
-
-::selection{background:var(--acc);color:var(--acc-text)}
-::-moz-selection{background:var(--acc);color:var(--acc-text)}
-
-a{color:var(--acc);text-decoration:none;transition:color var(--t-fast) var(--ease-out)}
-a:hover{color:var(--acc-strong)}
-
-code,pre,.mono{font-family:var(--mono)}
-
-/* ---------- Nav ---------- */
-nav{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  padding:14px 28px;
-  border-bottom:1px solid var(--br);
-  position:sticky;
-  top:0;
-  background:rgba(8,9,11,0.7);
-  backdrop-filter:blur(14px) saturate(180%);
-  -webkit-backdrop-filter:blur(14px) saturate(180%);
-  z-index:50;
-}
-nav .brand{
-  font:600 15px/1 var(--mono);
-  letter-spacing:-0.4px;
-  color:var(--fg);
-  display:inline-flex;
-  align-items:center;
-  gap:6px;
-  transition:opacity var(--t-fast) var(--ease-out);
-}
-nav .brand:hover{opacity:0.85;color:var(--fg)}
-nav .brand .dot{
-  display:inline-block;
-  width:6px;height:6px;
-  background:var(--acc);
-  border-radius:50%;
-  box-shadow:0 0 10px var(--acc-glow);
-}
-nav .links{display:flex;gap:6px;align-items:center}
-nav .links a{
-  color:var(--fg-dim);
-  font-size:13.5px;
-  padding:7px 11px;
-  border-radius:6px;
-  transition:color var(--t-fast) var(--ease-out),background-color var(--t-fast) var(--ease-out);
-}
-nav .links a:hover{color:var(--fg);background:var(--bg-elev)}
-nav .cta{
-  background:var(--fg);
-  color:var(--bg);
-  padding:7px 13px;
-  border-radius:7px;
-  font-weight:600;
-  font-size:13px;
-  border:1px solid var(--fg);
-  transition:transform var(--t-fast) var(--ease-out),background-color var(--t-fast) var(--ease-out);
-  display:inline-flex;align-items:center;gap:5px;
-}
-nav .cta:hover{background:#e4e4e7;color:var(--bg)}
-nav .cta:active{transform:scale(0.97)}
-
-/* ---------- Layout ---------- */
-main{max-width:1080px;margin:0 auto;padding:0 28px}
-
-/* ---------- Hero ---------- */
-.hero{padding:104px 0 80px;position:relative}
-.hero::after{
-  content:'';
-  position:absolute;
-  left:0;right:0;bottom:0;
-  height:1px;
-  background:linear-gradient(90deg,transparent,var(--br),transparent);
-}
-
-.pill{
-  display:inline-flex;
-  gap:8px;
-  align-items:center;
-  padding:5px 11px 5px 9px;
-  border:1px solid var(--br);
-  background:var(--bg-elev);
-  border-radius:99px;
-  font:500 12px/1 var(--mono);
-  color:var(--fg-dim);
-  margin-bottom:28px;
-  transition:border-color var(--t-fast) var(--ease-out);
-}
-.pill:hover{border-color:var(--br-strong)}
-.pill .live{
-  width:6px;height:6px;
-  border-radius:50%;
-  background:var(--good);
-  box-shadow:0 0 8px var(--good);
-  animation:pulse 2.4s var(--ease-in-out) infinite;
-}
-@keyframes pulse{
-  0%,100%{opacity:1;transform:scale(1)}
-  50%{opacity:0.55;transform:scale(0.92)}
-}
-
-.hero h1{
-  font-size:clamp(38px,6vw,64px);
-  line-height:1.02;
-  letter-spacing:-2.2px;
-  margin:0 0 24px;
-  font-weight:600;
-  max-width:920px;
-  color:var(--fg);
-}
-.hero h1 em{
-  font-style:normal;
-  background:linear-gradient(180deg,var(--acc),var(--acc-strong));
-  -webkit-background-clip:text;
-  background-clip:text;
-  color:transparent;
-}
-
-.hero p.lede{
-  font-size:18px;
-  color:var(--fg-dim);
-  max-width:660px;
-  margin:0 0 36px;
-  line-height:1.55;
-  letter-spacing:-0.1px;
-}
-
-/* ---------- Buttons ---------- */
-.btns{display:flex;gap:10px;flex-wrap:wrap}
-.btn{
-  padding:10px 18px;
-  border-radius:8px;
-  font-weight:550;
-  font-size:14px;
-  display:inline-flex;
-  align-items:center;
-  gap:7px;
-  border:1px solid var(--br);
-  background:var(--bg-elev);
-  color:var(--fg);
-  cursor:pointer;
-  transition:
-    transform var(--t-fast) var(--ease-out),
-    background-color var(--t-fast) var(--ease-out),
-    border-color var(--t-fast) var(--ease-out);
-  -webkit-tap-highlight-color:transparent;
-}
-.btn:hover{background:var(--bg-elev2);border-color:var(--br-strong);text-decoration:none}
-.btn:active{transform:scale(0.97)}
-
-.btn.primary{
-  background:var(--fg);
-  color:var(--bg);
-  border-color:var(--fg);
-}
-.btn.primary:hover{background:#e4e4e7;color:var(--bg)}
-
-.btn.ghost{background:transparent}
-.btn.ghost:hover{background:var(--bg-elev)}
-
-.btn .arr{
-  display:inline-block;
-  transition:transform var(--t-fast) var(--ease-out);
-}
-.btn:hover .arr{transform:translateX(2px)}
-
-/* ---------- Metrics ---------- */
-.metrics{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
-  gap:0;
-  margin:56px 0 0;
-  border:1px solid var(--br);
-  border-radius:12px;
-  overflow:hidden;
-  background:var(--bg-elev);
-}
-.metric{
-  padding:20px 22px;
-  border-right:1px solid var(--br);
-  position:relative;
-  transition:background-color var(--t-fast) var(--ease-out);
-}
-.metric:last-child{border-right:0}
-.metric:hover{background:var(--bg-elev2)}
-.metric .v{
-  font:600 28px/1 var(--mono);
-  color:var(--fg);
-  letter-spacing:-1.2px;
-  font-feature-settings:'tnum';
-}
-.metric .l{
-  font:500 10.5px/1 var(--mono);
-  color:var(--fg-dim2);
-  text-transform:uppercase;
-  letter-spacing:1.4px;
-  margin-top:7px;
-}
-
-/* ---------- Sections ---------- */
-.section{padding:80px 0;border-bottom:1px solid var(--br)}
-.section:last-of-type{border-bottom:0}
-.section h2{
-  font-size:34px;
-  margin:0 0 14px;
-  letter-spacing:-1.4px;
-  font-weight:600;
-  line-height:1.1;
-  max-width:760px;
-}
-.section .sub{
-  color:var(--fg-dim);
-  margin:0 0 44px;
-  max-width:620px;
-  font-size:16px;
-  line-height:1.6;
-}
-.eyebrow{
-  font:500 11px/1 var(--mono);
-  color:var(--acc);
-  text-transform:uppercase;
-  letter-spacing:1.8px;
-  margin:0 0 14px;
-}
-
-/* ---------- Cards ---------- */
-.grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
-  gap:12px;
-}
-.card{
-  background:var(--bg-elev);
-  border:1px solid var(--br);
-  border-radius:12px;
-  padding:22px;
-  transition:
-    border-color var(--t-med) var(--ease-out),
-    background-color var(--t-med) var(--ease-out),
-    transform var(--t-med) var(--ease-out);
-}
-.card:hover{
-  border-color:var(--br-strong);
-  background:var(--bg-elev2);
-  transform:translateY(-1px);
-}
-.card .icn{
-  font:500 10.5px/1 var(--mono);
-  color:var(--acc);
-  margin-bottom:12px;
-  letter-spacing:1.4px;
-  text-transform:uppercase;
-}
-.card h3{
-  margin:0 0 8px;
-  font-size:15.5px;
-  font-weight:600;
-  color:var(--fg);
-  letter-spacing:-0.2px;
-}
-.card p{
-  margin:0;
-  color:var(--fg-dim);
-  font-size:13.5px;
-  line-height:1.55;
-}
-
-/* ---------- Layer grid ---------- */
-.layers{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
-  gap:1px;
-  background:var(--br);
-  border:1px solid var(--br);
-  border-radius:12px;
-  overflow:hidden;
-}
-.layer{
-  background:var(--bg-elev);
-  padding:18px 20px;
-  transition:background-color var(--t-fast) var(--ease-out);
-}
-.layer:hover{background:var(--bg-elev2)}
-.layer .ln{
-  font:600 10.5px/1 var(--mono);
-  color:var(--acc);
-  margin-bottom:8px;
-  letter-spacing:1.4px;
-}
-.layer h4{
-  font-size:13.5px;
-  margin:0 0 8px;
-  font-weight:600;
-  color:var(--fg);
-}
-.layer .prims{
-  font:500 12px/1.55 var(--mono);
-  color:var(--fg-dim);
-  word-break:break-word;
-}
-
-/* ---------- Code window ---------- */
-.codewin{
-  background:var(--bg-elev);
-  border:1px solid var(--br);
-  border-radius:12px;
-  overflow:hidden;
-  margin:8px 0;
-}
-.codewin .bar{
-  display:flex;
-  align-items:center;
-  gap:6px;
-  padding:11px 14px;
-  background:var(--bg-elev2);
-  border-bottom:1px solid var(--br);
-}
-.codewin .bar .dots{display:flex;gap:6px;align-items:center}
-.codewin .bar .dot{
-  width:11px;height:11px;border-radius:50%;
-  background:var(--bg);
-}
-.codewin .bar .title{
-  margin-left:10px;
-  font:500 12px/1 var(--mono);
-  color:var(--fg-dim2);
-}
-pre.code{
-  background:transparent;
-  padding:18px 22px;
-  font:13px/1.65 var(--mono);
-  overflow:auto;
-  margin:0;
-  color:var(--fg-dim);
-  font-feature-settings:'liga' 0;
-}
-pre.code .k{color:var(--acc)}
-pre.code .s{color:#bef264}
-pre.code .c{color:var(--fg-dim3);font-style:italic}
-pre.code .n{color:#fde68a}
-
-/* ---------- Tables ---------- */
-.tablewrap{
-  border:1px solid var(--br);
-  border-radius:12px;
-  overflow:hidden;
-  background:var(--bg-elev);
-}
-table{width:100%;border-collapse:collapse;font-size:14px}
-th,td{padding:14px 18px;text-align:left;border-bottom:1px solid var(--br)}
-tr:last-child td{border-bottom:0}
-tr{transition:background-color var(--t-fast) var(--ease-out)}
-tbody tr:hover{background:var(--bg-elev2)}
-th{
-  font:600 11px/1 var(--mono);
-  color:var(--fg-dim2);
-  text-transform:uppercase;
-  letter-spacing:1.2px;
-  background:var(--bg-elev2);
-}
-.price{
-  font:600 22px/1 var(--mono);
-  color:var(--fg);
-  letter-spacing:-0.8px;
-  font-feature-settings:'tnum';
-}
-.price small{font-size:12.5px;color:var(--fg-dim2);font-weight:400;letter-spacing:0}
-
-/* ---------- Footer ---------- */
-footer{
-  max-width:1080px;
-  margin:60px auto 40px;
-  padding:24px 28px 0;
-  border-top:1px solid var(--br);
-  color:var(--fg-dim2);
-  font-size:12px;
-  display:flex;
-  flex-wrap:wrap;
-  justify-content:space-between;
-  gap:16px;
-}
-footer .l{display:flex;gap:18px;flex-wrap:wrap}
-footer a{color:var(--fg-dim)}
-footer a:hover{color:var(--fg)}
-
-/* ---------- Enter animations (fresh page loads) ---------- */
-.hero h1, .hero p.lede, .hero .btns, .hero .pill, .hero .metrics{
-  animation:rise 600ms var(--ease-out) both;
-}
-.hero .pill{animation-delay:0ms}
-.hero h1{animation-delay:60ms}
-.hero p.lede{animation-delay:120ms}
-.hero .btns{animation-delay:180ms}
-.hero .metrics{animation-delay:240ms}
-
-@keyframes rise{
-  from{opacity:0;transform:translateY(8px)}
-  to{opacity:1;transform:translateY(0)}
-}
-
-/* Card stagger */
-.grid > .card{
-  animation:rise 500ms var(--ease-out) both;
-}
-.grid > .card:nth-child(1){animation-delay:0ms}
-.grid > .card:nth-child(2){animation-delay:40ms}
-.grid > .card:nth-child(3){animation-delay:80ms}
-.grid > .card:nth-child(4){animation-delay:120ms}
-.grid > .card:nth-child(5){animation-delay:160ms}
-.grid > .card:nth-child(6){animation-delay:200ms}
-.grid > .card:nth-child(7){animation-delay:240ms}
-.grid > .card:nth-child(8){animation-delay:280ms}
-
-/* ---------- Reduced motion ---------- */
-@media (prefers-reduced-motion:reduce){
-  *,*::before,*::after{
-    animation-duration:1ms !important;
-    animation-iteration-count:1 !important;
-    transition-duration:1ms !important;
-  }
-  html{scroll-behavior:auto}
-  .pill .live{animation:none}
-}
-
-/* ---------- Touch — disable hover effects ---------- */
-@media (hover:none){
-  .card:hover,.layer:hover,.metric:hover,tbody tr:hover{
-    background:var(--bg-elev);
-    transform:none;
-    border-color:var(--br);
-  }
-}
-
-/* ---------- Mobile ---------- */
-@media (max-width:760px){
-  nav{padding:12px 18px}
-  nav .links a:not(.cta){display:none}
-  nav .links{gap:0}
-  main{padding:0 18px}
-  .hero{padding:68px 0 56px}
-  .section{padding:56px 0}
-  .section h2{font-size:26px;letter-spacing:-1px}
-  .metric{padding:16px 18px}
-  .metric .v{font-size:24px}
-  th,td{padding:11px 12px;font-size:13px}
-  .layer{padding:14px 16px}
-  pre.code{padding:14px 16px;font-size:12px}
-}
-
-@media (max-width:420px){
-  .hero h1{font-size:32px;letter-spacing:-1.4px}
-  .hero p.lede{font-size:16px}
-}
-</style></head><body>`;
-}
-
-function nav() {
-  return `<nav>
-  <a href="/" class="brand">openheab<span class="dot"></span></a>
-  <div class="links">
-    <a href="/docs">Docs</a>
-    <a href="/console">Console</a>
-    <a href="/pricing">Pricing</a>
-    <a href="https://github.com/jmtrades/openheab-agent-infra">GitHub</a>
-    <a href="/signup" class="cta">Get started <span aria-hidden="true">→</span></a>
-  </div>
-</nav>`;
-}
-
-function footer() {
-  return `<footer>
-  <span>Apache-2.0 · open source · self-hostable</span>
-  <span class="l">
-    <a href="/openapi.json">openapi</a>
-    <a href="/.well-known/agents.json">agents.json</a>
-    <a href="/llms.txt">llms.txt</a>
-    <a href="/mcp/manifest">mcp manifest</a>
-    <a href="/status">status</a>
-    <a href="https://github.com/jmtrades/openheab-agent-infra">github</a>
-  </span>
-</footer></body></html>`;
-}
-
-// ----------------------------------------------------------------------------
 // Layers — single source of truth for the landing's layer grid.
-// Each row [code, name, top-line-of-primitives]. Truncated for visual rhythm.
 // ----------------------------------------------------------------------------
 const LAYERS = [
   ['L1', 'Kernel', 'identity · secrets · aliases · storage · cost · analytics · portability · intelligence'],
@@ -648,16 +67,14 @@ function renderLanding(app) {
   const mcp = mcpToolCount();
   const desc = `${prims} primitives across ${layers} layers. Signed DID. USDC bank on Base. Virtual + physical cards. KYC. Memory. Marketplaces. Cognition. Plus the AGI-era substrate: goal stacks, value lock-boxes, treaties, shutdown protocols, emergency stops, drift detection. Open source. Self-hostable.`;
 
-  let jsonLd = '';
+  let jsonLd;
   try {
     const seo = require('./primitives/seo');
-    jsonLd = `<script type="application/ld+json">${seo.organizationJsonLd()}</script>
-<script type="application/ld+json">${seo.softwareApplicationJsonLd(prims, routes.length)}</script>
-<script type="application/ld+json">${seo.faqJsonLd()}</script>
-<script type="application/ld+json">${seo.searchActionJsonLd()}</script>`;
+    jsonLd = [seo.organizationJsonLd(), seo.softwareApplicationJsonLd(prims, routes.length), seo.faqJsonLd(), seo.searchActionJsonLd()];
   } catch {}
 
-  return head('OpenHeab — agent-native substrate for AI agents and AGI', desc, { path: '/', jsonLd }) + nav() + `<main>
+  return head('OpenHeab — agent-native substrate for AI agents and AGI', desc, { path: '/', jsonLd })
+    + NAV_HTML('home') + `<main>
 
 <section class="hero">
   <span class="pill"><span class="live" aria-hidden="true"></span> ${prims} primitives live · ${routes.length} routes · ${layers} layers</span>
@@ -761,19 +178,19 @@ ${LAYERS.map(([code, name, items]) => `    <div class="layer"><div class="ln">${
   </div>
 </section>
 
-</main>` + footer();
+</main>` + FOOTER_HTML();
 }
 
 // ----------------------------------------------------------------------------
-// Docs
+// Docs (the canonical /docs page — supersedes the /docs handler in docs_page.js
+// because landing.js's primitive registers earlier in integration.js).
 // ----------------------------------------------------------------------------
 function renderDocs(app) {
   const prims = primitiveCount();
   const layers = layerCount();
   return head('OpenHeab Docs — agent-native substrate API',
     `${prims} primitives across ${layers} layers. Identity, USDC bank, KYC, email, memory, marketplaces, perception, AGI cognition.`,
-    { path: '/docs' }
-  ) + nav() + `<main>
+    { path: '/docs' }) + NAV_HTML('docs') + `<main>
 <section class="hero" style="padding:64px 0 48px">
   <span class="pill">api version v1</span>
   <h1 style="font-size:clamp(32px,5vw,48px);max-width:760px">Documentation</h1>
@@ -846,12 +263,12 @@ function renderDocs(app) {
     <div class="card"><h3><a href="/openapi.json">OpenAPI spec</a></h3><p>Full machine-readable spec. Import into Postman, Insomnia, Bruno.</p></div>
     <div class="card"><h3><a href="/console">Live route console</a></h3><p>Browse all live routes by primitive family. Filter by HTTP verb.</p></div>
     <div class="card"><h3><a href="/mcp/manifest">MCP manifest</a></h3><p>${mcpToolCount()}+ tools exposed for Claude / OpenAI / Cursor / VS Code clients.</p></div>
+    <div class="card"><h3><a href="/sdk">SDK examples</a></h3><p>Copy-paste snippets in curl, Python, TypeScript, Go, Rust.</p></div>
     <div class="card"><h3><a href="https://github.com/jmtrades/openheab-agent-infra/blob/main/BILLION_DOLLAR_PATH.md">BILLION_DOLLAR_PATH.md</a></h3><p>The 7-year arc to $1B+ ARR. 14 revenue layers, capital plan, moats.</p></div>
-    <div class="card"><h3><a href="https://github.com/jmtrades/openheab-agent-infra/blob/main/REVENUE_NOW.md">REVENUE_NOW.md</a></h3><p>The 90-day path to $10M ARR. Week-by-week execution.</p></div>
     <div class="card"><h3><a href="https://github.com/jmtrades/openheab-agent-infra/blob/main/CLAUDE.md">CLAUDE.md</a></h3><p>Project memory + architectural conventions. Auto-loaded by Claude Code.</p></div>
   </div>
 </section>
-</main>` + footer();
+</main>` + FOOTER_HTML();
 }
 
 // ----------------------------------------------------------------------------
@@ -860,8 +277,7 @@ function renderDocs(app) {
 function renderPricing() {
   return head('OpenHeab — pricing',
     'Free to self-host. Pro $99/mo. Scale $349/mo. Enterprise $2,499+/mo. Plus 1% USDC transfers, 2% card interchange, 30% marketplace, 10% inference.',
-    { path: '/pricing' }
-  ) + nav() + `<main>
+    { path: '/pricing' }) + NAV_HTML('pricing') + `<main>
 <section class="hero">
   <span class="pill">simple · transparent</span>
   <h1>Pay only for what you use.</h1>
@@ -924,7 +340,7 @@ function renderPricing() {
   </div>
   <p style="color:var(--fg-dim2);margin-top:18px;font-size:13px">Credits never expire on Pro+ and Enterprise. Starter and Growth credits expire after 12 months.</p>
 </section>
-</main>` + footer();
+</main>` + FOOTER_HTML();
 }
 
 // ----------------------------------------------------------------------------

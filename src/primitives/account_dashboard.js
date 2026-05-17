@@ -84,12 +84,13 @@ function escapeHtml(s) {
   return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 }
 
+const { head: dsHead, NAV_HTML, FOOTER_HTML } = require('../design_system');
+
 function renderDashboard(data) {
   const agent = data.agent || {};
   const wallet = data.wallet || {};
   const kyc = data.kyc || {};
-  const kycColor = kyc.status === 'verified' ? '#22c55e' : (kyc.status ? '#eab308' : '#666');
-  // Escape every user-controlled value before HTML interpolation (XSS guard)
+  const kycColor = kyc.status === 'verified' ? 'var(--good)' : (kyc.status ? 'var(--warn)' : 'var(--fg-dim2)');
   const did = escapeHtml(data.did);
   const didUrl = encodeURIComponent(data.did);
   const agentName = escapeHtml(agent.name || 'Your Agent');
@@ -101,70 +102,48 @@ function renderDashboard(data) {
     let entry = {}; try { entry = typeof e.entry === 'string' ? JSON.parse(e.entry) : e.entry; } catch {}
     const type = escapeHtml(entry.event_type || 'unknown');
     return `<div class="event"><span class="event-type">${type}</span><span class="event-time">${escapeHtml(timeAgo(e.created_at))}</span></div>`;
-  }).join('') || '<div class="empty">No activity yet. Try the SDK examples!</div>';
+  }).join('') || '<div class="empty">No activity yet. Try the SDK examples.</div>';
 
   const cardsHtml = (data.cards || []).map(c =>
     `<div class="card-row"><span><b>•••• ${escapeHtml(c.last4 || '----')}</b> ${escapeHtml(c.brand || '')}</span><span class="${c.status === 'active' ? 'ok' : 'muted'}">${escapeHtml(c.status || '')}</span></div>`
   ).join('') || '<div class="empty">No cards issued yet.</div>';
 
-  return `<!doctype html><html><head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>${did} — Dashboard</title>
-<style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif; background: #0a0a0f; color: #e7e7ee; line-height: 1.6; }
-.wrap { max-width: 1180px; margin: 0 auto; padding: 32px 24px 80px; }
-.topnav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; padding-bottom: 24px; border-bottom: 1px solid #1a1a25; }
-.topnav .logo { font-weight: 700; font-size: 18px; color: #fff; text-decoration: none; letter-spacing: -0.3px; }
-.topnav .nav-links a { color: #888; margin-left: 22px; font-size: 14px; text-decoration: none; }
-.topnav .nav-links a:hover { color: #fff; }
-.hero { margin-bottom: 32px; }
-.hero h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 6px; }
-.did { font-family: 'SF Mono', monospace; font-size: 13px; color: #888; word-break: break-all; }
-.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin: 24px 0 40px; }
-.kpi { background: #14141c; border: 1px solid #1a1a25; border-radius: 10px; padding: 18px 20px; }
-.kpi .l { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
-.kpi .v { font-size: 24px; font-weight: 700; letter-spacing: -0.5px; }
-.kpi .v.muted { color: #666; }
-.kpi .sub { font-size: 12px; color: #888; margin-top: 4px; }
-.grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 18px; }
-@media (max-width: 880px) { .grid { grid-template-columns: 1fr; } }
-.panel { background: #14141c; border: 1px solid #1a1a25; border-radius: 12px; padding: 22px 24px; }
-.panel h2 { font-size: 14px; color: #aaa; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; font-weight: 500; }
-.event { display: flex; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid #1a1a25; font-family: 'SF Mono', monospace; font-size: 12px; }
-.event:last-child { border-bottom: 0; }
-.event-type { color: #e7e7ee; }
-.event-time { color: #666; }
-.empty { color: #555; font-size: 13px; padding: 12px 0; text-align: center; }
-.card-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #1a1a25; font-family: 'SF Mono', monospace; font-size: 13px; }
-.card-row:last-child { border-bottom: 0; }
-.card-row .ok { color: #22c55e; }
-.card-row .muted { color: #666; }
-.actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
-.btn { padding: 8px 14px; background: #1a1a25; color: #ccc; text-decoration: none; border-radius: 6px; font-size: 13px; transition: all 0.15s; border: 1px solid #25253a; }
-.btn:hover { background: #25253a; color: #fff; }
-.btn.primary { background: #4f46e5; color: #fff; border-color: transparent; }
-.btn.primary:hover { background: #4338ca; }
-.address { font-family: 'SF Mono', monospace; font-size: 12px; color: #aaa; word-break: break-all; background: #0f0f17; padding: 8px 10px; border-radius: 4px; margin-top: 6px; }
-.pill { display: inline-block; padding: 3px 10px; border-radius: 100px; font-size: 11px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; }
-</style></head><body><div class="wrap">
+  const extraHead = `<style>
+.dash-hero{padding:40px 0 24px}
+.dash-hero h1{font-size:28px;letter-spacing:-0.8px;margin-bottom:6px;font-weight:600;color:var(--fg)}
+.dash-did{font-family:var(--mono);font-size:12.5px;color:var(--fg-dim);word-break:break-all}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:24px 0 32px}
+.kpi{background:var(--bg-elev);border:1px solid var(--br);border-radius:10px;padding:16px 20px;transition:border-color var(--t-fast) var(--ease-out)}
+.kpi:hover{border-color:var(--br-strong)}
+.kpi .l{font:500 10.5px/1 var(--mono);color:var(--fg-dim2);text-transform:uppercase;letter-spacing:1.4px;margin-bottom:7px}
+.kpi .v{font:600 22px/1 var(--mono);letter-spacing:-1px;font-feature-settings:'tnum'}
+.kpi .sub{font-size:12px;color:var(--fg-dim);margin-top:6px}
+.dash-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:14px}
+@media (max-width:880px){.dash-grid{grid-template-columns:1fr}}
+.panel{background:var(--bg-elev);border:1px solid var(--br);border-radius:12px;padding:22px 24px;transition:border-color var(--t-fast) var(--ease-out)}
+.panel:hover{border-color:var(--br-strong)}
+.panel h2{font:500 11px/1 var(--mono);color:var(--fg-dim2);text-transform:uppercase;letter-spacing:1.4px;margin-bottom:14px;font-weight:500}
+.event{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--br);font-family:var(--mono);font-size:12px}
+.event:last-child{border-bottom:0}
+.event-type{color:var(--fg)}
+.event-time{color:var(--fg-dim2)}
+.empty{color:var(--fg-dim2);font-size:13px;padding:12px 0;text-align:center}
+.card-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--br);font-family:var(--mono);font-size:13px}
+.card-row:last-child{border-bottom:0}
+.card-row .ok{color:var(--good)}
+.card-row .muted{color:var(--fg-dim2)}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.address{font-family:var(--mono);font-size:12px;color:var(--fg-dim);word-break:break-all;background:var(--bg);padding:9px 11px;border-radius:6px;margin-top:6px;border:1px solid var(--br)}
+</style>`;
 
-<nav class="topnav">
-  <a class="logo" href="/">OpenHeab</a>
-  <div class="nav-links">
-    <a href="/docs">Docs</a>
-    <a href="/sdk">SDK</a>
-    <a href="/pricing">Pricing</a>
-    <a href="/activity">Activity</a>
-    <a href="/dashboard" style="color:#fff">Dashboard</a>
-  </div>
-</nav>
-
-<section class="hero">
+  return dsHead(`${did} — Dashboard`,
+    `OpenHeab dashboard for agent ${did}. Wallet, KYC, cards, API keys, recent activity.`,
+    { path: '/dashboard', extraHead }) +
+    NAV_HTML('dashboard') + `<main>
+<section class="dash-hero">
   <h1>${agentName}</h1>
-  <div class="did">${did}</div>
-  ${agent.created_at ? `<div style="color:#666;font-size:12px;margin-top:4px">Created ${timeAgo(agent.created_at)}</div>` : ''}
+  <div class="dash-did">${did}</div>
+  ${agent.created_at ? `<div style="color:var(--fg-dim2);font-size:12px;margin-top:6px">Created ${timeAgo(agent.created_at)}</div>` : ''}
 </section>
 
 <div class="kpis">
@@ -186,20 +165,20 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif; back
   <div class="kpi">
     <div class="l">Webhooks</div>
     <div class="v">${data.webhooks?.active || 0}</div>
-    <div class="sub">Subscribed</div>
+    <div class="sub">Active subscriptions</div>
   </div>
 </div>
 
-<div class="grid">
+<div class="dash-grid">
   <div class="panel">
-    <h2>Recent Activity</h2>
+    <h2>Recent activity</h2>
     ${eventsHtml}
   </div>
   <div>
-    <div class="panel" style="margin-bottom:18px">
+    <div class="panel" style="margin-bottom:14px">
       <h2>USDC Wallet</h2>
       ${wallet.address ? `
-        <div style="color:#aaa;font-size:13px">${walletNetwork} · ${walletAsset}</div>
+        <div style="color:var(--fg-dim);font-size:13px">${walletNetwork} · ${walletAsset}</div>
         <div class="address">${walletAddress}</div>
         <div class="actions">
           <a class="btn primary" href="/v1/agents/${didUrl}/wallet">Balance</a>
@@ -207,44 +186,37 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif; back
         </div>
       ` : '<div class="empty">No wallet provisioned yet.</div>'}
     </div>
-
     <div class="panel">
       <h2>Cards</h2>
       ${cardsHtml}
       <div class="actions">
-        <a class="btn primary" href="/v1/agents/${didUrl}/cards/issue">Issue Card</a>
-        <a class="btn" href="/v1/agents/${didUrl}/cards">View All</a>
+        <a class="btn primary" href="/v1/agents/${didUrl}/cards/issue">Issue card</a>
+        <a class="btn" href="/v1/agents/${didUrl}/cards">View all</a>
       </div>
     </div>
   </div>
 </div>
 
-<div style="margin-top:20px" class="panel">
+<div class="panel" style="margin-top:14px">
   <h2>Quick actions</h2>
   <div class="actions">
-    <a class="btn primary" href="/v1/agents/${didUrl}/keys">Manage API Keys</a>
-    <a class="btn" href="/v1/agents/${didUrl}/webhooks/subscriptions">Webhook Subscriptions</a>
-    <a class="btn" href="/v1/agents/${didUrl}/kyc">KYC Status</a>
+    <a class="btn primary" href="/v1/agents/${didUrl}/keys">API keys</a>
+    <a class="btn" href="/v1/agents/${didUrl}/webhooks/subscriptions">Webhooks</a>
+    <a class="btn" href="/v1/agents/${didUrl}/kyc">KYC</a>
     <a class="btn" href="/v1/agents/${didUrl}/savings">Savings</a>
     <a class="btn" href="/v1/agents/${didUrl}/lending">Lending</a>
-    <a class="btn" href="/v1/legal/gdpr/export" onclick="event.preventDefault();exportData('${did.replace(/'/g, '&#39;')}')">Export My Data</a>
+    <a class="btn ghost" href="#" onclick="event.preventDefault();exportData('${did.replace(/'/g, '&#39;')}')">Export data</a>
   </div>
 </div>
-
-</div>
+</main>
 <script>
-async function exportData(did) {
+async function exportData(did){
   if (!confirm('Request a signed JSON bundle of all your data?')) return;
-  const r = await fetch('/v1/legal/gdpr/export', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ agent_did: did })
-  });
+  const r = await fetch('/v1/legal/gdpr/export',{ method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ agent_did: did }) });
   const j = await r.json();
   alert('Request submitted: ' + j.request_id + '\\nReady within 24h.');
 }
-</script>
-</body></html>`;
+</script>` + FOOTER_HTML();
 }
 
 function registerAccountDashboardRoutes(app, pool, verifyAgentAuth) {
@@ -261,22 +233,32 @@ function registerAccountDashboardRoutes(app, pool, verifyAgentAuth) {
       } catch {}
     }
     if (!did) {
-      // No DID supplied — show a welcome page that prompts for one
       res.set('content-type', 'text/html');
-      return res.send(`<!doctype html><html><head><title>OpenHeab — Dashboard</title>
-<style>body{font-family:-apple-system,sans-serif;background:#0a0a0f;color:#e7e7ee;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0}
-.box{max-width:480px;padding:48px;text-align:center}h1{font-size:28px;margin-bottom:16px;letter-spacing:-0.5px}
-p{color:#888;margin-bottom:24px}input{width:100%;padding:12px 14px;background:#14141c;border:1px solid #1f1f2a;color:#fff;border-radius:8px;font-family:monospace;margin-bottom:12px;outline:none}
-input:focus{border-color:#4f46e5}button{padding:12px 24px;background:#4f46e5;color:#fff;border:0;border-radius:8px;font-weight:600;cursor:pointer;width:100%}
-button:hover{background:#4338ca}a{color:#818cf8;font-size:13px}</style></head><body>
-<div class="box"><h1>Open your agent dashboard</h1>
-<p>Paste your DID (or send a Bearer API key request to <code style="background:#14141c;padding:2px 6px;border-radius:4px;font-size:12px">/dashboard</code>)</p>
-<form onsubmit="event.preventDefault();const v=document.getElementById('did').value.trim();if(v.startsWith('opk_')||v.startsWith('oh_live_')){fetch('/dashboard',{headers:{authorization:'Bearer '+v}}).then(r=>r.text()).then(html=>{document.open();document.write(html);document.close()})}else{window.location='/dashboard?did='+encodeURIComponent(v)}">
-  <input id="did" placeholder="did:op:... or opk_/oh_live_ API key" autofocus required/>
-  <button>Open dashboard</button>
-</form>
-<p style="margin-top:24px"><a href="/signup">Don't have an account? Sign up</a> · <a href="/demo">Try the demo</a></p>
-</div></body></html>`);
+      const extraHead = `<style>
+.signin-shell{min-height:calc(100vh - 120px);display:flex;align-items:center;justify-content:center;padding:40px 0}
+.signin-card{max-width:440px;width:100%;text-align:center;background:var(--bg-elev);border:1px solid var(--br);border-radius:14px;padding:36px 32px;animation:rise 500ms var(--ease-out) both}
+.signin-card h1{font-size:24px;margin-bottom:10px;letter-spacing:-0.6px;font-weight:600}
+.signin-card p{color:var(--fg-dim);margin-bottom:22px;font-size:14px}
+.signin-card form{display:flex;flex-direction:column;gap:10px}
+.signin-card button{padding:11px 18px;background:var(--fg);color:var(--bg);border:0;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;font-family:var(--sans);transition:transform var(--t-fast) var(--ease-out),background-color var(--t-fast) var(--ease-out)}
+.signin-card button:hover{background:#e4e4e7}
+.signin-card button:active{transform:scale(0.97)}
+.signin-card .alt{margin-top:20px;font-size:13px;color:var(--fg-dim2)}
+</style>`;
+      return res.send(dsHead('OpenHeab — Sign in', 'Open your OpenHeab agent dashboard.', { path: '/dashboard', extraHead })
+        + NAV_HTML() + `<main>
+<div class="signin-shell">
+  <div class="signin-card">
+    <h1>Open your dashboard</h1>
+    <p>Paste your DID, or use a <code>Bearer</code> API key in the Authorization header.</p>
+    <form onsubmit="event.preventDefault();const v=document.getElementById('did').value.trim();if(v.startsWith('opk_')||v.startsWith('oh_live_')){fetch('/dashboard',{headers:{authorization:'Bearer '+v}}).then(r=>r.text()).then(html=>{document.open();document.write(html);document.close()})}else{window.location='/dashboard?did='+encodeURIComponent(v)}">
+      <input id="did" placeholder="did:op:… or opk_/oh_live_ API key" autofocus required type="text"/>
+      <button>Open dashboard <span class="arr">→</span></button>
+    </form>
+    <p class="alt"><a href="/signup">No account? Sign up</a> · <a href="/demo">Try the demo</a></p>
+  </div>
+</div>
+</main>` + FOOTER_HTML());
     }
     try {
       const data = await gatherAccount(pool, did);

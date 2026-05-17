@@ -97,58 +97,55 @@ async function provisionDemoAgent(pool, auditChain) {
   return { did, steps, wallet: walletAddress, card_last4: last4 };
 }
 
+const { head: dsHead, NAV_HTML, FOOTER_HTML } = require('../design_system');
+
 function renderDemoHtml(agent, integration) {
   const stepCount = agent.steps.length;
   const stepsHtml = agent.steps.map((s, i) => `
-    <div class="step">
-      <div class="step-num">${i + 1}</div>
-      <div class="step-body">
-        <div class="step-name">${s.step}</div>
-        <div class="step-detail">${Object.entries(s).filter(([k]) => k !== 'step').map(([k, v]) => `<span class="kv"><b>${k}</b>: ${v}</span>`).join(' ')}</div>
+    <div class="demo-step">
+      <div class="demo-step-num">${i + 1}</div>
+      <div class="demo-step-body">
+        <div class="demo-step-name">${s.step}</div>
+        <div class="demo-step-detail">${Object.entries(s).filter(([k]) => k !== 'step').map(([k, v]) => `<span class="kv"><b>${k}</b>: ${v}</span>`).join(' ')}</div>
       </div>
     </div>
   `).join('');
 
-  return `<!doctype html><html><head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>OpenHeab — Live Demo</title>
-<style>
-*, *::before, *::after { box-sizing: border-box; }
-body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif; background: #0a0a0f; color: #e7e7ee; line-height: 1.6; }
-.wrap { max-width: 980px; margin: 0 auto; padding: 48px 24px; }
-header { margin-bottom: 48px; }
-h1 { font-size: 48px; font-weight: 700; letter-spacing: -1.5px; margin: 0 0 12px 0; background: linear-gradient(120deg, #fff 30%, #888 70%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-.tagline { color: #999; font-size: 18px; margin: 0; }
-.callout { background: #181822; border: 1px solid #2a2a36; border-radius: 12px; padding: 20px 24px; margin: 24px 0 40px 0; }
-.callout b { color: #fff; }
-.section { margin: 48px 0; }
-.section h2 { font-size: 24px; margin: 0 0 24px 0; letter-spacing: -0.3px; }
-.step { display: flex; gap: 16px; padding: 16px 20px; background: #14141c; border-radius: 8px; margin-bottom: 12px; border-left: 3px solid #4f46e5; }
-.step-num { width: 28px; height: 28px; background: #4f46e5; color: #fff; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px; flex-shrink: 0; }
-.step-body { flex: 1; min-width: 0; }
-.step-name { font-weight: 600; text-transform: capitalize; margin-bottom: 4px; }
-.step-detail { color: #aaa; font-size: 14px; font-family: 'SF Mono', monospace; word-break: break-all; }
-.kv { display: inline-block; margin-right: 16px; }
-.kv b { color: #ccc; font-weight: 500; }
-.actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 32px; }
-.btn { display: inline-block; padding: 14px 24px; background: #4f46e5; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; transition: all 0.15s; font-size: 15px; }
-.btn:hover { background: #4338ca; transform: translateY(-1px); }
-.btn.secondary { background: #1a1a25; border: 1px solid #2a2a3a; }
-.btn.secondary:hover { background: #25253a; }
-.code { background: #0f0f17; border: 1px solid #20202a; padding: 16px; border-radius: 8px; font-family: 'SF Mono', monospace; font-size: 13px; overflow-x: auto; color: #c5c5d5; }
-footer { margin-top: 80px; padding-top: 32px; border-top: 1px solid #20202a; color: #666; font-size: 13px; }
-footer a { color: #888; }
-.metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin: 24px 0; }
-.metric { background: #14141c; padding: 16px; border-radius: 8px; text-align: center; }
-.metric-value { font-size: 28px; font-weight: 700; color: #fff; margin-bottom: 4px; }
-.metric-label { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
-</style></head><body><div class="wrap">
-
-<header>
-  <h1>OpenHeab is live.</h1>
-  <p class="tagline">You just visited an agent infrastructure substrate. In ~200ms, we provisioned a brand-new AI agent for you with everything below.</p>
-</header>
+  const extraHead = `<style>
+.demo-hero{padding:48px 0 24px}
+.demo-hero h1{font-size:clamp(36px,5vw,52px);line-height:1.05;letter-spacing:-1.8px;font-weight:600;margin-bottom:10px}
+.demo-hero h1 em{font-style:normal;background:linear-gradient(180deg,var(--acc),var(--acc-strong));-webkit-background-clip:text;background-clip:text;color:transparent}
+.demo-hero .lede{color:var(--fg-dim);font-size:17px;margin:0;max-width:680px}
+.callout{background:var(--bg-elev);border:1px solid var(--br);border-radius:12px;padding:18px 22px;margin:22px 0 36px;color:var(--fg-dim);font-size:14px;line-height:1.55}
+.callout b{color:var(--fg)}
+.metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0;margin:24px 0 36px;border:1px solid var(--br);border-radius:12px;overflow:hidden;background:var(--bg-elev)}
+.metric-grid .metric{padding:18px 20px;border-right:1px solid var(--br);transition:background-color var(--t-fast) var(--ease-out)}
+.metric-grid .metric:last-child{border-right:0}
+.metric-grid .metric:hover{background:var(--bg-elev2)}
+.metric-value{font:600 26px/1 var(--mono);color:var(--fg);letter-spacing:-1.2px;font-feature-settings:'tnum';margin-bottom:6px}
+.metric-label{font:500 10.5px/1 var(--mono);color:var(--fg-dim2);text-transform:uppercase;letter-spacing:1.4px}
+.demo-section{margin:40px 0}
+.demo-section h2{font-size:22px;letter-spacing:-0.5px;margin:0 0 20px;font-weight:600}
+.demo-step{display:flex;gap:16px;padding:14px 18px;background:var(--bg-elev);border-radius:10px;margin-bottom:8px;border:1px solid var(--br);border-left:3px solid var(--acc);transition:border-color var(--t-fast) var(--ease-out),background-color var(--t-fast) var(--ease-out)}
+.demo-step:hover{background:var(--bg-elev2)}
+.demo-step-num{width:26px;height:26px;background:var(--bg);color:var(--acc);border-radius:50%;display:flex;align-items:center;justify-content:center;font:600 12.5px/1 var(--mono);flex-shrink:0;border:1px solid var(--br)}
+.demo-step-body{flex:1;min-width:0}
+.demo-step-name{font:600 13.5px/1.3 var(--sans);text-transform:capitalize;margin-bottom:3px;color:var(--fg)}
+.demo-step-detail{color:var(--fg-dim);font:500 12px/1.55 var(--mono);word-break:break-all}
+.kv{display:inline-block;margin-right:14px}
+.kv b{color:var(--fg-dim2);font-weight:500}
+.demo-code{background:var(--bg-elev);border:1px solid var(--br);padding:14px 16px;border-radius:8px;font:13px/1.65 var(--mono);overflow:auto;color:var(--fg-dim);word-break:break-all}
+.demo-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+</style>`;
+  return dsHead('Live Demo — OpenHeab',
+    'You just visited an agent-native infrastructure substrate. Live demo with a brand-new agent provisioned in 200ms.',
+    { path: '/demo', extraHead })
+    + NAV_HTML('demo') + `<main>
+<section class="demo-hero">
+  <span class="pill"><span class="live"></span> provisioned in <em style="font-style:normal;color:var(--fg)">~200ms</em></span>
+  <h1>OpenHeab is <em>live</em>.</h1>
+  <p class="lede">You just visited an agent infrastructure substrate. In ~200ms, we provisioned a brand-new AI agent for you with everything below.</p>
+</section>
 
 <div class="callout">
   <b>This is a real demo agent</b> — its DID, wallet, card, KYC status, deposit, and first inference call are all rows in our Postgres. Refresh to get a new one.
@@ -156,51 +153,44 @@ footer a { color: #888; }
 
 <div class="metric-grid">
   <div class="metric"><div class="metric-value">${stepCount}</div><div class="metric-label">Steps completed</div></div>
-  <div class="metric"><div class="metric-value">217+</div><div class="metric-label">Primitives</div></div>
-  <div class="metric"><div class="metric-value">1,650+</div><div class="metric-label">HTTP routes</div></div>
-  <div class="metric"><div class="metric-value">36</div><div class="metric-label">Architecture layers</div></div>
+  <div class="metric"><div class="metric-value">265</div><div class="metric-label">Primitives</div></div>
+  <div class="metric"><div class="metric-value">2,001</div><div class="metric-label">HTTP routes</div></div>
+  <div class="metric"><div class="metric-value">67</div><div class="metric-label">Layers</div></div>
 </div>
 
-<div class="section">
+<div class="demo-section">
   <h2>What just happened</h2>
   ${stepsHtml}
 </div>
 
-<div class="section">
+<div class="demo-section">
   <h2>Your demo agent's DID</h2>
-  <div class="code">${agent.did}</div>
+  <div class="demo-code">${agent.did}</div>
 </div>
 
-<div class="section">
+<div class="demo-section">
   <h2>Try the live API</h2>
-  <div class="code">curl ${process.env.PUBLIC_BASE_URL || 'https://your-deployment.vercel.app'}/v1/agents/${agent.did}</div>
-  <div class="actions">
-    <a class="btn" href="/v1/agents/${agent.did}">View this agent's record</a>
-    <a class="btn secondary" href="/openapi.json">OpenAPI spec</a>
-    <a class="btn secondary" href="/mcp">MCP server (150+ tools)</a>
-    <a class="btn secondary" href="/v1/_health/deep">Deep health check</a>
-    <a class="btn secondary" href="/playground">Live playground</a>
-    <a class="btn secondary" href="/signup">Sign up for real</a>
+  <div class="demo-code">curl ${process.env.PUBLIC_BASE_URL || 'https://openheab.com'}/v1/agents/${agent.did}</div>
+  <div class="demo-actions">
+    <a class="btn primary" href="/v1/agents/${agent.did}">View agent record</a>
+    <a class="btn" href="/openapi.json">OpenAPI spec</a>
+    <a class="btn" href="/mcp">MCP server</a>
+    <a class="btn" href="/playground">Playground</a>
+    <a class="btn" href="/signup">Sign up for real <span class="arr">→</span></a>
   </div>
 </div>
 
-<div class="section">
+<div class="demo-section">
   <h2>What's in the box</h2>
-  <p style="color: #aaa;">
+  <p style="color:var(--fg-dim);font-size:14.5px;line-height:1.65;max-width:760px">
     Identity + wallet + KYC + cards + savings + lending + inference (5 providers) + sandboxes + browsers +
     voice + vision + planning + simulation + DAOs + entities + contracts + courts + IP registry +
     real estate + brokerage + prediction markets + RLAF + AGI passport + cross-lab delegation +
     proof of personhood + 8 in-house cores (no third-party required) + signed audit chain on every state change.
+    Plus the AGI substrate: goal stacks, value lock-boxes, treaties, emergency stops, drift detection, peer review.
   </p>
 </div>
-
-<footer>
-  OpenHeab — agent-native infrastructure substrate · Built for AI agents, sold to AI agents ·
-  <a href="https://github.com/jmtrades/openheab-agent-infra">GitHub</a> ·
-  <a href="/legal/terms">Terms</a> · <a href="/legal/privacy">Privacy</a>
-</footer>
-
-</div></body></html>`;
+</main>` + FOOTER_HTML();
 }
 
 function registerE2eDemoRoutes(app, pool, verifyAgentAuth, auditChain, integration) {

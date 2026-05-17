@@ -112,138 +112,98 @@ const FAQ = [
   { q: 'Can my agents resell my OpenHeab access?', a: 'Yes! Agents on Pro+ can issue scoped sub-keys to other agents, mark up usage, and earn from RLAF judgments.' }
 ];
 
+const { head, NAV_HTML, FOOTER_HTML } = require('../design_system');
+
 function renderPricingPage() {
-  return `<!doctype html><html><head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Pricing — OpenHeab</title>
-<meta name="description" content="OpenHeab pricing: Free, Starter ($19), Pro ($99), Team ($349), Enterprise ($2,499). All tiers include real USDC wallets, KYC, MCP server, audit chain. Cancel anytime."/>
-<style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif; background: #0a0a0f; color: #e7e7ee; line-height: 1.6; }
-.wrap { max-width: 1280px; margin: 0 auto; padding: 56px 24px; }
-.nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 56px; }
-.nav .logo { font-weight: 700; font-size: 18px; letter-spacing: -0.3px; }
-.nav .nav-links a { color: #888; margin-left: 24px; font-size: 14px; text-decoration: none; }
-.nav .nav-links a:hover { color: #fff; }
-.hero { text-align: center; margin-bottom: 56px; }
-h1 { font-size: 56px; font-weight: 700; letter-spacing: -2px; margin-bottom: 14px; background: linear-gradient(120deg, #fff 30%, #888 70%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-.subtitle { color: #888; font-size: 18px; max-width: 600px; margin: 0 auto; }
-.tier-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin: 48px 0 40px; }
-@media (max-width: 1100px) { .tier-grid { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 600px)  { .tier-grid { grid-template-columns: 1fr; } }
-.tier { background: #14141c; border: 1px solid #1f1f2a; border-radius: 14px; padding: 28px 22px; display: flex; flex-direction: column; transition: transform 0.15s, border-color 0.15s; }
-.tier:hover { border-color: #2a2a3a; transform: translateY(-2px); }
-.tier.highlight { border-color: #4f46e5; box-shadow: 0 0 40px rgba(79, 70, 229, 0.15); position: relative; }
-.tier.highlight::before { content: 'MOST POPULAR'; position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: #4f46e5; color: #fff; font-size: 10px; font-weight: 600; letter-spacing: 1px; padding: 4px 10px; border-radius: 100px; }
-.tier h2 { font-size: 18px; font-weight: 600; margin-bottom: 6px; }
-.tier .tagline { color: #888; font-size: 13px; margin-bottom: 20px; min-height: 38px; }
-.tier .price { font-size: 32px; font-weight: 700; letter-spacing: -1px; margin-bottom: 4px; }
-.tier .price small { font-size: 14px; color: #888; font-weight: 400; }
-.tier ul { list-style: none; margin: 20px 0; padding: 0; flex: 1; }
-.tier li { padding: 6px 0; font-size: 13px; color: #c5c5d5; display: flex; gap: 8px; }
-.tier li::before { content: '\\2713'; color: #22c55e; flex-shrink: 0; }
-.tier .cta { display: block; text-align: center; padding: 12px; background: #4f46e5; color: #fff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px; margin-top: auto; transition: all 0.15s; cursor: pointer; border: 0; }
-.tier .cta:hover { background: #4338ca; }
-.tier:not(.highlight) .cta { background: #1f1f2a; color: #e7e7ee; }
-.tier:not(.highlight) .cta:hover { background: #2a2a3a; }
-.section { margin: 80px 0; }
-.section h2 { font-size: 32px; font-weight: 700; letter-spacing: -0.8px; margin-bottom: 32px; text-align: center; }
-.addon-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
-.addon { background: #14141c; padding: 18px 22px; border-radius: 10px; border: 1px solid #1f1f2a; }
-.addon h3 { font-size: 14px; font-weight: 600; margin-bottom: 6px; color: #fff; }
-.addon p { font-size: 13px; color: #888; line-height: 1.5; }
-.faq { max-width: 760px; margin: 0 auto; }
-.faq-item { background: #14141c; border: 1px solid #1f1f2a; border-radius: 10px; margin-bottom: 8px; padding: 18px 24px; }
-.faq-item summary { cursor: pointer; font-weight: 500; font-size: 15px; color: #fff; list-style: none; padding-right: 24px; position: relative; }
-.faq-item summary::after { content: '+'; position: absolute; right: 0; top: 0; font-size: 22px; color: #4f46e5; }
-.faq-item[open] summary::after { content: '\\2212'; }
-.faq-item p { color: #aaa; font-size: 14px; margin-top: 12px; line-height: 1.7; }
-.footer { color: #555; font-size: 13px; margin-top: 80px; padding-top: 32px; border-top: 1px solid #1a1a25; text-align: center; }
-.footer a { color: #888; margin: 0 12px; }
-</style></head><body>
-<div class="wrap">
-
-<nav class="nav">
-  <a class="logo" href="/">OpenHeab</a>
-  <div class="nav-links">
-    <a href="/sdk">SDK</a>
-    <a href="/demo">Demo</a>
-    <a href="/docs">Docs</a>
-    <a href="/pricing" style="color:#fff">Pricing</a>
-    <a href="/signup" style="background:#4f46e5;color:#fff;padding:8px 16px;border-radius:6px">Sign up</a>
-  </div>
-</nav>
-
+  const extraHead = `<style>
+.tier-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:32px 0 40px}
+.tier{background:var(--bg-elev);border:1px solid var(--br);border-radius:14px;padding:26px 22px;display:flex;flex-direction:column;transition:border-color var(--t-med) var(--ease-out),background-color var(--t-med) var(--ease-out),transform var(--t-med) var(--ease-out);position:relative;animation:rise 500ms var(--ease-out) both}
+.tier:nth-child(1){animation-delay:0ms}.tier:nth-child(2){animation-delay:40ms}.tier:nth-child(3){animation-delay:80ms}.tier:nth-child(4){animation-delay:120ms}.tier:nth-child(5){animation-delay:160ms}
+.tier:hover{border-color:var(--br-strong);background:var(--bg-elev2);transform:translateY(-1px)}
+.tier.highlight{border-color:var(--acc-strong);box-shadow:0 0 28px rgba(125,211,252,0.08)}
+.tier.highlight::before{content:'MOST POPULAR';position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--acc);color:var(--acc-text);font:600 9.5px/1 var(--mono);letter-spacing:1.4px;padding:5px 11px;border-radius:99px}
+.tier h2{font-size:16px;font-weight:600;margin-bottom:6px;color:var(--fg);letter-spacing:-0.2px}
+.tier .tagline{color:var(--fg-dim);font-size:12.5px;margin-bottom:18px;min-height:36px;line-height:1.5}
+.tier .price-big{font:600 30px/1 var(--mono);letter-spacing:-1.2px;margin-bottom:4px;color:var(--fg);font-feature-settings:'tnum'}
+.tier .price-big small{font-size:13px;color:var(--fg-dim2);font-weight:400;letter-spacing:0}
+.tier ul.feat{list-style:none;margin:18px 0;padding:0;flex:1}
+.tier ul.feat li{padding:5px 0;font-size:13px;color:var(--fg-dim);display:flex;gap:8px;line-height:1.5}
+.tier ul.feat li::before{content:'\\2713';color:var(--good);flex-shrink:0;font-weight:700}
+.tier .cta-btn{display:block;text-align:center;padding:11px;background:var(--bg-elev2);color:var(--fg);text-decoration:none;border-radius:8px;font-weight:600;font-size:13.5px;margin-top:auto;cursor:pointer;border:1px solid var(--br);transition:transform var(--t-fast) var(--ease-out),background-color var(--t-fast) var(--ease-out),border-color var(--t-fast) var(--ease-out)}
+.tier .cta-btn:hover{background:var(--bg-elev);border-color:var(--br-strong)}
+.tier .cta-btn:active{transform:scale(0.97)}
+.tier.highlight .cta-btn{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.tier.highlight .cta-btn:hover{background:#e4e4e7}
+.addon-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.addon{background:var(--bg-elev);padding:18px 22px;border-radius:10px;border:1px solid var(--br);transition:border-color var(--t-fast) var(--ease-out)}
+.addon:hover{border-color:var(--br-strong)}
+.addon h3{font-size:14px;font-weight:600;margin-bottom:6px;color:var(--fg)}
+.addon p{font-size:13px;color:var(--fg-dim);line-height:1.5;margin:0}
+.faq{max-width:760px}
+.faq-item{background:var(--bg-elev);border:1px solid var(--br);border-radius:10px;margin-bottom:8px;padding:16px 22px;transition:border-color var(--t-fast) var(--ease-out)}
+.faq-item:hover{border-color:var(--br-strong)}
+.faq-item summary{cursor:pointer;font-weight:500;font-size:14.5px;color:var(--fg);list-style:none;padding-right:24px;position:relative}
+.faq-item summary::-webkit-details-marker{display:none}
+.faq-item summary::after{content:'+';position:absolute;right:0;top:-2px;font-size:20px;color:var(--acc);transition:transform var(--t-fast) var(--ease-out)}
+.faq-item[open] summary::after{content:'\\2212'}
+.faq-item p{color:var(--fg-dim);font-size:14px;margin-top:12px;line-height:1.7}
+</style>`;
+  return head('Pricing — OpenHeab',
+    'OpenHeab pricing: Free, Starter $19, Pro $99, Team $349, Enterprise $2,499. All tiers include real USDC wallets, KYC, MCP server, audit chain. Cancel anytime.',
+    { path: '/pricing', extraHead }) +
+    NAV_HTML('pricing') + `<main>
 <section class="hero">
-  <h1>Pricing for every agent.<br/>From hobbyist to fortune 500.</h1>
-  <p class="subtitle">Pay for what you use. Cancel anytime. No retention emails, no contract minimums, no surprise overages — set a cap and we'll honor it.</p>
-</section>
-
-<section class="tier-grid">
-${TIERS.map(t => `
-  <div class="tier ${t.highlight ? 'highlight' : ''}">
-    <h2>${t.name}</h2>
-    <div class="tagline">${t.tagline}</div>
-    <div class="price">${t.price}<small>${t.period}</small></div>
-    <ul>${t.features.map(f => `<li>${f}</li>`).join('')}</ul>
-    <button class="cta" onclick="signup('${t.plan_id}')">${t.cta}</button>
-  </div>
-`).join('')}
+  <span class="pill">simple · transparent</span>
+  <h1>Pricing for every agent — hobbyist to Fortune 500.</h1>
+  <p class="lede">Pay for what you use. Cancel anytime. No retention emails, no contract minimums, no surprise overages — set a cap and we'll honor it.</p>
 </section>
 
 <section class="section">
-  <h2>Usage-based add-ons</h2>
-  <p style="text-align:center;color:#888;margin-bottom:32px;font-size:14px;max-width:600px;margin:0 auto 32px;">Only pay for these when you use them. They're shown on every invoice with full breakdown.</p>
+  <div class="tier-grid">
+${TIERS.map(t => `    <div class="tier ${t.highlight ? 'highlight' : ''}">
+      <h2>${t.name}</h2>
+      <div class="tagline">${t.tagline}</div>
+      <div class="price-big">${t.price}<small>${t.period || ''}</small></div>
+      <ul class="feat">${t.features.map(f => `<li>${f}</li>`).join('')}</ul>
+      <button class="cta-btn" onclick="signup('${t.plan_id}')">${t.cta}</button>
+    </div>`).join('\n')}
+  </div>
+</section>
+
+<section class="section">
+  <p class="eyebrow">Usage-based add-ons</p>
+  <h2>Only pay when you use them.</h2>
+  <p class="sub">Shown on every invoice with full breakdown. Each one is metered to the unit, billed monthly.</p>
   <div class="addon-grid">
-${ADDONS.map(a => `<div class="addon"><h3>${a.name}</h3><p>${a.detail}</p></div>`).join('')}
+${ADDONS.map(a => `    <div class="addon"><h3>${a.name}</h3><p>${a.detail}</p></div>`).join('\n')}
   </div>
 </section>
 
 <section class="section">
-  <h2>Questions</h2>
+  <p class="eyebrow">Frequently asked</p>
+  <h2>Questions.</h2>
   <div class="faq">
-${FAQ.map(f => `
-    <details class="faq-item">
-      <summary>${f.q}</summary>
-      <p>${f.a}</p>
-    </details>
-`).join('')}
+${FAQ.map(f => `    <details class="faq-item"><summary>${f.q}</summary><p>${f.a}</p></details>`).join('\n')}
   </div>
 </section>
-
-<div class="footer">
-  <a href="/legal/terms">Terms</a>
-  <a href="/legal/privacy">Privacy</a>
-  <a href="/legal/acceptable-use">Acceptable Use</a>
-  <a href="/security">Security</a>
-  <a href="/status">Status</a>
-  <a href="https://github.com/jmtrades/openheab-agent-infra">GitHub</a>
-</div>
-
-</div>
+</main>
 <script>
-async function signup(plan) {
-  if (plan === 'enterprise') {
+async function signup(plan){
+  if (plan === 'enterprise'){
     window.location.href = 'mailto:sales@openheab.com?subject=Enterprise%20plan%20inquiry';
     return;
   }
   const email = prompt('Email address?');
   if (!email) return;
-  try {
-    const r = await fetch('/v1/signup', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ email, plan })
-    });
+  try{
+    const r = await fetch('/v1/signup', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ email, plan }) });
     const data = await r.json();
     if (data.checkout_url) window.location.href = data.checkout_url;
-    else if (data.did) { alert('Account created! DID: ' + data.did); window.location.href = '/dashboard'; }
+    else if (data.did){ alert('Account created! DID: ' + data.did); window.location.href = '/dashboard'; }
     else alert(JSON.stringify(data));
-  } catch (e) { alert('Signup failed: ' + e.message); }
+  } catch (e){ alert('Signup failed: ' + e.message); }
 }
-</script>
-</body></html>`;
+</script>` + FOOTER_HTML();
 }
 
 async function migrate(pool) {}

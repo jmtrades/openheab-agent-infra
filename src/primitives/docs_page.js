@@ -206,80 +206,73 @@ node server.js</code></pre>
   }
 ];
 
+const { head, NAV_HTML, FOOTER_HTML } = require('../design_system');
+
 function renderDocsPage(activeSlug = 'getting-started') {
   const activeSection = SECTIONS.find(s => s.slug === activeSlug) || SECTIONS[0];
-
-  return `<!doctype html><html><head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>${activeSection.title} — OpenHeab Docs</title>
-<meta name="description" content="Documentation for OpenHeab agent infrastructure — identity, wallets, inference, MCP, webhooks, compliance, self-hosting."/>
-<style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif; background: #0a0a0f; color: #e7e7ee; line-height: 1.7; }
-.wrap { max-width: 1280px; margin: 0 auto; display: grid; grid-template-columns: 260px 1fr; gap: 48px; padding: 40px 24px; min-height: 100vh; }
-.sidebar { position: sticky; top: 40px; align-self: start; }
-.sidebar .logo { font-weight: 700; font-size: 18px; margin-bottom: 24px; display: block; color: #fff; text-decoration: none; letter-spacing: -0.3px; }
-.sidebar ul { list-style: none; }
-.sidebar li { margin: 2px 0; }
-.sidebar a { display: block; padding: 8px 12px; color: #888; text-decoration: none; font-size: 14px; border-radius: 6px; transition: all 0.1s; }
-.sidebar a:hover { color: #fff; background: #14141c; }
-.sidebar a.active { color: #fff; background: #1a1a25; border-left: 2px solid #4f46e5; padding-left: 10px; }
-.sidebar .nav-section { margin-top: 28px; padding-top: 20px; border-top: 1px solid #1a1a25; }
-.sidebar .nav-section h4 { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #555; margin-bottom: 8px; padding: 0 12px; }
-.content { max-width: 760px; }
-.content h1 { font-size: 40px; font-weight: 700; letter-spacing: -1px; margin-bottom: 24px; }
-.content h2 { font-size: 22px; margin: 36px 0 14px; font-weight: 600; }
-.content h3 { font-size: 17px; margin: 24px 0 10px; color: #ccc; font-weight: 600; }
-.content p { color: #c5c5d5; margin-bottom: 14px; font-size: 15px; }
-.content ul, .content ol { padding-left: 24px; margin-bottom: 16px; }
-.content li { color: #c5c5d5; margin-bottom: 6px; font-size: 15px; }
-.content code { background: #14141c; padding: 2px 6px; border-radius: 4px; font-family: 'SF Mono', monospace; font-size: 13px; color: #c5c5d5; }
-.content pre { background: #0a0a12; border: 1px solid #1a1a25; padding: 16px 20px; border-radius: 8px; overflow-x: auto; margin: 16px 0; }
-.content pre code { background: transparent; padding: 0; font-size: 13px; color: #c5c5d5; line-height: 1.6; }
-.content a { color: #818cf8; text-decoration: none; }
-.content a:hover { text-decoration: underline; }
-.search { width: 100%; padding: 8px 12px; background: #14141c; border: 1px solid #1f1f2a; color: #fff; border-radius: 6px; font-size: 14px; margin-bottom: 20px; }
-.search:focus { outline: none; border-color: #4f46e5; }
-@media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } .sidebar { position: static; } }
-</style></head><body>
-<div class="wrap">
-
-<aside class="sidebar">
-  <a href="/" class="logo">OpenHeab Docs</a>
-  <input class="search" placeholder="Filter docs..." oninput="filterDocs(this.value)" id="search"/>
-  <ul id="nav">
-${SECTIONS.map(s => `    <li><a href="/docs/${s.slug}" class="${s.slug === activeSlug ? 'active' : ''}" data-title="${s.title.toLowerCase()}">${s.title}</a></li>`).join('\n')}
-  </ul>
-  <div class="nav-section">
-    <h4>External</h4>
-    <ul>
-      <li><a href="/openapi.json">OpenAPI 3.1 spec</a></li>
-      <li><a href="/mcp">MCP server</a></li>
-      <li><a href="/sdk">SDK examples</a></li>
-      <li><a href="/demo">Live demo</a></li>
-      <li><a href="/pricing">Pricing</a></li>
-      <li><a href="https://github.com/jmtrades/openheab-agent-infra">GitHub</a></li>
+  const extraHead = `<style>
+.docs-wrap{display:grid;grid-template-columns:240px 1fr;gap:48px;padding:48px 0;align-items:start}
+.docs-side{position:sticky;top:84px;align-self:start}
+.docs-side .h{font:500 11px/1 var(--mono);color:var(--fg-dim2);text-transform:uppercase;letter-spacing:1.4px;margin:0 12px 10px;padding-top:6px}
+.docs-side ul{list-style:none;margin:0;padding:0}
+.docs-side li{margin:1px 0}
+.docs-side a{display:block;padding:7px 12px;color:var(--fg-dim);font-size:13.5px;border-radius:7px;transition:color var(--t-fast) var(--ease-out),background-color var(--t-fast) var(--ease-out)}
+.docs-side a:hover{color:var(--fg);background:var(--bg-elev)}
+.docs-side a.active{color:var(--fg);background:var(--bg-elev);box-shadow:inset 2px 0 0 var(--acc)}
+.docs-side .section{margin-top:24px;padding-top:20px;border-top:1px solid var(--br)}
+.docs-side input.search{font-family:var(--mono);font-size:12.5px;padding:9px 12px;margin-bottom:14px}
+.docs-content{max-width:760px;min-width:0}
+.docs-content h1{font-size:38px;letter-spacing:-1.5px;line-height:1.1;margin:0 0 12px;font-weight:600;color:var(--fg)}
+.docs-content > .crumb{margin-bottom:10px}
+.docs-content h2{font-size:22px;margin:36px 0 14px;font-weight:600;letter-spacing:-0.4px;color:var(--fg)}
+.docs-content h3{font-size:16px;margin:24px 0 10px;color:var(--fg);font-weight:600}
+.docs-content p{color:var(--fg-dim);margin:0 0 14px;font-size:15px;line-height:1.7}
+.docs-content ul,.docs-content ol{padding-left:22px;color:var(--fg-dim);margin:0 0 16px}
+.docs-content li{color:var(--fg-dim);margin:6px 0;font-size:15px;line-height:1.65}
+.docs-content code{background:var(--bg-elev);padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:13px;border:1px solid var(--br)}
+.docs-content pre{background:var(--bg-elev);border:1px solid var(--br);padding:14px 18px;border-radius:10px;overflow:auto;margin:14px 0}
+.docs-content pre code{background:transparent;padding:0;border:0;display:block;font-size:13px;line-height:1.65;color:var(--fg-dim)}
+@media (max-width:900px){.docs-wrap{grid-template-columns:1fr;gap:24px;padding:32px 0}.docs-side{position:static}}
+</style>`;
+  return head(`${activeSection.title} — OpenHeab Docs`,
+    `Documentation for OpenHeab agent infrastructure — identity, wallets, inference, MCP, webhooks, compliance, self-hosting.`,
+    { path: '/docs/' + activeSlug, extraHead }) +
+    NAV_HTML('docs') + `<main>
+<div class="docs-wrap">
+  <aside class="docs-side">
+    <input class="search" placeholder="Filter docs…" oninput="filterDocs(this.value)" id="search" type="search"/>
+    <div class="h">Reference</div>
+    <ul id="nav">
+${SECTIONS.map(s => `      <li><a href="/docs/${s.slug}" class="${s.slug === activeSlug ? 'active' : ''}" data-title="${s.title.toLowerCase()}">${s.title}</a></li>`).join('\n')}
     </ul>
+    <div class="section">
+      <div class="h">External</div>
+      <ul>
+        <li><a href="/openapi.json">OpenAPI 3.1 spec</a></li>
+        <li><a href="/mcp">MCP server</a></li>
+        <li><a href="/sdk">SDK examples</a></li>
+        <li><a href="/demo">Live demo</a></li>
+        <li><a href="/console">Route console</a></li>
+        <li><a href="https://github.com/jmtrades/openheab-agent-infra">GitHub</a></li>
+      </ul>
+    </div>
+  </aside>
+  <div class="docs-content">
+    <div class="crumb"><a href="/">Home</a> · <a href="/docs">Docs</a> · ${activeSection.title}</div>
+    <h1>${activeSection.title}</h1>
+    ${activeSection.body}
   </div>
-</aside>
-
-<main class="content">
-  <h1>${activeSection.title}</h1>
-  ${activeSection.body}
-</main>
-
 </div>
+</main>
 <script>
-function filterDocs(q) {
+function filterDocs(q){
   q = q.toLowerCase();
-  for (const li of document.querySelectorAll('#nav li')) {
+  for (const li of document.querySelectorAll('#nav li')){
     const t = li.querySelector('a').dataset.title;
     li.style.display = t.includes(q) ? '' : 'none';
   }
 }
-</script>
-</body></html>`;
+</script>` + FOOTER_HTML();
 }
 
 async function migrate(pool) {}
