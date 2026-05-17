@@ -36,7 +36,7 @@ function groupByFamily(routes) {
 
 function primitiveCount() {
   try { return Object.keys(require('./integration').primitives).length; }
-  catch { return 233; }
+  catch { return 265; }
 }
 
 function renderOpenApiSpec(app, opts = {}) {
@@ -59,7 +59,7 @@ function renderOpenApiSpec(app, opts = {}) {
     openapi: '3.1.0',
     info: {
       title: 'OpenHeab Substrate', version: '0.2.0',
-      description: `Agent-native substrate API. ${prims} primitives across 37 layers. Apache-2.0.`,
+      description: `Agent-native substrate API. ${prims} primitives across 67 layers. Apache-2.0.`,
       contact: { name: 'OpenHeab', url: 'https://openheab.com' }
     },
     servers: [{ url: opts.publicUrl || 'https://openheab.com' }],
@@ -81,52 +81,87 @@ function registerStatusPage(app, pool) {
     res.send(`<!doctype html><html lang=en><head><meta charset=utf-8>
 <meta name=viewport content="width=device-width,initial-scale=1">
 <title>Console — OpenHeab</title>
+<meta name="theme-color" content="#08090b">
+<meta name="color-scheme" content="dark">
 <style>
-:root{--bg:#0a0a0a;--fg:#f0f0f0;--dim:#7a7a7a;--dim2:#bdbdbd;--acc:#7df9ff;--card:#0f0f0f;--br:#1a1a1a;--mono:ui-monospace,'SF Mono','JetBrains Mono',Menlo,Consolas,monospace;--sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,system-ui,sans-serif}
-*{box-sizing:border-box;margin:0;padding:0}
-body{font:14px/1.55 var(--sans);background:var(--bg);color:var(--fg);padding:24px}
+:root{
+  --bg:#08090b;--bg-elev:#0d0e10;--bg-elev2:#111316;
+  --br:#1d1f23;--br-strong:#2a2c31;
+  --fg:#f4f4f5;--fg-dim:#a1a1aa;--fg-dim2:#71717a;--fg-dim3:#52525b;
+  --acc:#7dd3fc;--acc-glow:rgba(125,211,252,0.18);--acc-text:#03161f;
+  --mono:ui-monospace,'SF Mono','JetBrains Mono',Menlo,Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,'Inter','SF Pro Display','Segoe UI',system-ui,sans-serif;
+  --ease-out:cubic-bezier(0.23, 1, 0.32, 1);
+  --t-fast:120ms;--t-med:180ms;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased}
+body{
+  font:14px/1.55 var(--sans);background:var(--bg);color:var(--fg);padding:24px;
+  background-image:radial-gradient(circle at 50% -200px,rgba(125,211,252,0.05),transparent 700px);
+  min-height:100vh;
+}
+::selection{background:var(--acc);color:var(--acc-text)}
 .wrap{max-width:1080px;margin:0 auto}
 .head{margin-bottom:28px;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:18px}
-.head h1{font:600 28px/1 var(--mono);letter-spacing:-1px}
-.head h1 .dot{color:var(--acc)}
-.sub{color:var(--dim2);font-size:14px;margin-top:6px}
+.head h1{font:600 28px/1 var(--mono);letter-spacing:-1.2px;display:inline-flex;align-items:center;gap:6px}
+.head h1 .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--acc);box-shadow:0 0 10px var(--acc-glow);margin-right:6px}
+.sub{color:var(--fg-dim);font-size:13.5px;margin-top:6px;font-family:var(--mono)}
+.head .actions{display:flex;gap:6px}
+.head .actions a{
+  font-size:13px;padding:8px 12px;border:1px solid var(--br);border-radius:7px;
+  text-decoration:none;color:var(--fg-dim);background:var(--bg-elev);
+  transition:transform var(--t-fast) var(--ease-out),background-color var(--t-fast) var(--ease-out),color var(--t-fast) var(--ease-out);
+}
+.head .actions a:hover{background:var(--bg-elev2);color:var(--fg)}
+.head .actions a:active{transform:scale(0.97)}
+.head .actions a.primary{background:var(--fg);color:var(--bg);font-weight:600;border-color:var(--fg)}
+.head .actions a.primary:hover{background:#e4e4e7;color:var(--bg)}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:24px}
-.kpi{background:var(--card);border:1px solid var(--br);border-radius:8px;padding:14px 18px}
-.kpi .l{font:500 10px/1 var(--mono);color:var(--dim);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:6px}
-.kpi .v{font:700 22px/1 var(--mono);letter-spacing:-1px}
-input.search{width:100%;background:var(--card);color:var(--fg);border:1px solid var(--br);border-radius:8px;padding:12px 16px;font:500 14px/1 var(--mono);outline:none;margin-bottom:18px}
-input.search:focus{border-color:var(--acc)}
-details{background:var(--card);border:1px solid var(--br);padding:0;margin:4px 0;border-radius:8px;overflow:hidden}
-summary{cursor:pointer;padding:12px 18px;display:flex;justify-content:space-between;align-items:center;font:500 13px/1 var(--mono);color:var(--fg);user-select:none}
+.kpi{background:var(--bg-elev);border:1px solid var(--br);border-radius:10px;padding:14px 18px;transition:border-color var(--t-fast) var(--ease-out)}
+.kpi:hover{border-color:var(--br-strong)}
+.kpi .l{font:500 10.5px/1 var(--mono);color:var(--fg-dim2);text-transform:uppercase;letter-spacing:1.4px;margin-bottom:7px}
+.kpi .v{font:600 24px/1 var(--mono);letter-spacing:-1.2px;font-feature-settings:'tnum'}
+input.search{
+  width:100%;background:var(--bg-elev);color:var(--fg);border:1px solid var(--br);border-radius:10px;
+  padding:13px 16px;font:500 14px/1 var(--mono);outline:none;margin-bottom:18px;
+  transition:border-color var(--t-fast) var(--ease-out),background-color var(--t-fast) var(--ease-out);
+}
+input.search:hover{background:var(--bg-elev2)}
+input.search:focus{border-color:var(--acc);background:var(--bg-elev2);box-shadow:0 0 0 3px var(--acc-glow)}
+details{background:var(--bg-elev);border:1px solid var(--br);padding:0;margin:4px 0;border-radius:10px;overflow:hidden;transition:border-color var(--t-fast) var(--ease-out)}
+details[open]{border-color:var(--br-strong)}
+summary{cursor:pointer;padding:12px 18px;display:flex;justify-content:space-between;align-items:center;font:500 13px/1 var(--mono);color:var(--fg);user-select:none;transition:background-color var(--t-fast) var(--ease-out)}
 summary::-webkit-details-marker{display:none}
-summary:hover{background:rgba(255,255,255,0.02)}
-summary .count{color:var(--dim);font-size:11px;background:rgba(125,249,255,0.08);padding:3px 8px;border-radius:99px}
-.routes{padding:8px 0;border-top:1px solid var(--br)}
-.route{padding:6px 18px;display:flex;align-items:center;gap:12px;font-family:var(--mono);font-size:12px}
-.route:hover{background:rgba(255,255,255,0.02)}
-.verb{font:600 11px/1 var(--mono);min-width:54px;text-align:center;padding:3px 6px;border:1px solid currentColor;border-radius:4px}
-.path{color:var(--dim2);word-break:break-all}
-.foot{margin-top:30px;padding-top:18px;border-top:1px solid var(--br);color:var(--dim);font-size:12px;display:flex;gap:18px;flex-wrap:wrap}
-.foot a{color:var(--acc);text-decoration:none}
-.foot a:hover{text-decoration:underline}
-@media (max-width:640px){body{padding:16px}.route{font-size:11px}.verb{min-width:48px}}
+summary:hover{background:var(--bg-elev2)}
+summary .count{color:var(--acc);font-size:11px;background:var(--acc-glow);padding:3px 9px;border-radius:99px;font-weight:600}
+.routes{padding:6px 0;border-top:1px solid var(--br)}
+.route{padding:7px 18px;display:flex;align-items:center;gap:12px;font-family:var(--mono);font-size:12.5px;transition:background-color var(--t-fast) var(--ease-out)}
+.route:hover{background:var(--bg-elev2)}
+.verb{font:600 11px/1 var(--mono);min-width:56px;text-align:center;padding:4px 7px;border:1px solid currentColor;border-radius:5px;letter-spacing:0.5px}
+.path{color:var(--fg-dim);word-break:break-all}
+.foot{margin-top:30px;padding-top:18px;border-top:1px solid var(--br);color:var(--fg-dim2);font-size:12px;display:flex;gap:18px;flex-wrap:wrap}
+.foot a{color:var(--fg-dim);text-decoration:none;transition:color var(--t-fast) var(--ease-out)}
+.foot a:hover{color:var(--fg)}
+@media (prefers-reduced-motion:reduce){*{transition-duration:1ms !important;animation-duration:1ms !important}}
+@media (max-width:640px){body{padding:16px}.route{font-size:11px;padding:6px 14px}.verb{min-width:50px}.head h1{font-size:22px}}
 </style></head><body><div class=wrap>
 <div class=head>
   <div>
     <h1>openheab<span class=dot>.</span> console</h1>
     <div class=sub>${routes.length} routes · ${familyCount} families · ${prims} primitives</div>
   </div>
-  <div style="display:flex;gap:8px">
-    <a href="/" style="color:var(--dim2);font-size:13px;padding:8px 12px;border:1px solid var(--br);border-radius:6px;text-decoration:none">← Home</a>
-    <a href="/v1/dashboard" style="color:var(--dim2);font-size:13px;padding:8px 12px;border:1px solid var(--br);border-radius:6px;text-decoration:none">Dashboard</a>
-    <a href="/openapi.json" style="background:var(--acc);color:#001a1f;font-size:13px;font-weight:600;padding:8px 12px;border-radius:6px;text-decoration:none">OpenAPI</a>
+  <div class=actions>
+    <a href="/">← Home</a>
+    <a href="/v1/dashboard">Dashboard</a>
+    <a href="/openapi.json" class=primary>OpenAPI</a>
   </div>
 </div>
 <div class=kpis>
   <div class=kpi><div class=l>Primitives</div><div class=v>${prims}</div></div>
   <div class=kpi><div class=l>Routes</div><div class=v>${routes.length}</div></div>
   <div class=kpi><div class=l>Families</div><div class=v>${familyCount}</div></div>
-  <div class=kpi><div class=l>Layers</div><div class=v>37</div></div>
+  <div class=kpi><div class=l>Layers</div><div class=v>67</div></div>
 </div>
 <form method=get><input type=search name=q value="${filter.replace(/"/g, '&quot;')}" placeholder="Filter routes (e.g. wallet, kyc, savings)…" class=search autofocus></form>
 ${Object.entries(groups).sort(([a],[b])=>a.localeCompare(b)).map(([f, rs]) => {
@@ -154,8 +189,8 @@ ${Object.entries(groups).sort(([a],[b])=>a.localeCompare(b)).map(([f, rs]) => {
       name: 'openheab-substrate',
       primitive_count: primitiveCount(),
       route_count: collectRoutes(app).length,
-      layer_count: 37,
-      mcp_tool_count_approx: 145,
+      layer_count: 67,
+      mcp_tool_count_approx: 149,
       revenue_layers: 14,
       docs: (process.env.OPERATOR_PUBLIC_URL || '') + '/docs',
       console: (process.env.OPERATOR_PUBLIC_URL || '') + '/console',

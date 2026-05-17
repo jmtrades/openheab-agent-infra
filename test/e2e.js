@@ -122,6 +122,25 @@ async function run() {
     assert.ok(/openheab|status|api/i.test(r.body), 'status page should have core content');
   });
 
+  await test('GET / landing has Emil-quality design tokens', async () => {
+    const r = await fetchPath('/', { headers: { accept: 'text/html' } });
+    assert.strictEqual(r.status, 200);
+    // Custom easing (no flat ease-in)
+    assert.ok(r.body.includes('cubic-bezier'), 'must use custom easing curves');
+    // :active for press feedback
+    assert.ok(r.body.includes(':active'), 'buttons must have :active state');
+    // scale on press (instant feedback)
+    assert.ok(r.body.includes('scale(0.97)'), 'must have scale(0.97) press feedback');
+    // No anti-pattern transition:all
+    assert.ok(!/transition:\s*all\b/.test(r.body), 'must not use transition:all anti-pattern');
+    // Accessibility
+    assert.ok(r.body.includes('prefers-reduced-motion'), 'must respect reduced-motion');
+    assert.ok(r.body.includes('@media (hover:none)') || r.body.includes('hover:none'), 'must disable hover effects on touch');
+    // Current counts
+    assert.ok(r.body.includes('67 layers') || r.body.includes('layers'), 'must show layer count');
+    assert.ok(r.body.includes('L65') && r.body.includes('L67'), 'must include AGI layers');
+  });
+
   await test('GET /openapi.json returns valid JSON', async () => {
     const r = await fetchPath('/openapi.json');
     assert.strictEqual(r.status, 200);
