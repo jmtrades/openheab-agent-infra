@@ -237,7 +237,16 @@ const PRIMITIVE_NAMES = [
   //                   /migrate/from-anthropic, /build-in-public, /research-access,
   //                   /press, /partners, /community, /events
   //   mcp_registry  : /mcp/registry, /mcp/registry/:name (browseable catalog)
-  'chat_ui', 'trust_center', 'growth_v3', 'mcp_registry'
+  'chat_ui', 'trust_center', 'growth_v3', 'mcp_registry',
+  // Layer 69 — deeper public surfaces.
+  //   agent_profile_ui : /agents, /agent/:did/{why,kill,reputation,audit,skills,spend}
+  //   live_pulse       : /pulse, /leaderboard, /now, /v1/pulse/stats
+  //   dev_ui           : /api-keys, /webhooks, /usage, /logs, /openapi-explorer,
+  //                      /audit-verify, /openheab-cli
+  //   marketing_v4     : /charter, /manifesto, /about, /jobs, /testimonials,
+  //                      /case-studies, /roadmap, /free-forever, /why-cheaper,
+  //                      /pricing/calculator, /carbon, /datacenters, /newsletter
+  'agent_profile_ui', 'live_pulse', 'dev_ui', 'marketing_v4'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -570,7 +579,12 @@ const REGISTER_OVERRIDES = {
   chat_ui: 'registerChatUiRoutes',
   trust_center: 'registerTrustCenterRoutes',
   growth_v3: 'registerGrowthV3Routes',
-  mcp_registry: 'registerMcpRegistryRoutes'
+  mcp_registry: 'registerMcpRegistryRoutes',
+  // Layer 69 — deeper public surfaces
+  agent_profile_ui: 'registerAgentProfileUiRoutes',
+  live_pulse: 'registerLivePulseRoutes',
+  dev_ui: 'registerDevUiRoutes',
+  marketing_v4: 'registerMarketingV4Routes'
 };
 
 async function migrateAll(pool) {
