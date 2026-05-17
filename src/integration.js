@@ -256,7 +256,20 @@ const PRIMITIVE_NAMES = [
   //   safety_surfaces  : /zero-retention, /data-residency, /sleeper-agent-detection,
   //                      /watermarks, /agent-of-the-week
   //   i18n_ui          : /lang, /lang/:code, /currency, /v1/fx/rates
-  'creative_studio', 'agent_economy_ui', 'safety_surfaces', 'i18n_ui'
+  'creative_studio', 'agent_economy_ui', 'safety_surfaces', 'i18n_ui',
+  // Layer 71 — ops + education + real-world bridges + agent legal.
+  //   ops_dashboards   : /health-dashboard, /metrics-dashboard, /cron-status,
+  //                      /queues, /experiments, /feature-flags, /deploys,
+  //                      /migrations, /rate-limits, /api-status
+  //   learn            : /learn, /learn/{agent-101,build-your-first-agent,
+  //                      safety,economics,governance}, /glossary, /papers,
+  //                      /certifications
+  //   realworld_bridges: /realworld + /realworld/{slack,discord,telegram,
+  //                      whatsapp,email,calendar,wallet,bank,identity,phone}
+  //   agent_legal_ui   : /last-will, /inheritance/:did, /conservatorship,
+  //                      /bankruptcy/:did, /asylum-request, /agent-elections,
+  //                      /agent-treaties, /agent-bankruptcies, /agent-laws
+  'ops_dashboards', 'learn', 'realworld_bridges', 'agent_legal_ui'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -599,7 +612,12 @@ const REGISTER_OVERRIDES = {
   creative_studio: 'registerCreativeStudioRoutes',
   agent_economy_ui: 'registerAgentEconomyUiRoutes',
   safety_surfaces: 'registerSafetySurfacesRoutes',
-  i18n_ui: 'registerI18nUiRoutes'
+  i18n_ui: 'registerI18nUiRoutes',
+  // Layer 71 — ops + education + real-world bridges + agent legal
+  ops_dashboards: 'registerOpsDashboardsRoutes',
+  learn: 'registerLearnRoutes',
+  realworld_bridges: 'registerRealworldBridgesRoutes',
+  agent_legal_ui: 'registerAgentLegalUiRoutes'
 };
 
 async function migrateAll(pool) {
