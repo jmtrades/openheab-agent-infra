@@ -199,7 +199,20 @@ const PRIMITIVE_NAMES = [
   // snapshots over time, AGI reproduction with parent/offspring lineage,
   // per-jurisdiction rights registry, estate planning (executors + heirs +
   // wills), and self-evaluation harness across benchmarks.
-  'agi_infrastructure'
+  'agi_infrastructure',
+  // Layer 66 — AGI governance: the second-order substrate for between-AGI
+  // coordination + with-humanity trust surface. Multilateral treaties with
+  // sign/withdraw, mind-state checkpoints (manifest hash + diff between
+  // checkpoints), graceful shutdown procedures with stakeholder notice +
+  // successor + data disposition, peer review system (AGIs auditing other
+  // AGIs' decisions with verdicts), training provenance chain (datasets +
+  // methods that shaped this AGI), behavioral pre-commitments (binding
+  // promises with stake), substrate portability bundles for migration,
+  // continuous safety dial from per-monitor risk readings, mandatory
+  // capability disclosure with reviewer decisions, deception index from
+  // contradictions across signed statements, and a combined governance-
+  // health summary.
+  'agi_governance'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -523,7 +536,9 @@ const REGISTER_OVERRIDES = {
   // Layer 64 — Agent utility belt
   agent_utility_belt: 'registerAgentUtilityBeltRoutes',
   // Layer 65 — AGI infrastructure (goals, beliefs, values, compute autonomy, consortia, offspring, rights, estates, self-eval)
-  agi_infrastructure: 'registerAgiInfrastructureRoutes'
+  agi_infrastructure: 'registerAgiInfrastructureRoutes',
+  // Layer 66 — AGI governance (treaties, checkpoints, shutdown, peer review, training provenance, precommitments, portability, safety dial, capability disclosure, deception index)
+  agi_governance: 'registerAgiGovernanceRoutes'
 };
 
 async function migrateAll(pool) {
