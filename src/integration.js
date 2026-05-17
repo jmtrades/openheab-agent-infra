@@ -226,7 +226,18 @@ const PRIMITIVE_NAMES = [
   // mental health monitors (incoherence/oscillation/repetition/fatigue/
   // hallucination) with wellbeing_score, and compliance certifications
   // (ISO 42001/NIST AI RMF/EU AI Act) with issuer/revoke flow.
-  'agi_operations'
+  'agi_operations',
+  // Layer 68 — public-facing surfaces (added after the security hardening sweep).
+  //   chat_ui       : /chat (anonymous demo, rate-limited)
+  //   trust_center  : /trust, /security, /security/disclosure, /security/hall-of-fame,
+  //                   /bug-bounty, /rsp, /risk-assessment, /transparency, /models,
+  //                   /models/:id, /proof-of-reserves, /subprocessors, /sla, /dpa
+  //   growth_v3     : /benchmarks, /customers, /founder, /compare, /compare/openai,
+  //                   /compare/anthropic, /migrate, /migrate/from-openai,
+  //                   /migrate/from-anthropic, /build-in-public, /research-access,
+  //                   /press, /partners, /community, /events
+  //   mcp_registry  : /mcp/registry, /mcp/registry/:name (browseable catalog)
+  'chat_ui', 'trust_center', 'growth_v3', 'mcp_registry'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -554,7 +565,12 @@ const REGISTER_OVERRIDES = {
   // Layer 66 — AGI governance (treaties, checkpoints, shutdown, peer review, training provenance, precommitments, portability, safety dial, capability disclosure, deception index)
   agi_governance: 'registerAgiGovernanceRoutes',
   // Layer 67 — AGI operations (emergency stop, quarantine, drift detection, boundaries, dispute mediation, knowledge graph, formal proofs, grants, mental health, compliance certs)
-  agi_operations: 'registerAgiOperationsRoutes'
+  agi_operations: 'registerAgiOperationsRoutes',
+  // Layer 68 — public-facing surfaces
+  chat_ui: 'registerChatUiRoutes',
+  trust_center: 'registerTrustCenterRoutes',
+  growth_v3: 'registerGrowthV3Routes',
+  mcp_registry: 'registerMcpRegistryRoutes'
 };
 
 async function migrateAll(pool) {
