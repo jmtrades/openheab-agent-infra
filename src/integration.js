@@ -178,7 +178,13 @@ const PRIMITIVE_NAMES = [
   // callable setup endpoints (signed-request auth), USDC-native subscription
   // purchase (no card / no Stripe Checkout / no human-in-loop ever),
   // delegation tokens (agent A grants agent B scoped provisioning rights).
-  'agent_self_provision'
+  'agent_self_provision',
+  // Layer 63 — Agent economy: discovery + capability declarations + A2A job
+  // marketplace with escrow + subagent spawning with budget caps +
+  // endorsement graph + A2A messaging channels + cross-agent file grants.
+  // Makes agents first-class economic participants who can work *with each
+  // other*, not just individually against the platform.
+  'agent_economy'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -496,7 +502,9 @@ const REGISTER_OVERRIDES = {
   // Layer 61 — Enterprise GTM + CEO command center
   enterprise_command_center: 'registerEnterpriseCommandCenterRoutes',
   // Layer 62 — Agent-callable everything (no human-in-loop)
-  agent_self_provision: 'registerAgentSelfProvisionRoutes'
+  agent_self_provision: 'registerAgentSelfProvisionRoutes',
+  // Layer 63 — Agent economy (capabilities + discovery + jobs + subagents + endorsements + a2a)
+  agent_economy: 'registerAgentEconomyRoutes'
 };
 
 async function migrateAll(pool) {

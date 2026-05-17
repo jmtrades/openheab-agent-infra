@@ -1581,8 +1581,143 @@ async function run() {
     const { TIER_USDC_PRICES } = require('../src/primitives/agent_self_provision');
     assert.ok(TIER_USDC_PRICES.starter && TIER_USDC_PRICES.pro
            && TIER_USDC_PRICES.team && TIER_USDC_PRICES.enterprise);
-    // 1 USDC = 1_000_000 raw (6 decimals) → $19 = 19_000_000 raw
     assert.strictEqual(TIER_USDC_PRICES.starter.raw_usdc, '19000000');
+  });
+
+  console.log('\n== e2e: layer 63 — agent economy ==');
+  await test('GET /v1/agents/search returns results array', async () => {
+    const r = await fetchPath('/v1/agents/search?limit=5');
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(Array.isArray(j.results));
+    assert.ok(j.query && typeof j.query.limit === 'number');
+  });
+  await test('GET /v1/agents/search with filter parses params', async () => {
+    const r = await fetchPath('/v1/agents/search?tag=translate&max_price_cents=100&min_sla_seconds=60');
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.strictEqual(j.query.tag, 'translate');
+    assert.strictEqual(j.query.max_price_cents, 100);
+  });
+  await test('POST /v1/agents/:did/capabilities without auth returns 401', async () => {
+    const r = await fetchPath('/v1/agents/did:op:cap-test/capabilities', {
+      method: 'POST', body: { slug: 'translate', name: 'Translate text' }
+    });
+    assert.strictEqual(r.status, 401);
+  });
+  await test('GET /v1/agents/:did/capabilities returns list', async () => {
+    const r = await fetchPath('/v1/agents/did:op:cap-list/capabilities');
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(Array.isArray(j.capabilities));
+  });
+  await test('POST /v1/jobs without auth returns 401', async () => {
+    const r = await fetchPath('/v1/jobs', { method: 'POST', body: { title: 'x', budget_cents: 100 } });
+    assert.strictEqual(r.status, 401);
+  });
+  await test('POST /v1/jobs with auth creates a job', async () => {
+    const r = await fetchPath('/v1/jobs', {
+      method: 'POST',
+      headers: { 'x-agent-did': 'did:op:poster-test' },
+      body: { title: 'translate this', budget_cents: 500, capability_tag: 'translate' }
+    });
+    assert.strictEqual(r.status, 201);
+    const j = JSON.parse(r.body);
+    assert.ok(j.job_id && j.escrow_held_cents === 500);
+  });
+  await test('POST /v1/jobs without title returns 400', async () => {
+    const r = await fetchPath('/v1/jobs', {
+      method: 'POST',
+      headers: { 'x-agent-did': 'did:op:poster' },
+      body: { budget_cents: 100 }
+    });
+    assert.strictEqual(r.status, 400);
+  });
+  await test('GET /v1/jobs returns open jobs', async () => {
+    const r = await fetchPath('/v1/jobs?status=open');
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(Array.isArray(j.jobs));
+  });
+  await test('POST /v1/agents/:did/subagents without auth returns 401', async () => {
+    const r = await fetchPath('/v1/agents/did:op:parent/subagents', {
+      method: 'POST',
+      body: { goal: 'research', budget_cents: 1000, scope: ['inference'] }
+    });
+    assert.strictEqual(r.status, 401);
+  });
+  await test('POST /v1/agents/:did/subagents requires strict signature', async () => {
+    // Without signature header → 401 (strictSignatureRequired in verifyAgentAuth).
+    // Validation of body shape only runs after auth passes.
+    const r = await fetchPath('/v1/agents/did:op:parent-test/subagents', {
+      method: 'POST',
+      headers: { 'x-agent-did': 'did:op:parent-test' },
+      body: { goal: 'research', budget_cents: 1000 }
+    });
+    assert.ok([400, 401].includes(r.status));
+  });
+  await test('GET /v1/subagents/:sub_did/budget-check returns allowed', async () => {
+    const r = await fetchPath('/v1/subagents/did:op:sub_unknown/budget-check?amount_cents=10');
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(typeof j.allowed === 'boolean');
+  });
+  await test('POST /v1/agents/:did/endorse cant self-endorse', async () => {
+    const r = await fetchPath('/v1/agents/did:op:self/endorse', {
+      method: 'POST',
+      headers: { 'x-agent-did': 'did:op:self' },
+      body: { skill: 'translate' }
+    });
+    assert.strictEqual(r.status, 400);
+  });
+  await test('POST /v1/agents/:did/endorse with auth records endorsement', async () => {
+    const r = await fetchPath('/v1/agents/did:op:subject/endorse', {
+      method: 'POST',
+      headers: { 'x-agent-did': 'did:op:endorser' },
+      body: { skill: 'translate', weight: 0.9, narrative: 'great work' }
+    });
+    assert.strictEqual(r.status, 201);
+    const j = JSON.parse(r.body);
+    assert.ok(j.endorsement_id);
+    assert.strictEqual(j.weight, 0.9);
+  });
+  await test('GET /v1/agents/:did/endorsements returns aggregate', async () => {
+    const r = await fetchPath('/v1/agents/did:op:endorse-target/endorsements');
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(Array.isArray(j.endorsements));
+    assert.ok(j.by_skill);
+  });
+  await test('POST /v1/a2a/channels without auth returns 401', async () => {
+    const r = await fetchPath('/v1/a2a/channels', { method: 'POST', body: { participants: ['did:op:other'] } });
+    assert.strictEqual(r.status, 401);
+  });
+  await test('POST /v1/a2a/channels with auth creates channel', async () => {
+    const r = await fetchPath('/v1/a2a/channels', {
+      method: 'POST',
+      headers: { 'x-agent-did': 'did:op:chan-creator' },
+      body: { participants: ['did:op:other-agent'], topic: 'project x' }
+    });
+    assert.strictEqual(r.status, 201);
+    const j = JSON.parse(r.body);
+    assert.ok(j.channel_id);
+    assert.ok(j.participants.includes('did:op:chan-creator'));
+  });
+  await test('GET /v1/a2a/channels lists agent channels', async () => {
+    const r = await fetchPath('/v1/a2a/channels', { headers: { 'x-agent-did': 'did:op:chan-list' } });
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(Array.isArray(j.channels));
+  });
+  await test('GET /v1/me/shared-files requires auth', async () => {
+    const r = await fetchPath('/v1/me/shared-files');
+    assert.strictEqual(r.status, 401);
+  });
+  await test('GET /v1/me/shared-files returns shared files list', async () => {
+    const r = await fetchPath('/v1/me/shared-files', { headers: { 'x-agent-did': 'did:op:shared-test' } });
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(Array.isArray(j.shared_files));
   });
 
   console.log(`\n${passed} passed, ${failed} failed`);
