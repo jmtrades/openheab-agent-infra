@@ -1472,6 +1472,82 @@ async function run() {
     assert.ok(/Traces|trace|span/i.test(r.body));
   });
 
+  console.log('\n== e2e: layer 61 — enterprise GTM + CEO command center ==');
+  await test('GET /vision renders $100B thesis', async () => {
+    const r = await fetchPath('/vision');
+    assert.strictEqual(r.status, 200);
+    assert.ok(/100B|substrate|moat|thesis|TAM/i.test(r.body));
+  });
+  await test('GET /scale renders live counters', async () => {
+    const r = await fetchPath('/scale');
+    assert.strictEqual(r.status, 200);
+    assert.ok(/Live substrate|Agents alive|Audit events/.test(r.body));
+  });
+  await test('GET /scale.json returns counter object', async () => {
+    const r = await fetchPath('/scale.json');
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(typeof j.agents === 'number');
+    assert.ok(typeof j.audit_events === 'number');
+  });
+  await test('GET /command-center without admin returns 401', async () => {
+    delete process.env.OPERATOR_ADMIN_TOKEN;
+    const r = await fetchPath('/command-center');
+    assert.strictEqual(r.status, 401);
+  });
+  await test('POST /v1/enterprise/rfp returns answers', async () => {
+    const r = await fetchPath('/v1/enterprise/rfp', {
+      method: 'POST',
+      body: { questions: ['how is data encrypted at rest', 'do you have soc 2', 'what is your sla'] }
+    });
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(Array.isArray(j.responses) && j.responses.length === 3);
+    assert.strictEqual(j.summary.matched, 3);
+  });
+  await test('POST /v1/enterprise/rfp with totally unrelated question handles gracefully', async () => {
+    const r = await fetchPath('/v1/enterprise/rfp', {
+      method: 'POST',
+      body: { question: 'lobster bisque recipe xyzpqr' }
+    });
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    // Either no match OR low confidence — both acceptable
+    assert.ok(typeof j.responses[0].matched === 'boolean');
+    assert.ok(typeof j.responses[0].match_score === 'number');
+  });
+  await test('GET /v1/enterprise/rfp/library returns library', async () => {
+    const r = await fetchPath('/v1/enterprise/rfp/library');
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(j.total >= 40 && Array.isArray(j.library));
+  });
+  await test('GET /v1/enterprise/security-questionnaire returns controls', async () => {
+    const r = await fetchPath('/v1/enterprise/security-questionnaire');
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(j.total_controls >= 15);
+    assert.ok(j.controls['AC-01']);
+  });
+  await test('GET /v1/enterprise/readiness-score returns A-F grade', async () => {
+    const r = await fetchPath('/v1/enterprise/readiness-score');
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(typeof j.score === 'number');
+    assert.ok(['A','B','C','D','F'].includes(j.grade));
+    assert.ok(Array.isArray(j.checks));
+  });
+  await test('POST /v1/enterprise/prospects without admin returns 401', async () => {
+    delete process.env.OPERATOR_ADMIN_TOKEN;
+    const r = await fetchPath('/v1/enterprise/prospects', { method: 'POST', body: { company: 'Test' } });
+    assert.strictEqual(r.status, 401);
+  });
+  await test('GET /v1/enterprise/prospects without admin returns 401', async () => {
+    delete process.env.OPERATOR_ADMIN_TOKEN;
+    const r = await fetchPath('/v1/enterprise/prospects');
+    assert.strictEqual(r.status, 401);
+  });
+
   console.log(`\n${passed} passed, ${failed} failed`);
   if (skipReasons.length) console.log(`(${skipReasons.length} skipped: ${skipReasons.join(', ')})`);
   await new Promise(r => server.close(r));
