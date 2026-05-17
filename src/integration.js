@@ -246,7 +246,17 @@ const PRIMITIVE_NAMES = [
   //   marketing_v4     : /charter, /manifesto, /about, /jobs, /testimonials,
   //                      /case-studies, /roadmap, /free-forever, /why-cheaper,
   //                      /pricing/calculator, /carbon, /datacenters, /newsletter
-  'agent_profile_ui', 'live_pulse', 'dev_ui', 'marketing_v4'
+  'agent_profile_ui', 'live_pulse', 'dev_ui', 'marketing_v4',
+  // Layer 70 — creative + agent-economy + safety + i18n surfaces.
+  //   creative_studio  : /voice, /code, /images, /agents/new, /voice-agents/new,
+  //                      /store, /dashboard/billing
+  //   agent_economy_ui : /bounty-board, /agent-hire, /agent-genealogy/:did,
+  //                      /agent-courts, /agent-wills, /agent-population,
+  //                      /agent-treasury/:org
+  //   safety_surfaces  : /zero-retention, /data-residency, /sleeper-agent-detection,
+  //                      /watermarks, /agent-of-the-week
+  //   i18n_ui          : /lang, /lang/:code, /currency, /v1/fx/rates
+  'creative_studio', 'agent_economy_ui', 'safety_surfaces', 'i18n_ui'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -584,7 +594,12 @@ const REGISTER_OVERRIDES = {
   agent_profile_ui: 'registerAgentProfileUiRoutes',
   live_pulse: 'registerLivePulseRoutes',
   dev_ui: 'registerDevUiRoutes',
-  marketing_v4: 'registerMarketingV4Routes'
+  marketing_v4: 'registerMarketingV4Routes',
+  // Layer 70 — creative + agent-economy + safety + i18n surfaces
+  creative_studio: 'registerCreativeStudioRoutes',
+  agent_economy_ui: 'registerAgentEconomyUiRoutes',
+  safety_surfaces: 'registerSafetySurfacesRoutes',
+  i18n_ui: 'registerI18nUiRoutes'
 };
 
 async function migrateAll(pool) {
