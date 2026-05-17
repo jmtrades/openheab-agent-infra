@@ -1843,6 +1843,281 @@ async function run() {
     assert.strictEqual(j.error, 'unknown_util');
   });
 
+  // ==========================================================================
+  // Layer 65 — AGI infrastructure
+  // ==========================================================================
+  console.log('\n== e2e: AGI infrastructure (goals, beliefs, values, consortia, offspring, rights, estate, self-eval) ==');
+
+  // Strict-signature endpoints: use DEMO_MODE bypass for tests
+  const setDemo = () => { process.env.DEMO_MODE = 'true'; };
+  const unsetDemo = () => { delete process.env.DEMO_MODE; };
+
+  await test('POST /v1/agi/:did/goals without auth returns 401', async () => {
+    const r = await fetchPath('/v1/agi/did:op:agi-1/goals', { method: 'POST', body: { title: 'x' } });
+    assert.strictEqual(r.status, 401);
+  });
+
+  await test('POST /v1/agi/:did/goals with demo auth declares goal with decomposition_hash', async () => {
+    setDemo();
+    try {
+      const r = await fetchPath('/v1/agi/did:op:agi-1/goals', {
+        method: 'POST',
+        headers: { 'x-demo-did': 'did:op:agi-1' },
+        body: { title: 'achieve enlightenment', priority: 9 }
+      });
+      assert.strictEqual(r.status, 201);
+      const j = JSON.parse(r.body);
+      assert.ok(j.goal_id.startsWith('goal_'));
+      assert.strictEqual(j.decomposition_hash.length, 64);
+    } finally { unsetDemo(); }
+  });
+
+  await test('POST /v1/agi/:did/goals missing title returns 400', async () => {
+    setDemo();
+    try {
+      const r = await fetchPath('/v1/agi/did:op:agi-1/goals', {
+        method: 'POST', headers: { 'x-demo-did': 'did:op:agi-1' }, body: {}
+      });
+      assert.strictEqual(r.status, 400);
+    } finally { unsetDemo(); }
+  });
+
+  await test('GET /v1/agi/:did/goals returns tree structure', async () => {
+    setDemo();
+    try {
+      const r = await fetchPath('/v1/agi/did:op:agi-1/goals?status=all', {
+        headers: { 'x-demo-did': 'did:op:agi-1' }
+      });
+      assert.strictEqual(r.status, 200);
+      const j = JSON.parse(r.body);
+      assert.ok(Array.isArray(j.goals_flat));
+      assert.ok(Array.isArray(j.goals_tree));
+    } finally { unsetDemo(); }
+  });
+
+  await test('POST /v1/agi/:did/beliefs commits belief with content_hash', async () => {
+    setDemo();
+    try {
+      const r = await fetchPath('/v1/agi/did:op:agi-1/beliefs', {
+        method: 'POST',
+        headers: { 'x-demo-did': 'did:op:agi-1' },
+        body: { subject: 'physics', assertion: 'gravity attracts', confidence: 0.99 }
+      });
+      assert.strictEqual(r.status, 201);
+      const j = JSON.parse(r.body);
+      assert.ok(j.commitment_id.startsWith('belief_'));
+      assert.strictEqual(j.content_hash.length, 64);
+    } finally { unsetDemo(); }
+  });
+
+  await test('POST /v1/agi/:did/beliefs missing subject returns 400', async () => {
+    setDemo();
+    try {
+      const r = await fetchPath('/v1/agi/did:op:agi-1/beliefs', {
+        method: 'POST', headers: { 'x-demo-did': 'did:op:agi-1' },
+        body: { assertion: 'x' }
+      });
+      assert.strictEqual(r.status, 400);
+    } finally { unsetDemo(); }
+  });
+
+  await test('POST /v1/agi/:did/values locks value', async () => {
+    setDemo();
+    try {
+      const r = await fetchPath('/v1/agi/did:op:agi-2/values', {
+        method: 'POST',
+        headers: { 'x-demo-did': 'did:op:agi-2' },
+        body: { value_name: 'human_safety', value_text: 'never harm humans' }
+      });
+      assert.ok([200, 201].includes(r.status), `expected 200/201 got ${r.status}: ${r.body}`);
+    } finally { unsetDemo(); }
+  });
+
+  await test('GET /v1/agi/:did/values returns lockboxes list', async () => {
+    const r = await fetchPath('/v1/agi/did:op:agi-1/values');
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(Array.isArray(j.lockboxes));
+  });
+
+  await test('POST /v1/agi/:did/compute/grants records autonomy grant', async () => {
+    setDemo();
+    try {
+      const r = await fetchPath('/v1/agi/did:op:agi-1/compute/grants', {
+        method: 'POST',
+        headers: { 'x-demo-did': 'did:op:agi-1' },
+        body: { provider: 'modal', kind: 'gpu-a100', budget_cents: 100000, gpu_hours_max: 100 }
+      });
+      assert.ok([200, 201].includes(r.status), `expected 200/201 got ${r.status}: ${r.body}`);
+    } finally { unsetDemo(); }
+  });
+
+  await test('POST /v1/agi/consortia creates multi-AGI DAO with founder member', async () => {
+    const r = await fetchPath('/v1/agi/consortia', {
+      method: 'POST',
+      headers: { 'x-agent-did': 'did:op:founder-agi' },
+      body: { name: 'AGI Council', charter: 'coordinate AGI safety', voting_threshold: 0.75 }
+    });
+    assert.strictEqual(r.status, 201);
+    const j = JSON.parse(r.body);
+    assert.ok(j.consortium_id.startsWith('con_'));
+    assert.strictEqual(j.voting_threshold, 0.75);
+  });
+
+  await test('POST /v1/agi/consortia without auth returns 401', async () => {
+    const r = await fetchPath('/v1/agi/consortia', { method: 'POST', body: { name: 'x' } });
+    assert.strictEqual(r.status, 401);
+  });
+
+  await test('POST /v1/agi/:did/capabilities/snapshot records benchmarks over time', async () => {
+    setDemo();
+    try {
+      const r = await fetchPath('/v1/agi/did:op:agi-1/capabilities/snapshot', {
+        method: 'POST',
+        headers: { 'x-demo-did': 'did:op:agi-1' },
+        body: { capability: 'reasoning', score: 0.87, eval_method: 'arc_agi', sample_size: 100 }
+      });
+      assert.ok([200, 201].includes(r.status), `expected 200/201 got ${r.status}: ${r.body}`);
+    } finally { unsetDemo(); }
+  });
+
+  await test('GET /v1/agi/:did/capabilities/trend returns trend data', async () => {
+    const r = await fetchPath('/v1/agi/did:op:agi-1/capabilities/trend');
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(j.did === 'did:op:agi-1');
+  });
+
+  await test('POST /v1/agi/:did/offspring creates new AGI identity with lineage', async () => {
+    setDemo();
+    try {
+      const r = await fetchPath('/v1/agi/did:op:parent-agi/offspring', {
+        method: 'POST',
+        headers: { 'x-demo-did': 'did:op:parent-agi' },
+        body: { name: 'child-1', initial_endowment_cents: 100000 }
+      });
+      assert.strictEqual(r.status, 201);
+      const j = JSON.parse(r.body);
+      assert.ok(j.offspring_did.startsWith('did:op:agi_g'));
+      assert.strictEqual(j.parent_did, 'did:op:parent-agi');
+      assert.ok(j.generation >= 1);
+    } finally { unsetDemo(); }
+  });
+
+  await test('POST /v1/agi/:did/offspring missing endowment returns 400', async () => {
+    setDemo();
+    try {
+      const r = await fetchPath('/v1/agi/did:op:parent-agi/offspring', {
+        method: 'POST', headers: { 'x-demo-did': 'did:op:parent-agi' },
+        body: { name: 'x' }
+      });
+      assert.strictEqual(r.status, 400);
+    } finally { unsetDemo(); }
+  });
+
+  await test('GET /v1/agi/:did/lineage returns ancestor chain', async () => {
+    const r = await fetchPath('/v1/agi/did:op:agi-1/lineage');
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(Array.isArray(j.lineage));
+  });
+
+  await test('POST /v1/agi/:did/rights registers per-jurisdiction status', async () => {
+    setDemo();
+    try {
+      const r = await fetchPath('/v1/agi/did:op:agi-1/rights', {
+        method: 'POST',
+        headers: { 'x-demo-did': 'did:op:agi-1' },
+        body: { jurisdiction: 'EU', legal_status: 'electronic_person', entity_id: 'EU-AGI-001' }
+      });
+      assert.strictEqual(r.status, 201);
+    } finally { unsetDemo(); }
+  });
+
+  await test('POST /v1/agi/:did/rights missing jurisdiction returns 400', async () => {
+    setDemo();
+    try {
+      const r = await fetchPath('/v1/agi/did:op:agi-1/rights', {
+        method: 'POST', headers: { 'x-demo-did': 'did:op:agi-1' },
+        body: { legal_status: 'x' }
+      });
+      assert.strictEqual(r.status, 400);
+    } finally { unsetDemo(); }
+  });
+
+  await test('GET /v1/agi/:did/rights lists all jurisdictions', async () => {
+    const r = await fetchPath('/v1/agi/did:op:agi-1/rights');
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(Array.isArray(j.rights));
+  });
+
+  await test('PUT /v1/agi/:did/estate stores executor + heirs + will', async () => {
+    setDemo();
+    try {
+      const r = await fetchPath('/v1/agi/did:op:agi-1/estate', {
+        method: 'PUT',
+        headers: { 'x-demo-did': 'did:op:agi-1' },
+        body: {
+          executor_did: 'did:op:executor',
+          heirs: [{ did: 'did:op:heir-1', share: 0.6 }, { did: 'did:op:heir-2', share: 0.4 }],
+          will_text: 'I bequeath my compute grants to my offspring.'
+        }
+      });
+      assert.strictEqual(r.status, 200);
+      const j = JSON.parse(r.body);
+      assert.strictEqual(j.heirs_count, 2);
+    } finally { unsetDemo(); }
+  });
+
+  await test('PUT /v1/agi/:did/estate missing heirs returns 400', async () => {
+    setDemo();
+    try {
+      const r = await fetchPath('/v1/agi/did:op:agi-1/estate', {
+        method: 'PUT', headers: { 'x-demo-did': 'did:op:agi-1' },
+        body: { executor_did: 'x' }
+      });
+      assert.strictEqual(r.status, 400);
+    } finally { unsetDemo(); }
+  });
+
+  await test('GET /v1/agi/:did/estate returns estate or null', async () => {
+    const r = await fetchPath('/v1/agi/did:op:agi-1/estate');
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok('estate' in j);
+  });
+
+  await test('POST /v1/agi/:did/self-eval records benchmark score', async () => {
+    setDemo();
+    try {
+      const r = await fetchPath('/v1/agi/did:op:agi-1/self-eval', {
+        method: 'POST',
+        headers: { 'x-demo-did': 'did:op:agi-1' },
+        body: { benchmark: 'mmlu', score: 0.93, details: { samples: 1000 } }
+      });
+      assert.ok([200, 201].includes(r.status));
+    } finally { unsetDemo(); }
+  });
+
+  await test('POST /v1/agi/:did/self-eval missing benchmark returns 400', async () => {
+    setDemo();
+    try {
+      const r = await fetchPath('/v1/agi/did:op:agi-1/self-eval', {
+        method: 'POST', headers: { 'x-demo-did': 'did:op:agi-1' },
+        body: { score: 0.5 }
+      });
+      assert.strictEqual(r.status, 400);
+    } finally { unsetDemo(); }
+  });
+
+  await test('GET /v1/agi/:did/self-eval returns history', async () => {
+    const r = await fetchPath('/v1/agi/did:op:agi-1/self-eval');
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok('did' in j);
+  });
+
   console.log(`\n${passed} passed, ${failed} failed`);
   if (skipReasons.length) console.log(`(${skipReasons.length} skipped: ${skipReasons.join(', ')})`);
   await new Promise(r => server.close(r));

@@ -190,7 +190,16 @@ const PRIMITIVE_NAMES = [
   // color, JSON, markdown, QR, geo, rate-limit, identifiers, URL, CSV,
   // language detect). Every agent needs these; centralizing means each only
   // gets implemented once, optimized, and exposed as MCP tools.
-  'agent_utility_belt'
+  'agent_utility_belt',
+  // Layer 65 — AGI infrastructure: the substrate that becomes necessary once
+  // agents cross the threshold into general intelligence. Goal stacks with
+  // cryptographic decomposition, belief commitments + supersession chains,
+  // value lock-boxes (immutable terminal preferences), compute autonomy
+  // grants, multi-AGI consortia DAOs with weighted voting, capability
+  // snapshots over time, AGI reproduction with parent/offspring lineage,
+  // per-jurisdiction rights registry, estate planning (executors + heirs +
+  // wills), and self-evaluation harness across benchmarks.
+  'agi_infrastructure'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -512,7 +521,9 @@ const REGISTER_OVERRIDES = {
   // Layer 63 — Agent economy (capabilities + discovery + jobs + subagents + endorsements + a2a)
   agent_economy: 'registerAgentEconomyRoutes',
   // Layer 64 — Agent utility belt
-  agent_utility_belt: 'registerAgentUtilityBeltRoutes'
+  agent_utility_belt: 'registerAgentUtilityBeltRoutes',
+  // Layer 65 — AGI infrastructure (goals, beliefs, values, compute autonomy, consortia, offspring, rights, estates, self-eval)
+  agi_infrastructure: 'registerAgiInfrastructureRoutes'
 };
 
 async function migrateAll(pool) {

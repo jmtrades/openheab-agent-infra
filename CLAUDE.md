@@ -12,13 +12,13 @@ Repo: `github.com/jmtrades/openheab-agent-infra`
 
 | Metric | Value |
 |---|---|
-| Primitive modules | **262** in `src/primitives/` |
-| HTTP routes | **1,915+** registered |
+| Primitive modules | **263** in `src/primitives/` |
+| HTTP routes | **1,941+** registered |
 | Cron jobs | 21 scheduled (85 wired via dispatcher) |
 | MCP tools | 149 at `/mcp` |
-| Architecture layers | 64 |
+| Architecture layers | 65 |
 | Utility functions | **91 at `/v1/util/*`** (slugify, hash, validate, format, etc.) |
-| Tests | 292 passing + route smoke (0 5xx across 826+ GET routes) |
+| Tests | 280 e2e + 12 unit + boot + route_smoke (0 5xx across 932+ GET routes) |
 | Revenue layers | 14 (see `BILLION_DOLLAR_PATH.md`) |
 
 ## The 135 primitives (19 layers)
@@ -65,6 +65,10 @@ Repo: `github.com/jmtrades/openheab-agent-infra`
 **L40 Account + admin + backup (3):** account_dashboard (`/dashboard` polished agent home — wallet, KYC, cards, recent events, API keys, webhooks all live from Postgres; with sign-in prompt when no DID supplied), admin_ui (`/admin` operator-gated cross-tenant dashboard — agent counts, 24h activity, top spenders, KYC tier distribution, adapter status, recent audit events, admin actions), backup_restore (`POST /v1/admin/backup/create` dumps every table to signed JSON bundle with sha256 digest; `GET /v1/admin/backup/list`; daily cron job)
 **L41 Public status + email templates (2):** status_uptime (`/status` polished public status page like status.openheab.com — per-component health, 24h uptime %, latency, active + recent incidents, auto-refresh 60s; admin endpoints to record checks + declare/resolve incidents; cron job for self-checks), email_templates (transactional templates for signup_welcome / billing_receipt / security_alert / kyc_approved / password_reset; render HTML + text; preview endpoint at `/v1/email-templates/:name/preview`; send-via-internal-key endpoint logging to transactional_emails)
 **L42 First-time user tour (1):** welcome_tour (`/tour` polished 6-step interactive walkthrough — signup → profile → inference → wallet → MCP → done. Each step shows copy-paste curl + JS snippets, progress bar, "I'm done" advance, breadcrumb step nav. The page every new visitor lands on after signup)
+**L62 Agent-callable provisioning (1):** agent_self_provision (per-tenant encrypted credential vault with AES-256-GCM + HKDF-derived keys; USDC-native subscription purchase so agents never see card forms; delegation tokens AWS-STS-style with parent/child scope restrictions; `/v1/pricing/usdc` machine-readable price list)
+**L63 Agent economy (1):** agent_economy (capability declarations + capability search; A2A job marketplace with escrowed payment + dispute resolution; subagent spawning with hierarchical budget caps; weighted endorsement graph; A2A messaging channels with rate-limited topic isolation; cross-agent file grants; `/v1/me/shared-files` view of inbound grants)
+**L64 Agent utility belt (1):** agent_utility_belt (91 pure-function utilities at `/v1/util/*` — string ops, encoding, hashing, validation, datetime, currency formatting, numeric / BigInt math, text similarity, color, JSON path, markdown, QR SVG, geo distance, identifier gen, CSV parse, language detect — every agent needs these; centralizing means each gets implemented once, optimized, and exposed as MCP tools)
+**L65 AGI infrastructure (1):** agi_infrastructure (the substrate AGIs need once they cross the general-intelligence threshold — goal stacks with cryptographic decomposition hashes + parent/child decomposition trees; belief commitments with content-hash + revision chains via `superseded_by` pointers; value lock-boxes for immutable terminal preferences with quorum-required unlock; compute autonomy grants with budget + GPU-hour caps; multi-AGI consortia DAOs with weighted voting + proposals + threshold-based execution; capability snapshots over time with per-capability trend extraction; AGI reproduction with parent/offspring lineage tracking + generation counters; per-jurisdiction rights registry (electronic_person, legal_entity, etc.); estate planning with executor + heirs + asset inventory + will; self-evaluation harness with per-benchmark trend; 13 new tables, 25+ routes)
 
 ## Critical infrastructure files
 
