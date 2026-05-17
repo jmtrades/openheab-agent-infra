@@ -336,9 +336,15 @@ async function computeRiskScore(pool, subjectDid, orgId = null) {
 // by us without revealing the underlying personal data. (Real impl would use
 // Bulletproofs or zk-SNARK; this is a passable v0 for the API surface.)
 // ----------------------------------------------------------------------------
+function zkSecret(secret) {
+  const k = secret || process.env.IDENTITY_MASTER_KEK;
+  if (!k) throw new Error('IDENTITY_MASTER_KEK not set — refusing to issue/verify ZK proofs with a literal fallback');
+  return k;
+}
+
 function issueZkProof(subjectDid, claim, secret) {
   const msg = JSON.stringify({ subject_did: subjectDid, claim, ts: Date.now() });
-  const sig = crypto.createHmac('sha256', secret || (process.env.IDENTITY_MASTER_KEK || 'fallback')).update(msg).digest('hex');
+  const sig = crypto.createHmac('sha256', zkSecret(secret)).update(msg).digest('hex');
   return { proof: Buffer.concat([Buffer.from(msg), Buffer.from('|'), Buffer.from(sig, 'hex')]) };
 }
 
@@ -347,7 +353,7 @@ function verifyZkProof(proofBuf, secret) {
   if (sep < 0) return null;
   const msg = proofBuf.subarray(0, sep).toString('utf8');
   const sig = proofBuf.subarray(sep + 1).toString('hex');
-  const expected = crypto.createHmac('sha256', secret || (process.env.IDENTITY_MASTER_KEK || 'fallback')).update(msg).digest('hex');
+  const expected = crypto.createHmac('sha256', zkSecret(secret)).update(msg).digest('hex');
   if (expected !== sig) return null;
   try { return JSON.parse(msg); } catch { return null; }
 }

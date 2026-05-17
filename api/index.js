@@ -2,6 +2,7 @@
 // Vercel Serverless entrypoint
 // ============================================================================
 const express = require('express');
+require('express-async-errors'); // routes async-rejections to the errorHandler middleware
 const { Pool } = require('pg');
 const { migrateAll, registerAllRoutes } = require('../src/integration');
 const { registerStatusPage } = require('../src/status_page');

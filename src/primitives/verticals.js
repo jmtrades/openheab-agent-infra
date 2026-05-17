@@ -127,28 +127,38 @@ function registerVerticalsRoutes(app, pool, verifyAgentAuth, auditChain) {
     res.json({ verticals: r.rows });
   });
 
+  // Org-membership guard — must be a member of the org to read/write its compliance trail
+  async function requireOrgMember(req, res) {
+    const did = req.headers['x-agent-did'];
+    if (!did) { res.status(401).json({ error: 'agent_did_required' }); return null; }
+    const auth = await verifyAgentAuth(req, did);
+    if (!auth.valid) { res.status(401).json({ error: auth.error }); return null; }
+    const member = await pool.query(
+      `SELECT role FROM org_members WHERE org_id=$1 AND agent_did=$2 LIMIT 1`,
+      [req.params.id, did]
+    ).catch(() => ({ rows: [] }));
+    if (!member.rows[0]) { res.status(403).json({ error: 'not_org_member' }); return null; }
+    return { did, role: member.rows[0].role };
+  }
+
   // Vertical-specific audit trail (e.g. healthcare PHI access log)
   app.post('/v1/orgs/:id/verticals/:v/audit', express.json(), async (req, res) => {
-    const did = req.headers['x-agent-did'];
-    if (!did) return res.status(401).json({ error: 'agent_did_required' });
-    const auth = await verifyAgentAuth(req, did);
-    if (!auth.valid) return res.status(401).json({ error: auth.error });
+    const m = await requireOrgMember(req, res);
+    if (!m) return;
     const id = newId('vrec');
     await pool.query(
       `INSERT INTO vertical_audit_records (record_id, org_id, vertical, kind, ref_id, action, actor_did, payload)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
       [id, req.params.id, req.params.v, req.body?.kind || 'access',
-       req.body?.ref_id || null, req.body?.action || 'view', did,
+       req.body?.ref_id || null, req.body?.action || 'view', m.did,
        JSON.stringify(req.body?.payload || {})]
     );
     res.status(201).json({ record_id: id });
   });
 
   app.get('/v1/orgs/:id/verticals/:v/audit', async (req, res) => {
-    const did = req.headers['x-agent-did'];
-    if (!did) return res.status(401).json({ error: 'agent_did_required' });
-    const auth = await verifyAgentAuth(req, did);
-    if (!auth.valid) return res.status(401).json({ error: auth.error });
+    const m = await requireOrgMember(req, res);
+    if (!m) return;
     const r = await pool.query(`
       SELECT record_id, kind, ref_id, action, actor_did, occurred_at
       FROM vertical_audit_records WHERE org_id=$1 AND vertical=$2 ORDER BY occurred_at DESC LIMIT 500

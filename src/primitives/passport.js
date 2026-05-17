@@ -79,7 +79,11 @@ async function handleAdd(req, res, pool, verifyAgentAuth, auditChain) {
   const docId = 'pdoc_' + crypto.randomBytes(10).toString('hex');
   let mrzEnc = null;
   if (body.mrz) {
-    const key = Buffer.from((process.env.IDENTITY_MASTER_KEK || '0'.repeat(64)).slice(0, 64), 'hex');
+    const kek = process.env.IDENTITY_MASTER_KEK;
+    if (!kek || kek.length < 64) {
+      return res.status(503).json({ error: 'mrz_encryption_unavailable', message: 'IDENTITY_MASTER_KEK must be set (≥64 hex chars) to store MRZ data' });
+    }
+    const key = Buffer.from(kek.slice(0, 64), 'hex');
     const iv = crypto.randomBytes(12);
     const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
     const ct = Buffer.concat([cipher.update(body.mrz, 'utf8'), cipher.final()]);

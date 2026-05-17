@@ -213,7 +213,7 @@ function registerCardCoreRoutes(app, pool, verifyAgentAuth, auditChain) {
   // ISO 8583-style authorization request (from network → us)
   app.post('/v1/card-core/authorize', express.json(), async (req, res) => {
     const t = req.headers['x-card-network-secret'];
-    if (t && t !== process.env.CARD_CORE_NETWORK_SECRET) return res.status(401).json({ error: 'network_auth_required' });
+    if (!t || t !== process.env.CARD_CORE_NETWORK_SECRET) return res.status(401).json({ error: 'network_auth_required' });
     const p = authSchema.safeParse(req.body || {});
     if (!p.success) return res.status(400).json({ error: 'invalid_input', details: p.error.flatten() });
 
@@ -270,7 +270,7 @@ function registerCardCoreRoutes(app, pool, verifyAgentAuth, auditChain) {
   // Capture / settle
   app.post('/v1/card-core/authorizations/:aid/capture', express.json(), async (req, res) => {
     const t = req.headers['x-card-network-secret'];
-    if (t && t !== process.env.CARD_CORE_NETWORK_SECRET) return res.status(401).json({ error: 'network_auth_required' });
+    if (!t || t !== process.env.CARD_CORE_NETWORK_SECRET) return res.status(401).json({ error: 'network_auth_required' });
     const a = await pool.query(`SELECT * FROM card_core_authorizations WHERE auth_id=$1 AND result='approved' AND captured_at IS NULL`, [req.params.aid])
       .catch(() => ({ rows: [] }));
     if (!a.rows[0]) return res.status(404).json({ error: 'not_capturable' });
@@ -308,7 +308,7 @@ function registerCardCoreRoutes(app, pool, verifyAgentAuth, auditChain) {
 
   app.post('/v1/card-core/authorizations/:aid/reverse', async (req, res) => {
     const t = req.headers['x-card-network-secret'];
-    if (t && t !== process.env.CARD_CORE_NETWORK_SECRET) return res.status(401).json({ error: 'network_auth_required' });
+    if (!t || t !== process.env.CARD_CORE_NETWORK_SECRET) return res.status(401).json({ error: 'network_auth_required' });
     const r = await pool.query(`UPDATE card_core_authorizations SET reversed_at=NOW(), result='reversed' WHERE auth_id=$1 AND captured_at IS NULL RETURNING auth_id, card_id, amount_cents`,
       [req.params.aid]).catch(() => ({ rows: [] }));
     if (!r.rows[0]) return res.status(404).json({ error: 'not_reversible' });
@@ -323,7 +323,7 @@ function registerCardCoreRoutes(app, pool, verifyAgentAuth, auditChain) {
 
   app.post('/v1/card-core/chargebacks', express.json(), async (req, res) => {
     const t = req.headers['x-card-network-secret'];
-    if (t && t !== process.env.CARD_CORE_NETWORK_SECRET) return res.status(401).json({ error: 'network_auth_required' });
+    if (!t || t !== process.env.CARD_CORE_NETWORK_SECRET) return res.status(401).json({ error: 'network_auth_required' });
     const id = newId('cbk');
     await pool.query(
       `INSERT INTO card_core_chargebacks (chargeback_id, auth_id, reason_code, amount_cents)

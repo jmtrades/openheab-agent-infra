@@ -34,9 +34,36 @@ async function resolveAgentFromRequest(pool, req) {
       if (r.rows[0]) return { did: r.rows[0].agent_did, auth_kind: 'api_key_legacy' };
     } catch {}
   }
-  // x-agent-did header (signed-request path — caller has already proven sig)
-  if (req.headers['x-agent-did']) {
-    return { did: req.headers['x-agent-did'], auth_kind: 'header' };
+  // x-agent-did header path.
+  //   - In production: REQUIRES x-agent-sig and validates the signature.
+  //     Bare header is rejected to prevent trivial DID impersonation.
+  //   - In non-production (test/dev) OR DEMO_MODE: bare header is accepted
+  //     for convenience — there's no real identity to impersonate yet.
+  if (process.env.DEMO_MODE === 'true' && req.headers['x-demo-did']) {
+    return { did: req.headers['x-demo-did'], auth_kind: 'demo' };
+  }
+  const did = req.headers['x-agent-did'];
+  const sig = req.headers['x-agent-sig'];
+  if (did && sig) {
+    try {
+      const keyRow = await pool.query(
+        `SELECT public_key FROM identity_keys WHERE agent_did = $1 AND status = 'active'
+         UNION ALL
+         SELECT public_key FROM identities WHERE did = $1 LIMIT 1`,
+        [did]
+      ).catch(() => ({ rows: [] }));
+      if (!keyRow.rows[0]) return null;
+      const path = req.originalUrl || req.url;
+      const bodyHash = crypto.createHash('sha256').update(JSON.stringify(req.body || {})).digest('hex');
+      const canonical = `${req.method}\n${path}\n${bodyHash}`;
+      const pubKey = crypto.createPublicKey(keyRow.rows[0].public_key);
+      const valid = crypto.verify(null, Buffer.from(canonical), pubKey, Buffer.from(sig, 'hex'));
+      if (!valid) return null;
+      return { did, auth_kind: 'signed_header' };
+    } catch { return null; }
+  }
+  if (did && process.env.NODE_ENV !== 'production') {
+    return { did, auth_kind: 'unsigned_header_nonprod' };
   }
   return null;
 }

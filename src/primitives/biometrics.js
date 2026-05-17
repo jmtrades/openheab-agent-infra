@@ -107,6 +107,10 @@ function registerBiometricsRoutes(app, pool, verifyAgentAuth, auditChain) {
 
   app.post('/v1/biometrics/enroll/:id/complete', express.json(), async (req, res) => {
     try {
+      const enroll = await pool.query(`SELECT * FROM biometric_enrollments WHERE enrollment_id=$1`, [req.params.id]).catch(() => ({ rows: [] }));
+      if (!enroll.rows[0]) return res.status(404).json({ error: 'not_found' });
+      const auth = await verifyAgentAuth(req, enroll.rows[0].agent_did, { strictSignatureRequired: true });
+      if (!auth.valid) return res.status(401).json({ error: auth.error || 'unauthorized' });
       const body = z.object({
         sample_hash: z.string().optional(),
         embedding_blob_id: z.string().optional(),
@@ -116,8 +120,6 @@ function registerBiometricsRoutes(app, pool, verifyAgentAuth, auditChain) {
       }).safeParse(req.body || {});
       if (!body.success) return res.status(400).json({ error: 'invalid_input', details: body.error.issues });
       const d = body.data;
-      const enroll = await pool.query(`SELECT * FROM biometric_enrollments WHERE enrollment_id=$1`, [req.params.id]).catch(() => ({ rows: [] }));
-      if (!enroll.rows[0]) return res.status(404).json({ error: 'not_found' });
       await pool.query(
         `UPDATE biometric_enrollments
          SET sample_hash=COALESCE($1,sample_hash), embedding_blob_id=COALESCE($2,embedding_blob_id),
