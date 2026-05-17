@@ -358,17 +358,75 @@ Plus take rates: 1% USDC, 2% card interchange, 30% marketplace, 10% inference, 0
   app.get('/favicon.ico', (req, res) => res.redirect(301, '/favicon.svg'));
   app.get('/apple-touch-icon.png', (req, res) => res.redirect(301, '/favicon.svg'));
 
-  // /og.svg — Open Graph preview SVG (1200x630)
+  // /og.svg — Open Graph preview (1200×630). Numbers re-derived live.
   app.get('/og.svg', (req, res) => {
+    let prims = 265, routes = 2001, layers = 67;
+    try {
+      prims = Object.keys(require('../integration').primitives).length;
+      const { collectRoutes } = require('../status_page');
+      routes = collectRoutes(app).length || routes;
+    } catch {}
     res.setHeader('content-type', 'image/svg+xml');
     res.setHeader('cache-control', 'public, max-age=86400');
-    res.send(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
-<rect width="1200" height="630" fill="#0a0a0a"/>
-<text x="60" y="120" fill="#7df9ff" font-family="ui-monospace,monospace" font-size="32" font-weight="700">openheab.</text>
-<text x="60" y="280" fill="#f0f0f0" font-family="-apple-system,sans-serif" font-size="72" font-weight="700" letter-spacing="-3">Agent-native</text>
-<text x="60" y="370" fill="#f0f0f0" font-family="-apple-system,sans-serif" font-size="72" font-weight="700" letter-spacing="-3">infrastructure.</text>
-<text x="60" y="500" fill="#7a7a7a" font-family="-apple-system,sans-serif" font-size="32">156 primitives · 1230 routes · 25 layers · Apache-2.0</text>
-<text x="60" y="560" fill="#7df9ff" font-family="ui-monospace,monospace" font-size="22">github.com/jmtrades/openheab-agent-infra</text>
+    res.send(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" font-family="-apple-system,BlinkMacSystemFont,Inter,system-ui,sans-serif">
+<defs>
+  <radialGradient id="g" cx="50%" cy="0%" r="80%">
+    <stop offset="0%" stop-color="#7dd3fc" stop-opacity="0.18"/>
+    <stop offset="100%" stop-color="#7dd3fc" stop-opacity="0"/>
+  </radialGradient>
+  <linearGradient id="a" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%" stop-color="#7dd3fc"/>
+    <stop offset="100%" stop-color="#38bdf8"/>
+  </linearGradient>
+</defs>
+<rect width="1200" height="630" fill="#08090b"/>
+<rect width="1200" height="630" fill="url(#g)"/>
+
+<!-- brand row -->
+<g transform="translate(72,72)">
+  <circle cx="6" cy="6" r="6" fill="#7dd3fc"/>
+  <text x="22" y="11" fill="#f4f4f5" font-size="20" font-weight="600" font-family="ui-monospace,'SF Mono',Menlo,monospace" letter-spacing="-0.5">openheab</text>
+  <text x="370" y="11" fill="#71717a" font-size="13" font-weight="500" font-family="ui-monospace,monospace" letter-spacing="1.4">AGENT-NATIVE INFRASTRUCTURE</text>
+</g>
+
+<!-- live pill -->
+<g transform="translate(72,124)">
+  <rect width="172" height="32" rx="16" fill="#0d0e10" stroke="#1d1f23"/>
+  <circle cx="20" cy="16" r="4" fill="#34d399"/>
+  <text x="32" y="20" fill="#a1a1aa" font-size="12" font-weight="500" font-family="ui-monospace,monospace">${prims} primitives live</text>
+</g>
+
+<!-- headline -->
+<text x="72" y="262" fill="#f4f4f5" font-size="74" font-weight="600" letter-spacing="-2.8">Every primitive an AI agent</text>
+<text x="72" y="346" fill="#f4f4f5" font-size="74" font-weight="600" letter-spacing="-2.8">— or an <tspan fill="url(#a)">AGI</tspan> — will ever need.</text>
+
+<!-- metrics strip -->
+<g transform="translate(72,422)">
+  <rect width="1056" height="92" rx="14" fill="#0d0e10" stroke="#1d1f23"/>
+  <g font-family="ui-monospace,'SF Mono',monospace">
+    <text x="40" y="40" fill="#f4f4f5" font-size="32" font-weight="600" letter-spacing="-1">${prims}</text>
+    <text x="40" y="68" fill="#71717a" font-size="11" font-weight="500" letter-spacing="1.4">PRIMITIVES</text>
+    <line x1="220" y1="22" x2="220" y2="70" stroke="#1d1f23"/>
+
+    <text x="260" y="40" fill="#f4f4f5" font-size="32" font-weight="600" letter-spacing="-1">${routes.toLocaleString()}</text>
+    <text x="260" y="68" fill="#71717a" font-size="11" font-weight="500" letter-spacing="1.4">ROUTES</text>
+    <line x1="460" y1="22" x2="460" y2="70" stroke="#1d1f23"/>
+
+    <text x="500" y="40" fill="#f4f4f5" font-size="32" font-weight="600" letter-spacing="-1">${layers}</text>
+    <text x="500" y="68" fill="#71717a" font-size="11" font-weight="500" letter-spacing="1.4">LAYERS</text>
+    <line x1="640" y1="22" x2="640" y2="70" stroke="#1d1f23"/>
+
+    <text x="680" y="40" fill="#f4f4f5" font-size="32" font-weight="600" letter-spacing="-1">149</text>
+    <text x="680" y="68" fill="#71717a" font-size="11" font-weight="500" letter-spacing="1.4">MCP TOOLS</text>
+    <line x1="840" y1="22" x2="840" y2="70" stroke="#1d1f23"/>
+
+    <text x="880" y="40" fill="#f4f4f5" font-size="32" font-weight="600" letter-spacing="-1">Apache 2</text>
+    <text x="880" y="68" fill="#71717a" font-size="11" font-weight="500" letter-spacing="1.4">LICENSE</text>
+  </g>
+</g>
+
+<!-- footer -->
+<text x="72" y="572" fill="#71717a" font-size="16" font-weight="500">Signed DID · USDC bank on Base · KYC · memory · marketplaces · cognition · AGI substrate</text>
 </svg>`);
   });
 

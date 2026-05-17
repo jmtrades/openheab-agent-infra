@@ -153,7 +153,54 @@ function securityHeaders(req, res, next) {
   next();
 }
 
+function wantsHtml(req) {
+  const a = String(req.headers.accept || '');
+  // Treat browsers (which always send text/html in Accept) as HTML clients,
+  // but never JSON-by-default API clients.
+  return a.includes('text/html');
+}
+
+function renderErrorPage(status, title, message, requestId) {
+  let ds;
+  try { ds = require('./design_system'); } catch { ds = null; }
+  if (!ds) {
+    // Fallback if design_system not available
+    return `<!doctype html><meta charset=utf-8><title>${status}</title><body style="font:14px/1.5 system-ui;background:#08090b;color:#f4f4f5;display:grid;place-items:center;min-height:100vh;margin:0"><div style="text-align:center;padding:24px"><h1 style="font:600 64px/1 ui-monospace,monospace;letter-spacing:-2px;margin:0 0 12px">${status}</h1><p style="color:#a1a1aa;margin:0 0 18px">${message}</p><a href="/" style="color:#7dd3fc">← Home</a></div>`;
+  }
+  const extraHead = `<style>
+.err-shell{min-height:calc(100vh - 160px);display:flex;align-items:center;justify-content:center;padding:48px 0;text-align:center}
+.err-card{max-width:520px;animation:rise 500ms var(--ease-out) both}
+.err-code{font:600 96px/1 var(--mono);letter-spacing:-4px;background:linear-gradient(180deg,var(--acc),var(--acc-strong));-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:12px;font-feature-settings:'tnum'}
+.err-title{font-size:26px;letter-spacing:-0.8px;margin-bottom:8px;font-weight:600}
+.err-msg{color:var(--fg-dim);margin:0 0 28px;font-size:15.5px;line-height:1.55}
+.err-rid{color:var(--fg-dim3);font:500 11.5px/1 var(--mono);margin-top:18px;letter-spacing:0.5px}
+.err-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+</style>`;
+  return ds.head(`${status} — OpenHeab`, message, { path: '/', extraHead }) + ds.NAV_HTML() + `<main>
+<div class="err-shell">
+  <div class="err-card">
+    <div class="err-code">${status}</div>
+    <h1 class="err-title">${title}</h1>
+    <p class="err-msg">${message}</p>
+    <div class="err-btns">
+      <a href="/" class="btn primary">Home <span class="arr">→</span></a>
+      <a href="/docs" class="btn">Read docs</a>
+      <a href="/console" class="btn">Browse routes</a>
+    </div>
+    ${requestId ? `<div class="err-rid">request_id: ${requestId}</div>` : ''}
+  </div>
+</div>
+</main>` + ds.FOOTER_HTML();
+}
+
 function notFoundHandler(req, res) {
+  if (wantsHtml(req)) {
+    res.status(404).setHeader('content-type', 'text/html; charset=utf-8');
+    return res.send(renderErrorPage(404,
+      'Page not found',
+      `We couldn't find <code style="background:rgba(255,255,255,0.06);padding:2px 6px;border-radius:4px;font-family:ui-monospace,monospace;font-size:0.9em">${String(req.path).replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c]))}</code> on openheab.com.`,
+      req.id));
+  }
   res.status(404).json({
     error: 'not_found', method: req.method, path: req.path,
     request_id: req.id,
@@ -166,14 +213,20 @@ function notFoundHandler(req, res) {
 // caller. Must be registered AFTER all routes via `app.use(errorHandler)`.
 function errorHandler(err, req, res, next) {
   if (res.headersSent) return next(err);
-  // Body-parser SyntaxError or HTTP-shaped error
   const status = err.statusCode || err.status || (err.type === 'entity.parse.failed' ? 400 : 500);
   const code = err.type === 'entity.parse.failed' ? 'invalid_json'
             : err.type === 'entity.too.large' ? 'body_too_large'
             : status >= 500 ? 'internal_error'
             : (err.code || 'request_failed');
-  // Log full error for the operator but never expose stack to caller
   try { console.error(JSON.stringify({ level: 'error', request_id: req.id, code, message: err.message })); } catch {}
+
+  if (wantsHtml(req) && status >= 500) {
+    res.status(status).setHeader('content-type', 'text/html; charset=utf-8');
+    return res.send(renderErrorPage(status,
+      'Something went wrong on our end',
+      `An internal error occurred while handling your request. The operator has been notified, and the audit chain logged this incident. Try again, or check the <a href="/status">status page</a>.`,
+      req.id));
+  }
   res.status(status).json({
     error: code,
     message: status < 500 ? err.message : 'An internal error occurred. The operator has been notified.',

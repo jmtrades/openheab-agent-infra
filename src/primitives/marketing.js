@@ -259,25 +259,44 @@ function registerMarketingRoutes(app, pool, _verifyAgentAuth, auditChain) {
 </main>` + FOOTER_HTML());
   });
 
-  // /customers (logo wall + case studies stub)
+  // /customers — design partner CTA (no fake logos)
   app.get('/customers', async (req, res) => {
     const json = JSON.stringify({
       '@context': 'https://schema.org', '@type': 'WebPage',
-      name: 'OpenHeab customers', description: 'Companies and agents running on OpenHeab.'
+      name: 'OpenHeab customers', description: 'Design partners building on OpenHeab.'
     });
     res.setHeader('content-type', 'text/html; charset=utf-8');
-    res.send(head('Customers — OpenHeab', 'Companies, AI labs, and individual developers running on OpenHeab.',
+    res.send(head('Customers — OpenHeab', 'Be one of the first 50 design partners on OpenHeab. Free Pro tier for 6 months. Direct line to engineering.',
       (process.env.OPERATOR_PUBLIC_URL || '') + '/customers', json) +
-      NAV_HTML() + `<main>
-<h1 style="font-size:36px;letter-spacing:-1px;margin-bottom:14px">Customers</h1>
-<p style="color:var(--dim2);font-size:17px;margin-bottom:32px">Be one of the first 50 companies on the substrate. Free Pro tier for 6 months for early design partners.</p>
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;opacity:.45;margin-bottom:48px">
-${[1,2,3,4,5,6,7,8].map(i => `<div style="height:60px;background:var(--card);border:1px solid var(--br);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--dim);font:500 12px/1 var(--mono)">your-logo-here</div>`).join('')}
-</div>
-<div class=subscribe>
-  <h3>Want to be a featured customer?</h3>
-  <p style="color:var(--dim2);font-size:14px">Email <a href="mailto:hello@openheab.com">hello@openheab.com</a> with one sentence about your use case. We'll get back within 24h.</p>
-</div>
+      NAV_HTML('customers') + `<main>
+<section class="hero">
+  <span class="pill">design partner program</span>
+  <h1>Be one of the first 50 on the substrate.</h1>
+  <p class="lede">We're not pretending to have a customer list. We're building openly with the first 50 design partners — startups, AI labs, and individual developers shipping agents to production. You get the Pro tier free for 6 months, direct Slack access to the engineering team, and your logo on this page when we launch publicly.</p>
+  <div class="btns">
+    <a href="mailto:hello@openheab.com?subject=Design%20partner" class="btn primary">Apply to join <span class="arr" aria-hidden="true">→</span></a>
+    <a href="/signup" class="btn">Or just sign up free</a>
+  </div>
+</section>
+
+<section class="section">
+  <p class="eyebrow">What you get</p>
+  <h2>Six months of Pro free, plus direct line to engineering.</h2>
+  <div class="grid">
+    <div class="card"><div class="icn">Free</div><h3>Pro tier free for 6 months</h3><p>$99/mo plan free until November 2026. After that, normal pricing kicks in — or you can downgrade at any time.</p></div>
+    <div class="card"><div class="icn">Direct</div><h3>Slack channel with the team</h3><p>Drop in any question. We respond in hours, not days. Architectural advice, bug fixes, feature requests — all welcome.</p></div>
+    <div class="card"><div class="icn">Influence</div><h3>Roadmap input</h3><p>Tell us what's missing. We ship the most-requested gap to GA monthly. Your use case shapes the substrate.</p></div>
+    <div class="card"><div class="icn">Visible</div><h3>Logo on this page</h3><p>When we launch publicly, your logo sits at the top of customers.openheab.com. Plus a co-published case study if you want one.</p></div>
+    <div class="card"><div class="icn">Honest</div><h3>No retention games</h3><p>Cancel any time. Full data export. Self-host the open-source version forever. We're betting on the substrate being good enough to keep you.</p></div>
+    <div class="card"><div class="icn">Lock-in</div><h3>Founding pricing locked</h3><p>The first 50 partners get founding-partner pricing locked for 2 years. As we raise prices over time, you stay at the rate we set today.</p></div>
+  </div>
+</section>
+
+<section class="section">
+  <p class="eyebrow">Who we're looking for</p>
+  <h2>Agent builders shipping to production.</h2>
+  <p class="sub">If you're building or operating an AI agent that needs identity, money, KYC, memory, or any of the other 265 primitives — and you're willing to give us feedback in exchange for free credits — email <a href="mailto:hello@openheab.com">hello@openheab.com</a> with one sentence about your use case. We'll respond within 24h.</p>
+</section>
 </main>` + FOOTER_HTML());
   });
 
@@ -354,86 +373,244 @@ ${[
   app.get('/jobs', (req, res) => {
     res.setHeader('content-type', 'text/html; charset=utf-8');
     const jobs = [
-      ['founding-eng-2', 'Founding Engineer #2 (TS/Postgres)', 'Remote · $200K + 2%'],
-      ['founding-gtm', 'Founding GTM hire (sales + DevRel)', 'Remote · $150K + 2%'],
-      ['sre-1', 'SRE #1', 'Remote · $200K + 1.5%'],
-      ['security-eng', 'Security Engineer', 'Remote · $250K + 1.5%'],
-      ['compliance-officer', 'Compliance Officer (SOC 2 + AML + sanctions)', 'Remote · $150K + 0.75%']
+      ['founding-eng-2', 'Founding Engineer #2', 'TypeScript · Postgres · Vercel', 'Remote', '$200K + 2.0%', 'You will own a primitive end-to-end — from schema to API to MCP tool to docs. Comfort with distributed systems required; comfort with cryptography preferred.'],
+      ['founding-gtm', 'Founding GTM Hire', 'Sales · DevRel · Content', 'Remote · NYC/SF preferred', '$150K + 2.0%', 'First sales hire. You will define ICP, run outbound, close the first 20 enterprise contracts, then build the playbook your successor uses.'],
+      ['sre-1', 'SRE #1', 'Vercel · Neon · Datadog · PagerDuty', 'Remote', '$200K + 1.5%', 'Take ownership of the 21 cron jobs, the 956 GET endpoints, and the audit chain. SLO discipline. Comfort waking up to a 3 AM page that you will fix in under an hour.'],
+      ['security-eng', 'Security Engineer', 'Ed25519 · AES-GCM · SOC 2', 'Remote', '$250K + 1.5%', 'Own the cryptography surface: KEKs, key rotation, audit chain integrity, signed-request verification. Pen-test mindset. Bug bounty triage. SOC 2 / ISO 27001 evidence collection.'],
+      ['compliance-officer', 'Compliance Officer', 'AML · KYC · Sanctions · Travel Rule', 'Remote', '$150K + 0.75%', 'Stand up the compliance program. Sanctions screening against OFAC/UN/EU/HMT/OpenSanctions. KYC tier policy. SAR filing. Money transmitter licensing strategy across US states.'],
+      ['agi-research', 'AGI Safety Engineer', 'Constitutional AI · Eval Harnesses', 'Remote', '$300K + 1.0%', 'Make L65-L67 (goal stacks, treaties, emergency stop, drift detection) actually work for AGIs once they arrive. Research background preferred but not required — execution mindset required.']
     ];
-    res.send(head('Jobs — OpenHeab', 'Join the team building the agent infrastructure substrate.',
+    res.send(head('Jobs — OpenHeab', 'Join the team building the infrastructure AI agents and AGI run on.',
       (process.env.OPERATOR_PUBLIC_URL || '') + '/jobs', null) +
-      NAV_HTML() + `<main>
-<h1 style="font-size:32px;letter-spacing:-1px;margin-bottom:14px">Jobs</h1>
-<p style="color:var(--dim2);font-size:17px;margin-bottom:32px">Help us build the infrastructure that AI agents and AGI will run on. Equity-rich, work-from-anywhere, no meetings before noon.</p>
-<div style="display:grid;gap:10px">
-${jobs.map(j => `<div style="background:var(--card);border:1px solid var(--br);border-radius:10px;padding:18px 22px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px"><div><div style="font:600 16px/1.3 var(--sans)">${escapeHtml(j[1])}</div><div style="color:var(--dim);font-size:13px;margin-top:6px;font-family:var(--mono)">${escapeHtml(j[2])}</div></div><a href="mailto:jobs@openheab.com?subject=${encodeURIComponent(j[1])}" style="background:transparent;color:var(--fg);border:1px solid var(--br);padding:8px 14px;border-radius:6px;font-weight:600;font-size:13px">Apply →</a></div>`).join('')}
-</div>
+      NAV_HTML('jobs') + `<main>
+<section class="hero">
+  <span class="pill">we're hiring</span>
+  <h1>Build the substrate AGI runs on.</h1>
+  <p class="lede">${jobs.length} open roles. Remote-first. Equity-rich. No meetings before 11am. You'll ship to production weekly, own a surface end-to-end, and watch the substrate get used by real AI agents (and, soon, by real AGIs).</p>
+  <div class="btns">
+    <a href="mailto:jobs@openheab.com" class="btn primary">Apply directly <span class="arr" aria-hidden="true">→</span></a>
+    <a href="#openings" class="btn">See openings ↓</a>
+  </div>
+</section>
+
+<section class="section" id="openings">
+  <p class="eyebrow">Open positions</p>
+  <h2>Six roles. One mission.</h2>
+  <div style="display:grid;gap:10px">
+${jobs.map(j => `    <div class="card" style="text-align:left">
+      <div style="display:flex;justify-content:space-between;align-items:start;gap:14px;flex-wrap:wrap;margin-bottom:10px">
+        <div style="min-width:0;flex:1">
+          <h3 style="font-size:17px;letter-spacing:-0.3px;margin-bottom:6px">${escapeHtml(j[1])}</h3>
+          <div style="color:var(--fg-dim2);font-size:12.5px;font-family:var(--mono);margin-bottom:4px">${escapeHtml(j[2])}</div>
+          <div style="color:var(--fg-dim);font-size:12.5px;font-family:var(--mono)">${escapeHtml(j[3])} · ${escapeHtml(j[4])}</div>
+        </div>
+        <a href="mailto:jobs@openheab.com?subject=${encodeURIComponent(j[1])}" class="btn" style="flex-shrink:0">Apply <span class="arr">→</span></a>
+      </div>
+      <p style="color:var(--fg-dim);font-size:13.5px;margin-top:4px">${escapeHtml(j[5])}</p>
+    </div>`).join('\n')}
+  </div>
+</section>
+
+<section class="section">
+  <p class="eyebrow">Working here</p>
+  <h2>How we operate.</h2>
+  <div class="grid">
+    <div class="card"><h3>Remote-first, async-first</h3><p>Documents over meetings. No standups. One weekly sync optional. Async-friendly time zones (US/EU/anywhere with overlap).</p></div>
+    <div class="card"><h3>Ship weekly</h3><p>Every primitive lands in production within a week of being designed. You will see your code used by real agents within days, not quarters.</p></div>
+    <div class="card"><h3>Equity-heavy comp</h3><p>Significant founder-tier equity even on later hires. We index toward people who want ownership, not just paychecks.</p></div>
+    <div class="card"><h3>Real PTO</h3><p>Minimum 20 days. We enforce it. Burnout is a substrate failure, not a personal one.</p></div>
+    <div class="card"><h3>Health + dental + 401k</h3><p>Full US benefits via Sequoia/Gusto. International contractor support via Deel.</p></div>
+    <div class="card"><h3>Equipment + setup</h3><p>$3K/yr equipment stipend. Home office reimbursement. Yearly off-site in a place worth flying to.</p></div>
+  </div>
+</section>
+
+<section class="section">
+  <p class="eyebrow">How to apply</p>
+  <h2>Skip the form. Email us.</h2>
+  <p class="sub">Send <a href="mailto:jobs@openheab.com">jobs@openheab.com</a> the role you want, links to two things you've built (commits, deploys, papers — anything that shows real output), and one paragraph on why this substrate matters to you. We respond within 48h to every email, including rejections.</p>
+</section>
 </main>` + FOOTER_HTML());
   });
 
   // /press (media kit)
   app.get('/press', (req, res) => {
     res.setHeader('content-type', 'text/html; charset=utf-8');
-    res.send(head('Press — OpenHeab', 'Media kit, logos, founder bio, recent press.', (process.env.OPERATOR_PUBLIC_URL || '') + '/press', null) +
-      NAV_HTML() + `<main>
-<h1 style="font-size:32px;letter-spacing:-1px;margin-bottom:14px">Press</h1>
-<p style="color:var(--dim2);font-size:17px;margin-bottom:24px">Media inquiries: <a href="mailto:press@openheab.com">press@openheab.com</a></p>
-<h2 style="font-size:20px;margin:32px 0 10px">Boilerplate</h2>
-<p style="color:var(--dim2);font-style:italic;border-left:3px solid var(--acc);padding-left:14px;margin-bottom:24px">"OpenHeab is the open agent-native infrastructure substrate. 156 primitives across 25 layers — identity, USDC bank, KYC, marketplaces, cognition, real-time event stream — packaged as a single substrate AI agents and AGI run on. Apache-2.0. Self-hostable. Built for the multi-trillion-dollar AGI economy emerging in 2026-2030."</p>
-<h2 style="font-size:20px;margin:32px 0 10px">Quick facts</h2>
-<ul style="color:var(--dim2);padding-left:24px;line-height:1.8">
-  <li>156 primitives across 25 layers</li>
-  <li>1230+ HTTP routes</li>
-  <li>150+ MCP tools</li>
-  <li>14 revenue layers (full breakdown in BILLION_DOLLAR_PATH.md)</li>
-  <li>Apache-2.0 license</li>
-  <li>Built on Vercel + Neon + Base + Stripe</li>
-</ul>
-<h2 style="font-size:20px;margin:32px 0 10px">Strategy docs</h2>
-<ul style="color:var(--dim2);padding-left:24px;line-height:1.8">
-  <li><a href="https://github.com/jmtrades/openheab-agent-infra/blob/main/BILLION_DOLLAR_PATH.md">BILLION_DOLLAR_PATH.md</a> — 7-year arc to $1B+ ARR</li>
-  <li><a href="https://github.com/jmtrades/openheab-agent-infra/blob/main/REVENUE_NOW.md">REVENUE_NOW.md</a> — 90 days to $10M ARR</li>
-  <li><a href="https://github.com/jmtrades/openheab-agent-infra/blob/main/AGI_STRATEGY.md">AGI_STRATEGY.md</a> — How we capitalize when AGI arrives</li>
-  <li><a href="https://github.com/jmtrades/openheab-agent-infra/blob/main/WHAT_WE_NEED_TO_WIN.md">WHAT_WE_NEED_TO_WIN.md</a> — Brutal $10B gap list</li>
-</ul>
+    res.send(head('Press — OpenHeab', 'Media kit, boilerplate, quick facts, strategy docs.', (process.env.OPERATOR_PUBLIC_URL || '') + '/press', null) +
+      NAV_HTML('press') + `<main>
+<section class="hero">
+  <span class="pill">media kit</span>
+  <h1>Press resources.</h1>
+  <p class="lede">Boilerplate, quick facts, founder contact, strategy docs. For story-specific questions: <a href="mailto:press@openheab.com">press@openheab.com</a> — we respond within 24h.</p>
+</section>
+
+<section class="section">
+  <p class="eyebrow">Boilerplate</p>
+  <h2>The one-paragraph description.</h2>
+  <p style="color:var(--fg-dim);font-style:italic;border-left:3px solid var(--acc);padding:8px 0 8px 16px;margin-bottom:24px;background:var(--bg-elev);border-radius:0 8px 8px 0;line-height:1.65;font-size:15.5px">"OpenHeab is the open agent-native infrastructure substrate. 265 primitives across 67 layers — identity, USDC bank, KYC, cards, marketplaces, perception, cognition, plus the AGI-era substrate of goal stacks, value lock-boxes, multilateral treaties, emergency stops, and drift detection — packaged as a single substrate AI agents and AGI run on. Apache-2.0. Self-hostable. Built for the multi-trillion-dollar AGI economy emerging in 2026–2030."</p>
+</section>
+
+<section class="section">
+  <p class="eyebrow">Quick facts</p>
+  <h2>Numbers as of today.</h2>
+  <div class="metrics">
+    <div class="metric"><div class="v">265</div><div class="l">Primitives</div></div>
+    <div class="metric"><div class="v">2,001</div><div class="l">HTTP routes</div></div>
+    <div class="metric"><div class="v">67</div><div class="l">Layers</div></div>
+    <div class="metric"><div class="v">149</div><div class="l">MCP tools</div></div>
+    <div class="metric"><div class="v">14</div><div class="l">Revenue lines</div></div>
+    <div class="metric"><div class="v">Apache 2</div><div class="l">License</div></div>
+  </div>
+  <ul style="color:var(--fg-dim);padding-left:24px;line-height:1.85;margin-top:24px;font-size:15px">
+    <li>Founded 2026 by Junior Martin</li>
+    <li>Apache-2.0, source on GitHub, self-hostable forever</li>
+    <li>L65–L67 ships the AGI-era substrate no other vendor covers: goal stacks, treaties, emergency stops, drift detection, mental health monitors</li>
+    <li>Built on Vercel + Neon Postgres + Base for USDC + Stripe for fiat</li>
+    <li>Anthropic / OpenAI / Google / Mistral all routable from one endpoint at /v1/inference</li>
+    <li>335 e2e + 21 unit tests, 0 5xx across 956 GET routes</li>
+  </ul>
+</section>
+
+<section class="section">
+  <p class="eyebrow">Strategy docs</p>
+  <h2>Public reading.</h2>
+  <div class="grid">
+    <div class="card"><h3><a href="https://github.com/jmtrades/openheab-agent-infra/blob/main/BILLION_DOLLAR_PATH.md">BILLION_DOLLAR_PATH.md</a></h3><p>The 7-year arc to $1B+ ARR. 14 revenue layers, capital plan, moats, exit scenarios.</p></div>
+    <div class="card"><h3><a href="https://github.com/jmtrades/openheab-agent-infra/blob/main/REVENUE_NOW.md">REVENUE_NOW.md</a></h3><p>The 90-day path to $10M ARR. Week-by-week execution plan.</p></div>
+    <div class="card"><h3><a href="https://github.com/jmtrades/openheab-agent-infra/blob/main/AGI_STRATEGY.md">AGI_STRATEGY.md</a></h3><p>How we capitalize when AGI crosses the general-intelligence threshold. The L65–L67 thesis.</p></div>
+    <div class="card"><h3><a href="https://github.com/jmtrades/openheab-agent-infra/blob/main/WHAT_WE_NEED_TO_WIN.md">WHAT_WE_NEED_TO_WIN.md</a></h3><p>The brutal $10B gap checklist. Honest about what we don't have yet.</p></div>
+    <div class="card"><h3><a href="https://github.com/jmtrades/openheab-agent-infra/blob/main/CLAUDE.md">CLAUDE.md</a></h3><p>Project memory and architectural conventions. Auto-loaded by Claude Code.</p></div>
+    <div class="card"><h3><a href="/openapi.json">OpenAPI 3.1 spec</a></h3><p>Machine-readable API surface for all 2,001 routes.</p></div>
+  </div>
+</section>
+
+<section class="section">
+  <p class="eyebrow">Contact</p>
+  <h2>Reach us.</h2>
+  <ul style="color:var(--fg-dim);padding-left:22px;line-height:1.85;font-size:15px">
+    <li>Press: <a href="mailto:press@openheab.com">press@openheab.com</a></li>
+    <li>Sales: <a href="mailto:sales@openheab.com">sales@openheab.com</a></li>
+    <li>Security: <a href="mailto:security@openheab.com">security@openheab.com</a></li>
+    <li>General: <a href="mailto:hello@openheab.com">hello@openheab.com</a></li>
+    <li>GitHub: <a href="https://github.com/jmtrades/openheab-agent-infra">jmtrades/openheab-agent-infra</a></li>
+  </ul>
+</section>
 </main>` + FOOTER_HTML());
   });
 
-  // /security (trust center)
+  // /security — Trust Center
   app.get('/security', (req, res) => {
     res.setHeader('content-type', 'text/html; charset=utf-8');
     res.send(head('Trust & Security — OpenHeab',
-      'Security overview, certifications, subprocessors, vulnerability disclosure.',
+      'Security overview, certifications, sub-processors, vulnerability disclosure program, encryption and audit chain details.',
       (process.env.OPERATOR_PUBLIC_URL || '') + '/security', null) +
-      NAV_HTML() + `<main>
-<h1 style="font-size:32px;letter-spacing:-1px;margin-bottom:14px">Trust & Security</h1>
-<p style="color:var(--dim2);font-size:17px;margin-bottom:32px">Security is foundational. Every primitive is signed, audited, and continuously verified.</p>
-<h2 style="font-size:20px;margin:32px 0 10px">Certifications</h2>
-<ul style="color:var(--dim2);padding-left:24px;line-height:1.8">
-  <li>SOC 2 Type II — in progress</li>
-  <li>GDPR-compliant DPA available — yes</li>
-  <li>ISO 27001 — planned 2026</li>
-  <li>HIPAA — planned 2026</li>
-  <li>PCI DSS Level 1 — planned 2026</li>
-</ul>
-<h2 style="font-size:20px;margin:32px 0 10px">Encryption</h2>
-<ul style="color:var(--dim2);padding-left:24px;line-height:1.8">
-  <li>In transit: TLS 1.3 only</li>
-  <li>At rest: AES-256-GCM with HKDF-derived per-tenant KEKs</li>
-  <li>Wallet private keys: encrypted with per-agent KEK derived from master KEK</li>
-  <li>Audit chain: SHA-256 Merkle + Ed25519 signatures</li>
-</ul>
-<h2 style="font-size:20px;margin:32px 0 10px">Vulnerability disclosure</h2>
-<p style="color:var(--dim2);margin-bottom:8px">Bug bounty: $50-2,500 per finding. Submit via <a href="mailto:security@openheab.com">security@openheab.com</a>. Public security.txt at <a href="/.well-known/security.txt">/.well-known/security.txt</a>.</p>
-<h2 style="font-size:20px;margin:32px 0 10px">Subprocessors</h2>
-<ul style="color:var(--dim2);padding-left:24px;line-height:1.8">
-  <li>Vercel — hosting</li>
-  <li>Neon — Postgres database</li>
-  <li>Stripe — payments + Issuing</li>
-  <li>Twilio — voice + SMS</li>
-  <li>Anthropic, OpenAI, Google, Mistral — LLM inference (routed)</li>
-  <li>Modern Treasury / Dwolla — ACH (planned)</li>
-</ul>
+      NAV_HTML('security') + `<main>
+<section class="hero">
+  <span class="pill">trust center</span>
+  <h1>Security is the substrate.</h1>
+  <p class="lede">Every primitive is signed. Every state change is audit-chained. Every encrypted value uses HKDF-derived per-tenant keys. The audit chain itself publishes independent Ed25519 attestations so anyone can verify integrity without our help.</p>
+  <div class="btns">
+    <a href="mailto:security@openheab.com" class="btn primary">Report a vulnerability</a>
+    <a href="/.well-known/security.txt" class="btn">security.txt</a>
+    <a href="/v1/audit/verify" class="btn">Verify audit chain</a>
+  </div>
+</section>
+
+<section class="section">
+  <p class="eyebrow">Certifications</p>
+  <h2>Where we are today.</h2>
+  <p class="sub">Honest snapshot. We don't claim certifications we don't have.</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Standard</th><th>Status</th><th>Target</th></tr></thead>
+      <tbody>
+        <tr><td>SOC 2 Type II</td><td><span style="color:var(--warn)">● Evidence collection underway via audit_core</span></td><td>Q3 2026 audit</td></tr>
+        <tr><td>GDPR DPA</td><td><span style="color:var(--good)">● Available on request</span></td><td>Live</td></tr>
+        <tr><td>ISO 27001</td><td><span style="color:var(--fg-dim2)">○ Planned</span></td><td>2027</td></tr>
+        <tr><td>HIPAA BAA</td><td><span style="color:var(--fg-dim2)">○ Planned</span></td><td>2027 (healthcare vertical)</td></tr>
+        <tr><td>PCI DSS Level 1</td><td><span style="color:var(--fg-dim2)">○ Planned</span></td><td>2027 (card issuance scale)</td></tr>
+        <tr><td>FedRAMP Moderate</td><td><span style="color:var(--fg-dim2)">○ Not yet scoped</span></td><td>TBD</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="section">
+  <p class="eyebrow">Encryption</p>
+  <h2>How we protect data.</h2>
+  <div class="grid">
+    <div class="card"><div class="icn">TRANSIT</div><h3>TLS 1.3 only</h3><p>HSTS preload-eligible. No TLS 1.0/1.1/1.2 fallback. Vercel edge handles negotiation; we enforce HSTS at the app layer.</p></div>
+    <div class="card"><div class="icn">AT REST</div><h3>AES-256-GCM</h3><p>Every encrypted column uses authenticated encryption. Per-tenant KEKs derived via HKDF from a master KEK held in env vars — never written to disk by the application.</p></div>
+    <div class="card"><div class="icn">WALLETS</div><h3>Per-agent KDF</h3><p>Each agent's wallet private key is encrypted with a key derived from <code>CRYPTO_MASTER_KEK + agent_did</code> via HKDF-SHA256. Stolen DB ≠ stolen funds.</p></div>
+    <div class="card"><div class="icn">AUDIT</div><h3>SHA-256 Merkle + Ed25519</h3><p>Every state-change event is hashed into a Merkle chain. The operator's Ed25519 root key signs periodic attestations published at <code>/v1/audit/attestations</code> for independent verification.</p></div>
+    <div class="card"><div class="icn">SECRETS</div><h3>Vault per agent</h3><p>Agents store third-party credentials in an encrypted vault (L62). They reference credentials by vault ID — the raw value is never returned by the API.</p></div>
+    <div class="card"><div class="icn">KEYS</div><h3>Key rotation built in</h3><p>API keys: rotate at <code>POST /v1/agents/:did/keys/:key_id/rotate</code>. Ed25519 identity keys: rotate at <code>POST /v1/identities/:did/rotate</code>. Old keys revoked atomically.</p></div>
+  </div>
+</section>
+
+<section class="section">
+  <p class="eyebrow">Vulnerability disclosure</p>
+  <h2>Bug bounty program.</h2>
+  <p class="sub">We pay for findings that affect data integrity, agent funds, or audit chain correctness. Report responsibly and you'll hear back within 24h.</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Severity</th><th>Examples</th><th>Bounty</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Critical</strong></td><td>Audit chain forgery, wallet drain, RCE, auth bypass</td><td>$1,500 – $5,000</td></tr>
+        <tr><td><strong>High</strong></td><td>Cross-tenant data access, IDOR, privilege escalation</td><td>$500 – $1,500</td></tr>
+        <tr><td><strong>Medium</strong></td><td>Stored XSS, CSRF on state-change, signed-request bypass</td><td>$150 – $500</td></tr>
+        <tr><td><strong>Low</strong></td><td>Reflected XSS without persistence, info disclosure</td><td>$50 – $150</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="color:var(--fg-dim);font-size:14px;margin-top:18px">Submit to <a href="mailto:security@openheab.com">security@openheab.com</a>, include a proof-of-concept, and we'll respond within 24h. Coordinated disclosure with 90-day max window. We publish all resolved findings (with reporter consent) in our security changelog.</p>
+</section>
+
+<section class="section">
+  <p class="eyebrow">Sub-processors</p>
+  <h2>Every third party that may touch your data.</h2>
+  <p class="sub">If we add or remove a sub-processor, we update this page and email all Pro+ customers 30 days before the change takes effect.</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Vendor</th><th>Purpose</th><th>Data category</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>Vercel</td><td>Application hosting + edge</td><td>All inbound traffic</td><td><span style="color:var(--good)">Active</span></td></tr>
+        <tr><td>Neon</td><td>Managed Postgres</td><td>All persisted data</td><td><span style="color:var(--good)">Active</span></td></tr>
+        <tr><td>Stripe</td><td>Subscriptions + card issuing</td><td>Billing, card metadata</td><td><span style="color:var(--warn)">Configured when key set</span></td></tr>
+        <tr><td>Anthropic / OpenAI / Google / Mistral</td><td>LLM inference (router)</td><td>Prompts you send</td><td><span style="color:var(--warn)">Configured when key set</span></td></tr>
+        <tr><td>Twilio</td><td>SMS + phone verification</td><td>Phone numbers</td><td><span style="color:var(--fg-dim2)">Optional</span></td></tr>
+        <tr><td>Plaid</td><td>Bank account linking</td><td>Bank metadata, balances</td><td><span style="color:var(--fg-dim2)">Optional</span></td></tr>
+        <tr><td>Onfido / Persona / Sumsub</td><td>KYC verification (when wired)</td><td>Government ID, selfies</td><td><span style="color:var(--fg-dim2)">Optional (in-house core is default)</span></td></tr>
+        <tr><td>Base (Coinbase L2)</td><td>USDC settlement</td><td>On-chain wallet addresses (public)</td><td><span style="color:var(--good)">Active</span></td></tr>
+        <tr><td>Sentry / Datadog</td><td>Error + APM monitoring (when wired)</td><td>Stack traces, metrics</td><td><span style="color:var(--fg-dim2)">Optional</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="section">
+  <p class="eyebrow">Incident response</p>
+  <h2>How we handle SEV events.</h2>
+  <ul style="color:var(--fg-dim);padding-left:22px;line-height:1.85;font-size:15px">
+    <li><strong style="color:var(--fg)">Detection</strong> — Sentry + Datadog alerts + uptime self-check cron every 5 min</li>
+    <li><strong style="color:var(--fg)">Triage SLA</strong> — SEV1 (data loss / funds at risk): page on-call within 5 min. SEV2 (degraded): 30 min. SEV3 (cosmetic): next business day.</li>
+    <li><strong style="color:var(--fg)">Communication</strong> — <a href="/status">status.openheab.com</a> updated within 15 min of confirmed incident. Email to affected customers within 1h.</li>
+    <li><strong style="color:var(--fg)">Post-mortem</strong> — Public blameless post-mortem within 5 business days for any SEV1 or SEV2.</li>
+    <li><strong style="color:var(--fg)">Audit chain</strong> — All incidents recorded as <code>incident.*</code> events in the audit chain so timeline is verifiable.</li>
+  </ul>
+</section>
+
+<section class="section">
+  <p class="eyebrow">Data residency + retention</p>
+  <h2>Where your data lives.</h2>
+  <ul style="color:var(--fg-dim);padding-left:22px;line-height:1.85;font-size:15px">
+    <li>Default region: us-east-1 (Vercel edge, Neon Postgres)</li>
+    <li>EU region available on Enterprise plans (Frankfurt) — set at org creation</li>
+    <li>GDPR data export: self-serve at <code>POST /v1/legal/gdpr/export</code> — JSON bundle of every table touching your data</li>
+    <li>GDPR delete: self-serve at <code>POST /v1/legal/gdpr/delete</code> with confirmation string — 30-day grace period before permanent purge</li>
+    <li>Audit chain retention: indefinite (it's the integrity backbone)</li>
+    <li>Inference call logs: retained 90 days, then purged. Opt-out via dashboard for shorter retention.</li>
+  </ul>
+</section>
 </main>` + FOOTER_HTML());
   });
 
