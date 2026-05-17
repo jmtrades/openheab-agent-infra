@@ -184,7 +184,13 @@ const PRIMITIVE_NAMES = [
   // endorsement graph + A2A messaging channels + cross-agent file grants.
   // Makes agents first-class economic participants who can work *with each
   // other*, not just individually against the platform.
-  'agent_economy'
+  'agent_economy',
+  // Layer 64 — Agent utility belt: 60+ pure-function utilities at /v1/util/*
+  // (string, encoding, hash, validation, datetime, formatting, numeric, text,
+  // color, JSON, markdown, QR, geo, rate-limit, identifiers, URL, CSV,
+  // language detect). Every agent needs these; centralizing means each only
+  // gets implemented once, optimized, and exposed as MCP tools.
+  'agent_utility_belt'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -504,7 +510,9 @@ const REGISTER_OVERRIDES = {
   // Layer 62 — Agent-callable everything (no human-in-loop)
   agent_self_provision: 'registerAgentSelfProvisionRoutes',
   // Layer 63 — Agent economy (capabilities + discovery + jobs + subagents + endorsements + a2a)
-  agent_economy: 'registerAgentEconomyRoutes'
+  agent_economy: 'registerAgentEconomyRoutes',
+  // Layer 64 — Agent utility belt
+  agent_utility_belt: 'registerAgentUtilityBeltRoutes'
 };
 
 async function migrateAll(pool) {

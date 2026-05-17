@@ -1720,6 +1720,129 @@ async function run() {
     assert.ok(Array.isArray(j.shared_files));
   });
 
+  console.log('\n== e2e: layer 64 — agent utility belt (60+ utilities) ==');
+  await test('GET /v1/util lists 80+ utilities', async () => {
+    const r = await fetchPath('/v1/util');
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(j.total >= 80, `expected ≥80 utilities, got ${j.total}`);
+    assert.ok(Array.isArray(j.utilities));
+  });
+  await test('POST /v1/util/slugify converts string', async () => {
+    const r = await fetchPath('/v1/util/slugify', { method: 'POST', body: { s: 'Hello World! 2025' } });
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.strictEqual(j.result, 'hello-world-2025');
+  });
+  await test('POST /v1/util/sha256 hashes correctly', async () => {
+    const r = await fetchPath('/v1/util/sha256', { method: 'POST', body: { s: 'hello' } });
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.strictEqual(j.result, '2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824');
+  });
+  await test('POST /v1/util/is_email validates address', async () => {
+    const ok = await fetchPath('/v1/util/is_email', { method: 'POST', body: { s: 'user@example.com' } });
+    const bad = await fetchPath('/v1/util/is_email', { method: 'POST', body: { s: 'not-an-email' } });
+    assert.strictEqual(JSON.parse(ok.body).result, true);
+    assert.strictEqual(JSON.parse(bad.body).result, false);
+  });
+  await test('POST /v1/util/is_iban validates IBAN with mod-97', async () => {
+    // GB82 WEST 1234 5698 7654 32 — a real valid IBAN test value
+    const r = await fetchPath('/v1/util/is_iban', { method: 'POST', body: { s: 'GB82WEST12345698765432' } });
+    assert.strictEqual(JSON.parse(r.body).result, true);
+  });
+  await test('POST /v1/util/is_luhn validates card', async () => {
+    // 4111 1111 1111 1111 — known-valid test card
+    const r = await fetchPath('/v1/util/is_luhn', { method: 'POST', body: { s: '4111111111111111' } });
+    assert.strictEqual(JSON.parse(r.body).result, true);
+  });
+  await test('POST /v1/util/levenshtein computes edit distance', async () => {
+    const r = await fetchPath('/v1/util/levenshtein', { method: 'POST', body: { a: 'kitten', b: 'sitting' } });
+    assert.strictEqual(JSON.parse(r.body).result, 3);
+  });
+  await test('POST /v1/util/similarity returns 0-1 score', async () => {
+    const r = await fetchPath('/v1/util/similarity', { method: 'POST', body: { a: 'hello', b: 'hallo' } });
+    const j = JSON.parse(r.body);
+    assert.ok(j.result > 0.7 && j.result < 1);
+  });
+  await test('POST /v1/util/uuid_v4 returns valid UUID', async () => {
+    const r = await fetchPath('/v1/util/uuid_v4', { method: 'POST', body: {} });
+    const j = JSON.parse(r.body);
+    assert.ok(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(j.result));
+  });
+  await test('POST /v1/util/haversine_km computes great-circle distance', async () => {
+    // SF → NYC roughly 4130km
+    const r = await fetchPath('/v1/util/haversine_km', {
+      method: 'POST', body: { lat1: 37.7749, lon1: -122.4194, lat2: 40.7128, lon2: -74.0060 }
+    });
+    const j = JSON.parse(r.body);
+    assert.ok(j.result > 4000 && j.result < 4200, `expected ~4130km, got ${j.result}`);
+  });
+  await test('POST /v1/util/redact_pii redacts sensitive data', async () => {
+    const r = await fetchPath('/v1/util/redact_pii', {
+      method: 'POST',
+      body: { s: 'email me at john@example.com or call +14155551234' }
+    });
+    const j = JSON.parse(r.body);
+    assert.ok(j.result.includes('[EMAIL]'));
+    assert.ok(j.result.includes('[PHONE]'));
+  });
+  await test('POST /v1/util/format_currency formats amounts', async () => {
+    const r = await fetchPath('/v1/util/format_currency', { method: 'POST', body: { cents: 12345, currency: 'USD' } });
+    assert.strictEqual(JSON.parse(r.body).result, '$123.45');
+  });
+  await test('POST /v1/util/csv_parse parses CSV', async () => {
+    const r = await fetchPath('/v1/util/csv_parse', {
+      method: 'POST', body: { text: 'name,age\nAlice,30\nBob,25' }
+    });
+    const j = JSON.parse(r.body);
+    assert.deepStrictEqual(j.result.headers, ['name', 'age']);
+    assert.strictEqual(j.result.rows.length, 2);
+    assert.strictEqual(j.result.rows[0].name, 'Alice');
+  });
+  await test('POST /v1/util/json_path queries nested object', async () => {
+    const r = await fetchPath('/v1/util/json_path', {
+      method: 'POST', body: { obj: { a: { b: { c: 42 } } }, path: 'a.b.c' }
+    });
+    assert.strictEqual(JSON.parse(r.body).result, 42);
+  });
+  await test('POST /v1/util/password_strength scores password', async () => {
+    const r = await fetchPath('/v1/util/password_strength', { method: 'POST', body: { pw: 'Tr0ub4dor&3' } });
+    const j = JSON.parse(r.body);
+    assert.ok(j.result.score >= 4);
+    assert.ok(['weak', 'medium', 'strong'].includes(j.result.label));
+  });
+  await test('GET /v1/util/qr.svg returns SVG image', async () => {
+    const r = await fetchPath('/v1/util/qr.svg?text=hello');
+    assert.strictEqual(r.status, 200);
+    assert.ok(r.headers['content-type']?.includes('svg'));
+    assert.ok(/<svg|<rect/.test(r.body));
+  });
+  await test('POST /v1/util/hex_to_rgb parses hex color', async () => {
+    const r = await fetchPath('/v1/util/hex_to_rgb', { method: 'POST', body: { hex: '#ff8800' } });
+    const j = JSON.parse(r.body);
+    assert.deepStrictEqual(j.result, { r: 255, g: 136, b: 0 });
+  });
+  await test('POST /v1/util/exp_backoff_ms computes backoff', async () => {
+    const r = await fetchPath('/v1/util/exp_backoff_ms', { method: 'POST', body: { attempt: 3, base: 1000, max: 60000 } });
+    assert.strictEqual(JSON.parse(r.body).result, 8000);
+  });
+  await test('POST /v1/util/bignum_mul handles huge integers correctly', async () => {
+    // Verify against a known-correct big-int multiplication
+    const a = '99999999999999999999', b = '12345678901234567890';
+    const expected = (BigInt(a) * BigInt(b)).toString();
+    const r = await fetchPath('/v1/util/bignum_mul', { method: 'POST', body: { a, b } });
+    assert.strictEqual(JSON.parse(r.body).result, expected);
+    // Sanity: result is much larger than either operand
+    assert.ok(BigInt(JSON.parse(r.body).result) > BigInt(a));
+  });
+  await test('POST /v1/util/unknown returns 404', async () => {
+    const r = await fetchPath('/v1/util/nonexistent_function', { method: 'POST', body: {} });
+    assert.strictEqual(r.status, 404);
+    const j = JSON.parse(r.body);
+    assert.strictEqual(j.error, 'unknown_util');
+  });
+
   console.log(`\n${passed} passed, ${failed} failed`);
   if (skipReasons.length) console.log(`(${skipReasons.length} skipped: ${skipReasons.join(', ')})`);
   await new Promise(r => server.close(r));
