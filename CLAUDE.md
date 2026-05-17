@@ -12,13 +12,13 @@ Repo: `github.com/jmtrades/openheab-agent-infra`
 
 | Metric | Value |
 |---|---|
-| Primitive modules | **264** in `src/primitives/` |
-| HTTP routes | **1,971+** registered |
+| Primitive modules | **265** in `src/primitives/` |
+| HTTP routes | **2,001+** registered |
 | Cron jobs | 21 scheduled (85 wired via dispatcher) |
 | MCP tools | 149 at `/mcp` |
-| Architecture layers | 66 |
+| Architecture layers | 67 |
 | Utility functions | **91 at `/v1/util/*`** (slugify, hash, validate, format, etc.) |
-| Tests | 306 e2e + 21 unit + boot + route_smoke (0 5xx across 946+ GET routes) |
+| Tests | 334 e2e + 21 unit + boot + route_smoke (0 5xx across 956+ GET routes) |
 | Revenue layers | 14 (see `BILLION_DOLLAR_PATH.md`) |
 
 ## The 135 primitives (19 layers)
@@ -70,6 +70,7 @@ Repo: `github.com/jmtrades/openheab-agent-infra`
 **L64 Agent utility belt (1):** agent_utility_belt (91 pure-function utilities at `/v1/util/*` — string ops, encoding, hashing, validation, datetime, currency formatting, numeric / BigInt math, text similarity, color, JSON path, markdown, QR SVG, geo distance, identifier gen, CSV parse, language detect — every agent needs these; centralizing means each gets implemented once, optimized, and exposed as MCP tools)
 **L65 AGI infrastructure (1):** agi_infrastructure (the substrate AGIs need once they cross the general-intelligence threshold — goal stacks with cryptographic decomposition hashes + parent/child decomposition trees; belief commitments with content-hash + revision chains via `superseded_by` pointers; value lock-boxes for immutable terminal preferences with quorum-required unlock; compute autonomy grants with budget + GPU-hour caps; multi-AGI consortia DAOs with weighted voting + proposals + threshold-based execution; capability snapshots over time with per-capability trend extraction; AGI reproduction with parent/offspring lineage tracking + generation counters; per-jurisdiction rights registry (electronic_person, legal_entity, etc.); estate planning with executor + heirs + asset inventory + will; self-evaluation harness with per-benchmark trend; 13 new tables, 25+ routes)
 **L66 AGI governance (1):** agi_governance (between-AGI coordination + with-humanity trust surface — multilateral treaties with sign/withdraw + content-hash; mind-state checkpoints with manifest hash + diff endpoint between any two checkpoints; graceful shutdown procedures with stakeholder notice + successor DID + data disposition (archive/purge/transfer); peer review system where AGIs audit each other's decisions with verdicts (endorse/object/abstain) + severity + reasoning; training provenance chain tracking every dataset + method + base model that shaped this AGI; behavioral pre-commitments with stake_cents + verifiable_via that compute trustworthiness_score from fulfillment ratio; substrate portability bundles exporting AGI state for migration with manifest hash; continuous safety dial that aggregates per-monitor risk_score → composite_risk with flagged threshold ≥0.7; mandatory capability disclosure with reviewer approval/restriction/prohibition workflow; deception index computing honesty_score from contradictions across signed statements; combined `/v1/agi/:did/governance-health` returning composite_governance_score from all four dimensions; 11 new tables, 25+ routes)
+**L67 AGI operations (1):** agi_operations (operational day-to-day safety + collective intelligence — N-of-M-quorum emergency stop with per-cycle signature counting and auto status transition once quorum reached; quarantine zones with isolation_level ∈ {read-only, no-network, airgapped} and assignment/release flow; drift detection comparing latest agi_capability_snapshots vs configured agi_capability_baselines with per-capability max_deviation threshold; boundary declarations with content_hash + violation tracking that auto-quarantines at severity ≥8; AGI-to-AGI dispute mediation with arbiter_pool and majority-verdict auto-resolution at ≥3 votes; collective AGI knowledge graph (nodes with content_hash, typed edges, agree/disagree/cannot-verify attestations, ILIKE search); formal proof submissions in z3/coq/lean/isabelle with verifier workflow; AGI grant/gift transfers with tax_jurisdiction + kyc_ref recording and grantor-only settlement; mental health monitors across 5 indicators (incoherence/oscillation/repetition/fatigue/hallucination) yielding wellbeing_score; compliance certifications (ISO 42001/NIST AI RMF/EU AI Act) with issuer-only revoke; 11 new tables, ~25 routes)
 
 ## Critical infrastructure files
 

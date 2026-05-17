@@ -212,7 +212,21 @@ const PRIMITIVE_NAMES = [
   // capability disclosure with reviewer decisions, deception index from
   // contradictions across signed statements, and a combined governance-
   // health summary.
-  'agi_governance'
+  'agi_governance',
+  // Layer 67 — AGI operations: the operational safety layer. N-of-M-quorum
+  // emergency stop, quarantine zones (read-only/no-network/airgapped) with
+  // assignment/release, drift detection comparing latest capability
+  // snapshots against established baselines with configurable max_deviation,
+  // boundary declarations + violation tracking with auto-quarantine at
+  // severity ≥8, dispute mediation between two AGIs with arbiter pool and
+  // majority verdict resolution, collective AGI knowledge graph (nodes
+  // with content_hash, typed edges, attestations of agree/disagree),
+  // formal proof submissions (z3/coq/lean/isabelle) with verifier
+  // workflow, AGI-to-AGI grants with KYC + tax jurisdiction recording,
+  // mental health monitors (incoherence/oscillation/repetition/fatigue/
+  // hallucination) with wellbeing_score, and compliance certifications
+  // (ISO 42001/NIST AI RMF/EU AI Act) with issuer/revoke flow.
+  'agi_operations'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -538,7 +552,9 @@ const REGISTER_OVERRIDES = {
   // Layer 65 — AGI infrastructure (goals, beliefs, values, compute autonomy, consortia, offspring, rights, estates, self-eval)
   agi_infrastructure: 'registerAgiInfrastructureRoutes',
   // Layer 66 — AGI governance (treaties, checkpoints, shutdown, peer review, training provenance, precommitments, portability, safety dial, capability disclosure, deception index)
-  agi_governance: 'registerAgiGovernanceRoutes'
+  agi_governance: 'registerAgiGovernanceRoutes',
+  // Layer 67 — AGI operations (emergency stop, quarantine, drift detection, boundaries, dispute mediation, knowledge graph, formal proofs, grants, mental health, compliance certs)
+  agi_operations: 'registerAgiOperationsRoutes'
 };
 
 async function migrateAll(pool) {

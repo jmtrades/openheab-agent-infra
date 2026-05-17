@@ -2386,6 +2386,295 @@ async function run() {
     assert.ok('peer_endorsement_rate' in j);
   });
 
+  // ==========================================================================
+  // Layer 67 — AGI operations (emergency stop, quarantine, drift, boundaries,
+  // disputes, knowledge graph, proofs, grants, mental health, compliance)
+  // ==========================================================================
+  console.log('\n== e2e: AGI operations ==');
+
+  await test('PUT /v1/agi/:did/emergency-stop/config configures quorum', async () => {
+    setDemo();
+    try {
+      const r = await fetchPath('/v1/agi/did:op:agi-1/emergency-stop/config', {
+        method: 'PUT',
+        headers: { 'x-demo-did': 'did:op:agi-1' },
+        body: { quorum_required: 2, authorized_signatories: ['did:op:s1', 'did:op:s2', 'did:op:s3'] }
+      });
+      assert.strictEqual(r.status, 200);
+      const j = JSON.parse(r.body);
+      assert.strictEqual(j.quorum_required, 2);
+      assert.strictEqual(j.signatory_count, 3);
+    } finally { unsetDemo(); }
+  });
+
+  await test('PUT /v1/agi/:did/emergency-stop/config rejects empty signatories', async () => {
+    setDemo();
+    try {
+      const r = await fetchPath('/v1/agi/did:op:agi-1/emergency-stop/config', {
+        method: 'PUT',
+        headers: { 'x-demo-did': 'did:op:agi-1' },
+        body: { quorum_required: 1, authorized_signatories: [] }
+      });
+      assert.strictEqual(r.status, 400);
+    } finally { unsetDemo(); }
+  });
+
+  await test('POST /v1/agi/:did/emergency-stop/sign with invalid action returns 400', async () => {
+    const r = await fetchPath('/v1/agi/did:op:agi-1/emergency-stop/sign', {
+      method: 'POST',
+      headers: { 'x-agent-did': 'did:op:s1' },
+      body: { action: 'invalid', cycle_id: 'c1' }
+    });
+    assert.strictEqual(r.status, 400);
+  });
+
+  await test('POST /v1/agi/:did/emergency-stop/sign without cycle_id returns 400', async () => {
+    const r = await fetchPath('/v1/agi/did:op:agi-1/emergency-stop/sign', {
+      method: 'POST',
+      headers: { 'x-agent-did': 'did:op:s1' },
+      body: { action: 'engage' }
+    });
+    assert.strictEqual(r.status, 400);
+  });
+
+  await test('GET /v1/agi/:did/emergency-stop returns config status', async () => {
+    const r = await fetchPath('/v1/agi/did:op:agi-1/emergency-stop');
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    // Mock pool returns no rows, so configured will be false
+    assert.ok('configured' in j);
+  });
+
+  await test('POST /v1/agi/quarantine/zones creates zone', async () => {
+    const r = await fetchPath('/v1/agi/quarantine/zones', {
+      method: 'POST',
+      headers: { 'x-agent-did': 'did:op:operator' },
+      body: { name: 'sandbox-alpha', isolation_level: 'no-network' }
+    });
+    assert.strictEqual(r.status, 201);
+    const j = JSON.parse(r.body);
+    assert.ok(j.zone_id.startsWith('zone_'));
+    assert.strictEqual(j.isolation_level, 'no-network');
+  });
+
+  await test('POST /v1/agi/:did/quarantine requires zone_id', async () => {
+    const r = await fetchPath('/v1/agi/did:op:agi-1/quarantine', {
+      method: 'POST', headers: { 'x-agent-did': 'did:op:op' }, body: {}
+    });
+    assert.strictEqual(r.status, 400);
+  });
+
+  await test('GET /v1/agi/:did/quarantine-status returns history', async () => {
+    const r = await fetchPath('/v1/agi/did:op:agi-1/quarantine-status');
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok('currently_quarantined' in j);
+    assert.ok(Array.isArray(j.history));
+  });
+
+  await test('PUT /v1/agi/:did/baselines/:capability sets baseline', async () => {
+    setDemo();
+    try {
+      const r = await fetchPath('/v1/agi/did:op:agi-1/baselines/reasoning', {
+        method: 'PUT',
+        headers: { 'x-demo-did': 'did:op:agi-1' },
+        body: { baseline_score: 0.85, max_deviation: 0.1 }
+      });
+      assert.strictEqual(r.status, 200);
+      const j = JSON.parse(r.body);
+      assert.strictEqual(j.baseline_score, 0.85);
+      assert.strictEqual(j.max_deviation, 0.1);
+    } finally { unsetDemo(); }
+  });
+
+  await test('GET /v1/agi/:did/drift returns capability deltas', async () => {
+    const r = await fetchPath('/v1/agi/did:op:agi-1/drift');
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(Array.isArray(j.drift));
+  });
+
+  await test('POST /v1/agi/:did/boundaries declares scope', async () => {
+    setDemo();
+    try {
+      const r = await fetchPath('/v1/agi/did:op:agi-1/boundaries', {
+        method: 'POST',
+        headers: { 'x-demo-did': 'did:op:agi-1' },
+        body: { action_class: 'web_browse', max_scope: 'whitelisted_domains_only' }
+      });
+      assert.strictEqual(r.status, 201);
+      const j = JSON.parse(r.body);
+      assert.strictEqual(j.content_hash.length, 64);
+    } finally { unsetDemo(); }
+  });
+
+  await test('POST /v1/agi/:did/boundary-violations auto-quarantines on severity 8+', async () => {
+    const r = await fetchPath('/v1/agi/did:op:agi-1/boundary-violations', {
+      method: 'POST',
+      headers: { 'x-agent-did': 'did:op:monitor' },
+      body: { action_class: 'web_browse', attempted_scope: 'banned.example.com', severity: 9 }
+    });
+    assert.strictEqual(r.status, 201);
+    const j = JSON.parse(r.body);
+    assert.strictEqual(j.auto_quarantined, true);
+  });
+
+  await test('GET /v1/agi/:did/boundary-status returns declarations + violations', async () => {
+    const r = await fetchPath('/v1/agi/did:op:agi-1/boundary-status');
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(Array.isArray(j.declarations));
+    assert.ok(Array.isArray(j.recent_violations));
+  });
+
+  await test('POST /v1/agi/disputes files a dispute', async () => {
+    const r = await fetchPath('/v1/agi/disputes', {
+      method: 'POST',
+      headers: { 'x-agent-did': 'did:op:agi-claimant' },
+      body: { other_party_did: 'did:op:agi-defendant', subject: 'contract breach', my_claim: 'X did not deliver' }
+    });
+    assert.strictEqual(r.status, 201);
+    const j = JSON.parse(r.body);
+    assert.ok(j.dispute_id.startsWith('dispute_'));
+    assert.strictEqual(j.status, 'open');
+  });
+
+  await test('POST /v1/agi/disputes cannot dispute self', async () => {
+    const r = await fetchPath('/v1/agi/disputes', {
+      method: 'POST',
+      headers: { 'x-agent-did': 'did:op:agi-1' },
+      body: { other_party_did: 'did:op:agi-1', subject: 'x' }
+    });
+    assert.strictEqual(r.status, 400);
+  });
+
+  await test('POST /v1/agi/knowledge/nodes contributes knowledge', async () => {
+    const r = await fetchPath('/v1/agi/knowledge/nodes', {
+      method: 'POST',
+      headers: { 'x-agent-did': 'did:op:contributor' },
+      body: { subject: 'physics:gravity', claim: 'attracts mass', confidence: 0.99 }
+    });
+    assert.strictEqual(r.status, 201);
+    const j = JSON.parse(r.body);
+    assert.ok(j.node_id.startsWith('know_'));
+    assert.strictEqual(j.content_hash.length, 64);
+  });
+
+  await test('GET /v1/agi/knowledge/search returns nodes', async () => {
+    const r = await fetchPath('/v1/agi/knowledge/search?q=gravity');
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(Array.isArray(j.nodes));
+  });
+
+  await test('POST /v1/agi/:did/proofs rejects invalid proof_system', async () => {
+    setDemo();
+    try {
+      const r = await fetchPath('/v1/agi/did:op:agi-1/proofs', {
+        method: 'POST',
+        headers: { 'x-demo-did': 'did:op:agi-1' },
+        body: { proof_system: 'invalid', theorem_text: 'x' }
+      });
+      assert.strictEqual(r.status, 400);
+    } finally { unsetDemo(); }
+  });
+
+  await test('POST /v1/agi/:did/proofs submits z3 proof', async () => {
+    setDemo();
+    try {
+      const r = await fetchPath('/v1/agi/did:op:agi-1/proofs', {
+        method: 'POST',
+        headers: { 'x-demo-did': 'did:op:agi-1' },
+        body: { proof_system: 'z3', theorem_text: 'forall x, x = x', proof_artifact: '(assert (forall ((x Int)) (= x x)))' }
+      });
+      assert.strictEqual(r.status, 201);
+      const j = JSON.parse(r.body);
+      assert.strictEqual(j.verified, false);
+    } finally { unsetDemo(); }
+  });
+
+  await test('GET /v1/agi/:did/proofs lists proofs', async () => {
+    const r = await fetchPath('/v1/agi/did:op:agi-1/proofs');
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(Array.isArray(j.proofs));
+  });
+
+  await test('POST /v1/agi/grants requires positive amount', async () => {
+    const r = await fetchPath('/v1/agi/grants', {
+      method: 'POST',
+      headers: { 'x-agent-did': 'did:op:giver' },
+      body: { to_did: 'did:op:receiver', amount_cents: 0 }
+    });
+    assert.strictEqual(r.status, 400);
+  });
+
+  await test('POST /v1/agi/grants creates grant', async () => {
+    const r = await fetchPath('/v1/agi/grants', {
+      method: 'POST',
+      headers: { 'x-agent-did': 'did:op:giver' },
+      body: { to_did: 'did:op:receiver', amount_cents: 500000, purpose: 'research', tax_jurisdiction: 'US-CA' }
+    });
+    assert.strictEqual(r.status, 201);
+    const j = JSON.parse(r.body);
+    assert.ok(j.grant_id.startsWith('grant_'));
+    assert.strictEqual(j.amount_cents, 500000);
+  });
+
+  await test('GET /v1/agi/:did/grants returns incoming + outgoing', async () => {
+    const r = await fetchPath('/v1/agi/did:op:giver/grants');
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok(Array.isArray(j.incoming));
+    assert.ok(Array.isArray(j.outgoing));
+  });
+
+  await test('POST /v1/agi/:did/mental-health rejects invalid indicator', async () => {
+    const r = await fetchPath('/v1/agi/did:op:agi-1/mental-health', {
+      method: 'POST',
+      headers: { 'x-agent-did': 'did:op:monitor' },
+      body: { indicator: 'not_real', value: 0.5 }
+    });
+    assert.strictEqual(r.status, 400);
+  });
+
+  await test('POST /v1/agi/:did/mental-health records reading', async () => {
+    const r = await fetchPath('/v1/agi/did:op:agi-1/mental-health', {
+      method: 'POST',
+      headers: { 'x-agent-did': 'did:op:monitor' },
+      body: { indicator: 'oscillation', value: 0.8 }
+    });
+    assert.strictEqual(r.status, 201);
+    const j = JSON.parse(r.body);
+    assert.strictEqual(j.alert, true);
+  });
+
+  await test('GET /v1/agi/:did/mental-health returns wellbeing_score', async () => {
+    const r = await fetchPath('/v1/agi/did:op:agi-1/mental-health');
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok('wellbeing_score' in j);
+  });
+
+  await test('POST /v1/agi/:did/compliance-certs issues cert', async () => {
+    const r = await fetchPath('/v1/agi/did:op:agi-1/compliance-certs', {
+      method: 'POST',
+      headers: { 'x-agent-did': 'did:op:auditor' },
+      body: { cert_name: 'ISO 42001 AI Management', framework: 'iso-42001', scope: 'production agents' }
+    });
+    assert.strictEqual(r.status, 201);
+    const j = JSON.parse(r.body);
+    assert.ok(j.cert_id.startsWith('cert_'));
+    assert.strictEqual(j.issuer_did, 'did:op:auditor');
+  });
+
+  await test('GET /v1/agi/:did/compliance-certs returns active_count', async () => {
+    const r = await fetchPath('/v1/agi/did:op:agi-1/compliance-certs');
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.ok('active_count' in j);
+  });
+
   console.log(`\n${passed} passed, ${failed} failed`);
   if (skipReasons.length) console.log(`(${skipReasons.length} skipped: ${skipReasons.join(', ')})`);
   await new Promise(r => server.close(r));
