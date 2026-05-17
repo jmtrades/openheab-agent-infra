@@ -71,7 +71,12 @@ module.exports = async (req, res) => {
   try {
     if (!cachedHandler) {
       if (!cachedPromise) cachedPromise = buildHandler();
-      cachedHandler = await cachedPromise;
+      try {
+        cachedHandler = await cachedPromise;
+      } catch (e) {
+        cachedPromise = null;
+        throw e;
+      }
     }
     return cachedHandler(req, res);
   } catch (e) {

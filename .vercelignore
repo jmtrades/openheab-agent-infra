@@ -1,0 +1,46 @@
+# Don't bundle these in the Vercel function
+.git
+.github
+.agents
+.claude
+.vscode
+.idea
+
+# Tests + dev fixtures
+test/
+*.test.js
+*.spec.js
+coverage/
+pg-mem*/
+
+# Smart contracts (not needed by API)
+contracts/
+
+# Docs — keep README + LICENSE + CLAUDE.md only
+AGI_AGE_PLAYBOOK.md
+AGI_STRATEGY.md
+ALL_GAPS.md
+BILLION_DOLLAR_PATH.md
+CHANGELOG.md
+CONTRIBUTING.md
+COWORKER_HANDOFF.md
+INDEX.md
+LAUNCH_NOW.md
+NO_THIRD_PARTY.md
+QUICKSTART.md
+REVENUE_NOW.md
+WHAT_WE_NEED_TO_WIN.md
+_100B_AUDIT.md
+SECURITY.md
+
+# Build artifacts
+*.log
+*.bak
+*.bak[0-9]
+dryrun.js
+deploy.sh
+Makefile
+Dockerfile
+
+# Env templates (real env is set in Vercel UI)
+.env*
