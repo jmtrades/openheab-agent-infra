@@ -172,7 +172,13 @@ const PRIMITIVE_NAMES = [
   // rfp (50+ canned answers), /v1/enterprise/security-questionnaire (SIG/CAIQ
   // pre-fill), /v1/enterprise/readiness-score (Fortune-500 procurement
   // checklist), /v1/enterprise/prospects (CRM)
-  'enterprise_command_center'
+  'enterprise_command_center',
+  // Layer 62 — Agent-callable provisioning. Removes the "paste API key into
+  // a web form" requirement. Per-agent encrypted credential vault, agent-
+  // callable setup endpoints (signed-request auth), USDC-native subscription
+  // purchase (no card / no Stripe Checkout / no human-in-loop ever),
+  // delegation tokens (agent A grants agent B scoped provisioning rights).
+  'agent_self_provision'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -488,7 +494,9 @@ const REGISTER_OVERRIDES = {
   // Layer 60 — Distributed tracing
   tracing: 'registerTracingRoutes',
   // Layer 61 — Enterprise GTM + CEO command center
-  enterprise_command_center: 'registerEnterpriseCommandCenterRoutes'
+  enterprise_command_center: 'registerEnterpriseCommandCenterRoutes',
+  // Layer 62 — Agent-callable everything (no human-in-loop)
+  agent_self_provision: 'registerAgentSelfProvisionRoutes'
 };
 
 async function migrateAll(pool) {

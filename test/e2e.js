@@ -1548,6 +1548,43 @@ async function run() {
     assert.strictEqual(r.status, 401);
   });
 
+  console.log('\n== e2e: layer 62 — agent-callable provisioning (no human-in-loop) ==');
+  await test('GET /v1/pricing/usdc returns machine-readable tier prices', async () => {
+    const r = await fetchPath('/v1/pricing/usdc');
+    assert.strictEqual(r.status, 200);
+    const j = JSON.parse(r.body);
+    assert.strictEqual(j.currency, 'USDC');
+    assert.ok(Array.isArray(j.tiers) && j.tiers.length === 4);
+    assert.ok(j.tiers.find(t => t.plan === 'pro'));
+  });
+  await test('GET /v1/agents/:did/setup/discovered returns discovered creds shape', async () => {
+    const r = await fetchPath('/v1/agents/did:op:disc-test/setup/discovered');
+    // Without signature it'll 401 — that's correct
+    assert.ok([200, 401].includes(r.status));
+  });
+  await test('encryptValue + decryptValue roundtrip per-tenant', () => {
+    const { encryptValue, decryptValue } = require('../src/primitives/agent_self_provision');
+    const did = 'did:op:enc-test';
+    const original = 'sk_live_super_secret_value_12345';
+    const enc = encryptValue(original, did);
+    assert.ok(enc.encrypted && enc.iv);
+    assert.notStrictEqual(enc.encrypted, original);
+    const dec = decryptValue(enc.encrypted, enc.iv, did);
+    assert.strictEqual(dec, original);
+  });
+  await test('encryptValue+decryptValue with wrong DID throws (tenant isolation)', () => {
+    const { encryptValue, decryptValue } = require('../src/primitives/agent_self_provision');
+    const enc = encryptValue('secret', 'did:op:agentA');
+    assert.throws(() => decryptValue(enc.encrypted, enc.iv, 'did:op:agentB'));
+  });
+  await test('TIER_USDC_PRICES exports 4 tiers with raw amounts', () => {
+    const { TIER_USDC_PRICES } = require('../src/primitives/agent_self_provision');
+    assert.ok(TIER_USDC_PRICES.starter && TIER_USDC_PRICES.pro
+           && TIER_USDC_PRICES.team && TIER_USDC_PRICES.enterprise);
+    // 1 USDC = 1_000_000 raw (6 decimals) → $19 = 19_000_000 raw
+    assert.strictEqual(TIER_USDC_PRICES.starter.raw_usdc, '19000000');
+  });
+
   console.log(`\n${passed} passed, ${failed} failed`);
   if (skipReasons.length) console.log(`(${skipReasons.length} skipped: ${skipReasons.join(', ')})`);
   await new Promise(r => server.close(r));
