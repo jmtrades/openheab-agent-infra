@@ -46,7 +46,7 @@ async function migrate(pool) {
 function newId(p) { return p + '_' + crypto.randomBytes(10).toString('hex'); }
 function isAdmin(req) {
   const t = req.headers['x-admin-token'];
-  return t && t === process.env.OPERATOR_ADMIN_TOKEN;
+  return require('../safe_compare').safeTokenCompare(t, process.env.OPERATOR_ADMIN_TOKEN);
 }
 
 const federationSchema = z.object({

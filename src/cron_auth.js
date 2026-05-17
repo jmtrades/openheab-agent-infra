@@ -6,9 +6,13 @@ const REGISTERED_CRONS = [];
 function isCronRequest(req) {
   const secret = process.env.CRON_SECRET;
   if (!secret) return false;
-  if (req.headers['x-cron-secret'] === secret) return true;
-  if (req.headers['x-vercel-cron'] && req.headers['authorization'] === `Bearer ${secret}`) return true;
-  if (req.headers['authorization'] === `Bearer ${secret}`) return true;
+  const { safeTokenCompare } = require('./safe_compare');
+  if (safeTokenCompare(req.headers['x-cron-secret'], secret)) return true;
+  const auth = req.headers['authorization'] || '';
+  const bearer = auth.startsWith('Bearer ') ? auth.slice(7) : '';
+  // Vercel's cron facility sends a Bearer with the project's CRON_SECRET
+  if (req.headers['x-vercel-cron'] && safeTokenCompare(bearer, secret)) return true;
+  if (safeTokenCompare(bearer, secret)) return true;
   return false;
 }
 

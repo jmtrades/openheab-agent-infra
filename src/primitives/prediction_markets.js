@@ -383,7 +383,7 @@ function registerPredictionMarketsRoutes(app, pool, verifyAgentAuth, auditChain)
       if (!parse.success) return res.status(400).json({ error: 'invalid_input', details: parse.error.issues });
       const d = parse.data;
       const auth = await verifyAgentAuth(req, d.resolver_did);
-      const isAdmin = req.headers['x-admin-token'] === process.env.OPERATOR_ADMIN_TOKEN;
+      const { safeTokenCompare: _stc } = require('../safe_compare'); const isAdmin = _stc(req.headers['x-admin-token'], process.env.OPERATOR_ADMIN_TOKEN);
       if (!auth.valid && !isAdmin) return res.status(401).json({ error: 'unauthorized' });
 
       const mRow = await pool.query(

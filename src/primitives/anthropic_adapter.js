@@ -150,7 +150,7 @@ function registerAnthropicAdapterRoutes(app, pool, verifyAgentAuth, auditChain) 
 
   app.get('/v1/admin/anthropic/stats', async (req, res) => {
     const t = req.headers['x-admin-token'];
-    if (t !== process.env.OPERATOR_ADMIN_TOKEN) return res.status(401).json({ error: 'admin_auth_required' });
+    const { safeTokenCompare: _stc } = require('../safe_compare'); if (!_stc(t, process.env.OPERATOR_ADMIN_TOKEN)) return res.status(401).json({ error: 'admin_auth_required' });
     const r = await pool.query(`
       SELECT model, COUNT(*)::int AS calls,
              SUM(input_tokens)::bigint AS tok_in, SUM(output_tokens)::bigint AS tok_out,

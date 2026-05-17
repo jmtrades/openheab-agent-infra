@@ -267,8 +267,8 @@ function registerPayoutsRoutes(app, pool, verifyAgentAuth, auditChain) {
   });
   app.post('/v1/_admin/payouts/:payout_id/mark', express.json(), async (req, res) => {
     try {
-      const token = req.headers['x-admin-token'];
-      if (!token || !process.env.OPERATOR_ADMIN_TOKEN || token !== process.env.OPERATOR_ADMIN_TOKEN) {
+      const { safeTokenCompare } = require('../safe_compare');
+      if (!safeTokenCompare(req.headers['x-admin-token'], process.env.OPERATOR_ADMIN_TOKEN)) {
         return res.status(401).json({ error: 'admin_token_required' });
       }
       const parse = MarkSchema.safeParse(req.body || {});
@@ -302,10 +302,29 @@ function registerPayoutsRoutes(app, pool, verifyAgentAuth, auditChain) {
     }
   });
 
-  // POST /v1/_webhooks/payout-provider — generic webhook
-  app.post('/v1/_webhooks/payout-provider', express.json(), async (req, res) => {
+  // POST /v1/_webhooks/payout-provider — generic webhook for ACH/wire processors.
+  // Verifies HMAC-SHA256 over raw body using PAYOUT_WEBHOOK_SECRET. Without
+  // this, anyone could mark any payout as 'paid' and trigger downstream credit.
+  app.post('/v1/_webhooks/payout-provider', express.raw({ type: '*/*', limit: '1mb' }), async (req, res) => {
     try {
-      const body = req.body || {};
+      const secret = process.env.PAYOUT_WEBHOOK_SECRET || process.env.INTERNAL_API_KEY;
+      if (!secret) {
+        if (process.env.NODE_ENV === 'production') {
+          return res.status(503).json({ error: 'payout_webhook_secret_not_configured' });
+        }
+      } else {
+        const sigHeader = req.headers['x-payout-signature'] || req.headers['x-webhook-signature'] || '';
+        const sig = sigHeader.startsWith('sha256=') ? sigHeader.slice(7) : sigHeader;
+        const cryptoLib = require('crypto');
+        const expected = cryptoLib.createHmac('sha256', secret).update(req.body).digest('hex');
+        const { safeTokenCompare } = require('../safe_compare');
+        if (!sig || !safeTokenCompare(expected, sig)) {
+          return res.status(401).json({ error: 'payout_webhook_signature_invalid' });
+        }
+      }
+      let body = {};
+      try { body = JSON.parse(req.body.toString('utf8')); }
+      catch { return res.status(400).json({ error: 'invalid_json' }); }
       const payoutId = body.payout_id || body.id || body.metadata?.payout_id;
       const status = body.status;
       const providerRef = body.provider_ref || body.transfer_id || body.id;

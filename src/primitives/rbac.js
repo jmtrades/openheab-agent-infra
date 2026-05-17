@@ -489,7 +489,8 @@ function registerRbacRoutes(app, pool, verifyAgentAuth, auditChain) {
       const auth = await verifyAgentAuth(req, did);
       if (!auth.valid) {
         // Allow admin token override
-        if (req.headers['x-admin-token'] !== process.env.OPERATOR_ADMIN_TOKEN) {
+        const { safeTokenCompare } = require('../safe_compare');
+        if (!safeTokenCompare(req.headers['x-admin-token'], process.env.OPERATOR_ADMIN_TOKEN)) {
           return res.status(401).json({ error: auth.error });
         }
       }
@@ -513,8 +514,8 @@ function registerRbacRoutes(app, pool, verifyAgentAuth, auditChain) {
           return res.status(403).json({ error: 'requires_org_admin' });
         }
       } else {
-        const adminToken = req.headers['x-admin-token'];
-        if (adminToken !== process.env.OPERATOR_ADMIN_TOKEN) return res.status(401).json({ error: 'unauthorized' });
+        const { safeTokenCompare } = require('../safe_compare');
+        if (!safeTokenCompare(req.headers['x-admin-token'], process.env.OPERATOR_ADMIN_TOKEN)) return res.status(401).json({ error: 'unauthorized' });
       }
       const limit = Math.min(parseInt(req.query.limit) || 100, 1000);
       const offset = Math.max(parseInt(req.query.offset) || 0, 0);

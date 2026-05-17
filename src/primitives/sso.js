@@ -482,7 +482,7 @@ function registerSsoRoutes(app, pool, verifyAgentAuth, auditChain) {
         }
       } else {
         const adminToken = req.headers['x-admin-token'];
-        if (adminToken !== process.env.OPERATOR_ADMIN_TOKEN) return res.status(401).json({ error: 'unauthorized' });
+        if (!require('../safe_compare').safeTokenCompare(adminToken, process.env.OPERATOR_ADMIN_TOKEN)) return res.status(401).json({ error: 'unauthorized' });
       }
       const r = await pool.query(
         `SELECT provider_id, org_id, kind, name, idp_entity_id, idp_sso_url,
@@ -763,7 +763,7 @@ function registerSsoRoutes(app, pool, verifyAgentAuth, auditChain) {
         }
       } else {
         const adminToken = req.headers['x-admin-token'];
-        if (adminToken !== process.env.OPERATOR_ADMIN_TOKEN) return res.status(401).json({ error: 'unauthorized' });
+        if (!require('../safe_compare').safeTokenCompare(adminToken, process.env.OPERATOR_ADMIN_TOKEN)) return res.status(401).json({ error: 'unauthorized' });
       }
       const limit = Math.min(parseInt(req.query.limit) || 100, 1000);
       const r = await pool.query(`

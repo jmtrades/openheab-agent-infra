@@ -175,19 +175,33 @@ function registerCloudAdaptersRoutes(app, pool, verifyAgentAuth, auditChain) {
   });
 
   // ===== Slack event handler =====
-  app.post('/v1/_webhooks/slack-real', express.json(), async (req, res) => {
-    if (req.body?.type === 'url_verification') return res.json({ challenge: req.body.challenge });
-    // Verify Slack signature
+  // Slack signs the RAW request body (not the parsed JSON) per their spec
+  // (api.slack.com/authentication/verifying-requests-from-slack). Using
+  // express.raw lets us reconstruct the exact bytes Slack signed; previously
+  // we signed JSON.stringify(req.body) which never matches on field reordering.
+  app.post('/v1/_webhooks/slack-real', express.raw({ type: '*/*', limit: '1mb' }), async (req, res) => {
+    let body = {};
+    try { body = JSON.parse(req.body.toString('utf8')); }
+    catch { return res.status(400).json({ error: 'invalid_json' }); }
+    if (body.type === 'url_verification') return res.json({ challenge: body.challenge });
     const sig = req.headers['x-slack-signature'];
     const ts = req.headers['x-slack-request-timestamp'];
     const secret = process.env.SLACK_SIGNING_SECRET;
-    if (secret && sig && ts) {
-      const baseString = `v0:${ts}:${JSON.stringify(req.body)}`;
+    if (secret) {
+      if (!sig || !ts) return res.status(401).json({ error: 'slack_signature_missing' });
+      // Reject events older than 5 minutes to prevent replay attacks.
+      const skew = Math.abs(Math.floor(Date.now() / 1000) - parseInt(ts));
+      if (skew > 300) return res.status(401).json({ error: 'slack_timestamp_skewed' });
+      const baseString = `v0:${ts}:${req.body.toString('utf8')}`;
       const expected = 'v0=' + crypto.createHmac('sha256', secret).update(baseString).digest('hex');
-      const ok = crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(sig));
-      if (!ok && process.env.NODE_ENV === 'production') return res.status(401).json({ error: 'invalid_signature' });
+      const { safeTokenCompare } = require('../safe_compare');
+      if (!safeTokenCompare(expected, sig)) {
+        return res.status(401).json({ error: 'slack_signature_invalid' });
+      }
+    } else if (process.env.NODE_ENV === 'production') {
+      return res.status(503).json({ error: 'slack_signing_secret_not_configured' });
     }
-    if (auditChain) await auditChain.append({ event_type: 'slack.webhook', slack_event_type: req.body?.event?.type }).catch(() => {});
+    if (auditChain) await auditChain.append({ event_type: 'slack.webhook', slack_event_type: body.event?.type }).catch(() => {});
     res.json({ ok: true });
   });
 

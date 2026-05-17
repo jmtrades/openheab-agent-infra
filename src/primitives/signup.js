@@ -37,11 +37,16 @@ async function migrate(pool) {
       utm_campaign      TEXT,
       lead_id           TEXT,
       ip_hash           TEXT,
+      idempotency_key   TEXT,
+      response_snapshot JSONB,
       created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       completed_at      TIMESTAMPTZ
     );
     CREATE INDEX IF NOT EXISTS idx_signup_sessions_email ON signup_sessions (email);
     CREATE INDEX IF NOT EXISTS idx_signup_sessions_stripe ON signup_sessions (stripe_session_id);
+    ALTER TABLE signup_sessions ADD COLUMN IF NOT EXISTS idempotency_key TEXT;
+    ALTER TABLE signup_sessions ADD COLUMN IF NOT EXISTS response_snapshot JSONB;
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_signup_sessions_idem ON signup_sessions (idempotency_key) WHERE idempotency_key IS NOT NULL;
   `);
 }
 
@@ -281,11 +286,45 @@ function registerSignupRoutes(app, pool, _verifyAgentAuth, auditChain, stripe) {
     res.send(successHTML());
   });
 
-  app.post('/v1/signup', express.json(), async (req, res) => {
+  // Per-IP rate limit so bots can't flood signups (each one creates an org,
+  // a wallet, and an api_key — cheap individually, expensive at 1k/min).
+  const { rateLimit: _rl } = require('../rate_limit');
+  const signupRateLimit = _rl({
+    windowMs: 60 * 60 * 1000,
+    max: parseInt(process.env.IDENTITY_SIGNUP_LIMIT_PER_HOUR || '10'),
+    pool,
+    keyer: (req) => {
+      const fwd = req.headers['x-forwarded-for'];
+      const ip = (fwd ? fwd.split(',')[0].trim() : (req.ip || 'unknown'));
+      return `signup-v1:${ip}`;
+    }
+  });
+
+  app.post('/v1/signup', signupRateLimit, express.json(), async (req, res) => {
     const p = signupSchema.safeParse(req.body || {});
     if (!p.success) return res.status(400).json({ error: 'invalid_input', details: p.error.flatten() });
     const body = p.data;
     const ipHash = crypto.createHash('sha256').update(req.ip || '').digest('hex').slice(0, 16);
+
+    // Idempotency: if the caller sent X-Idempotency-Key and we've already
+    // serviced that request, return the cached response instead of re-
+    // provisioning a duplicate org/agent/wallet/api_key and re-charging Stripe.
+    const idemKey = req.headers['x-idempotency-key'];
+    if (idemKey) {
+      const cached = await pool.query(
+        `SELECT response_snapshot FROM signup_sessions
+          WHERE idempotency_key = $1 AND response_snapshot IS NOT NULL
+          LIMIT 1`,
+        [String(idemKey)]
+      ).catch(() => ({ rows: [] }));
+      if (cached.rows[0]?.response_snapshot) {
+        const snap = typeof cached.rows[0].response_snapshot === 'string'
+          ? JSON.parse(cached.rows[0].response_snapshot)
+          : cached.rows[0].response_snapshot;
+        res.setHeader('idempotent-replay', 'true');
+        return res.status(201).json(snap);
+      }
+    }
 
     // Create lead in marketing
     let leadId = null;
@@ -310,48 +349,55 @@ function registerSignupRoutes(app, pool, _verifyAgentAuth, auditChain, stripe) {
     const sessionId = newId('sgn');
     await pool.query(
       `INSERT INTO signup_sessions (session_id, email, plan_code, billing_interval,
-         org_id, agent_did, api_key_first6, status, utm_source, utm_campaign, lead_id, ip_hash)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+         org_id, agent_did, api_key_first6, status, utm_source, utm_campaign, lead_id, ip_hash, idempotency_key)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
       [sessionId, body.email.toLowerCase(), body.plan_code, body.billing_interval,
        identifiers.org_id, identifiers.did, identifiers.api_key.slice(0, 6),
        body.plan_code === 'free' ? 'completed' : 'pending_payment',
-       body.utm_source || null, body.utm_campaign || null, leadId, ipHash]
+       body.utm_source || null, body.utm_campaign || null, leadId, ipHash,
+       idemKey ? String(idemKey) : null]
     );
 
-    // Free plan? We're done.
+    // Build the response, persist it for idempotent replay, then send it.
+    let response;
     if (body.plan_code === 'free') {
-      return res.status(201).json({
+      response = {
         ok: true, did: identifiers.did, org_id: identifiers.org_id,
         api_key: identifiers.api_key, public_key: identifiers.public_key,
         private_key: identifiers.private_key,
         wallet: identifiers.wallet ? { address: identifiers.wallet.address } : null,
         next: '/v1/dashboard'
-      });
+      };
+    } else {
+      const baseUrl = process.env.OPERATOR_PUBLIC_URL || ('http://' + req.headers.host);
+      const checkout = await makeStripeCheckout(stripe, body, identifiers, baseUrl);
+      if (checkout && !checkout.error) {
+        await pool.query(
+          `UPDATE signup_sessions SET stripe_customer_id=$1, stripe_session_id=$2 WHERE session_id=$3`,
+          [checkout.customer_id, checkout.session_id, sessionId]
+        ).catch(() => {});
+        response = {
+          ok: true, did: identifiers.did, org_id: identifiers.org_id,
+          api_key: identifiers.api_key, checkout_url: checkout.checkout_url
+        };
+      } else {
+        response = {
+          ok: true, did: identifiers.did, org_id: identifiers.org_id,
+          api_key: identifiers.api_key, public_key: identifiers.public_key,
+          private_key: identifiers.private_key,
+          stripe_unavailable: checkout?.error || 'stripe_not_configured',
+          note: 'Account created. Subscription pending — operator must configure Stripe price IDs and re-trigger checkout.',
+          next: '/v1/dashboard'
+        };
+      }
     }
-
-    // Paid plan: Stripe Checkout
-    const baseUrl = process.env.OPERATOR_PUBLIC_URL || ('http://' + req.headers.host);
-    const checkout = await makeStripeCheckout(stripe, body, identifiers, baseUrl);
-    if (checkout && !checkout.error) {
+    if (idemKey) {
       await pool.query(
-        `UPDATE signup_sessions SET stripe_customer_id=$1, stripe_session_id=$2 WHERE session_id=$3`,
-        [checkout.customer_id, checkout.session_id, sessionId]
+        `UPDATE signup_sessions SET response_snapshot = $1::jsonb WHERE session_id = $2`,
+        [JSON.stringify(response), sessionId]
       ).catch(() => {});
-      return res.status(201).json({
-        ok: true, did: identifiers.did, org_id: identifiers.org_id,
-        api_key: identifiers.api_key, checkout_url: checkout.checkout_url
-      });
     }
-
-    // Stripe not configured: still return the API key but warn
-    return res.status(201).json({
-      ok: true, did: identifiers.did, org_id: identifiers.org_id,
-      api_key: identifiers.api_key, public_key: identifiers.public_key,
-      private_key: identifiers.private_key,
-      stripe_unavailable: checkout?.error || 'stripe_not_configured',
-      note: 'Account created. Subscription pending — operator must configure Stripe price IDs and re-trigger checkout.',
-      next: '/v1/dashboard'
-    });
+    return res.status(201).json(response);
   });
 
   // Stripe webhook — activates subscription on checkout.session.completed

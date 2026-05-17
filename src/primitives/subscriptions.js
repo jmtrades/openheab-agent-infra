@@ -574,20 +574,28 @@ function registerSubscriptionsRoutes(app, pool, verifyAgentAuth, auditChain) {
   });
 
   // POST /v1/_webhooks/stripe-subscription
-  // Stripe webhook for subscription events. We expect raw body to be JSON-parsed
-  // already by upstream JSON middleware in development; in production, the
-  // operator may want to wire express.raw + signature verification.
-  app.post('/v1/_webhooks/stripe-subscription', express.json({ limit: '2mb' }), async (req, res) => {
+  // Uses express.raw so we hold the bytes Stripe actually signed. In production
+  // STRIPE_WEBHOOK_SECRET is required — the handler refuses to act on unsigned
+  // events to prevent anyone marking invoices paid or cancelling subscriptions.
+  app.post('/v1/_webhooks/stripe-subscription', express.raw({ type: '*/*', limit: '2mb' }), async (req, res) => {
     try {
-      let event = req.body || {};
-      // Optionally verify signature if STRIPE_WEBHOOK_SECRET present and we have raw body
-      if (stripe && process.env.STRIPE_WEBHOOK_SECRET && req.headers['stripe-signature'] && Buffer.isBuffer(req.body)) {
+      let event;
+      const secret = process.env.STRIPE_WEBHOOK_SECRET;
+      if (stripe && secret) {
+        const sig = req.headers['stripe-signature'];
+        if (!sig) return res.status(400).json({ error: 'stripe_signature_missing' });
         try {
-          event = stripe.webhooks.constructEvent(req.body, req.headers['stripe-signature'],
-            process.env.STRIPE_WEBHOOK_SECRET);
+          event = stripe.webhooks.constructEvent(req.body, sig, secret);
         } catch (e) {
           return res.status(400).json({ error: `webhook_signature_invalid: ${e.message}` });
         }
+      } else if (process.env.NODE_ENV === 'production') {
+        return res.status(503).json({ error: 'webhook_secret_not_configured' });
+      } else {
+        // Dev fallback: accept unsigned events when STRIPE_WEBHOOK_SECRET is unset
+        // AND we're not in production. Local test flows use this.
+        try { event = JSON.parse(req.body.toString('utf8')); }
+        catch { return res.status(400).json({ error: 'invalid_json' }); }
       }
 
       const type = event?.type || '';

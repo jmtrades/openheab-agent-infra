@@ -354,7 +354,8 @@ function verifyZkProof(proofBuf, secret) {
   const msg = proofBuf.subarray(0, sep).toString('utf8');
   const sig = proofBuf.subarray(sep + 1).toString('hex');
   const expected = crypto.createHmac('sha256', zkSecret(secret)).update(msg).digest('hex');
-  if (expected !== sig) return null;
+  const { safeTokenCompare } = require('../safe_compare');
+  if (!safeTokenCompare(expected, sig)) return null;
   try { return JSON.parse(msg); } catch { return null; }
 }
 
@@ -422,7 +423,7 @@ const sarSchema = z.object({
 
 function isAdmin(req) {
   const t = req.headers['x-admin-token'];
-  return t && t === process.env.OPERATOR_ADMIN_TOKEN;
+  return require('../safe_compare').safeTokenCompare(t, process.env.OPERATOR_ADMIN_TOKEN);
 }
 
 function registerKycAdvancedRoutes(app, pool, verifyAgentAuth, auditChain) {

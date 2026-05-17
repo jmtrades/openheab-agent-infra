@@ -206,7 +206,7 @@ function registerAmlRoutes(app, pool, verifyAgentAuth, auditChain) {
   app.post('/v1/aml/rules', express.json(), async (req, res) => {
     try {
       const token = req.headers['x-admin-token'];
-      if (token !== process.env.OPERATOR_ADMIN_TOKEN) return res.status(401).json({ error: 'admin_required' });
+      const { safeTokenCompare: _stc } = require('../safe_compare'); if (!_stc(token, process.env.OPERATOR_ADMIN_TOKEN)) return res.status(401).json({ error: 'admin_required' });
       const body = z.object({
         name: z.string().min(1).max(300),
         kind: z.enum(RULE_KINDS),

@@ -472,8 +472,8 @@ function registerOnboardingRoutes(app, pool, verifyAgentAuth, auditChain) {
 
   // GET /v1/admin/onboarding/funnel
   app.get('/v1/admin/onboarding/funnel', async (req, res) => {
-    const token = req.headers['x-admin-token'];
-    if (!token || token !== process.env.OPERATOR_ADMIN_TOKEN) {
+    const { safeTokenCompare } = require('../safe_compare');
+    if (!safeTokenCompare(req.headers['x-admin-token'], process.env.OPERATOR_ADMIN_TOKEN)) {
       return res.status(401).json({ error: 'admin_required' });
     }
     const stats = await funnelStats(pool, req.query.from, req.query.to);
@@ -482,8 +482,8 @@ function registerOnboardingRoutes(app, pool, verifyAgentAuth, auditChain) {
 
   // GET /v1/admin/onboarding/abandoned
   app.get('/v1/admin/onboarding/abandoned', async (req, res) => {
-    const token = req.headers['x-admin-token'];
-    if (!token || token !== process.env.OPERATOR_ADMIN_TOKEN) {
+    const { safeTokenCompare } = require('../safe_compare');
+    if (!safeTokenCompare(req.headers['x-admin-token'], process.env.OPERATOR_ADMIN_TOKEN)) {
       return res.status(401).json({ error: 'admin_required' });
     }
     const olderThanHours = Math.max(1, parseInt(req.query.older_than_hours || '24'));

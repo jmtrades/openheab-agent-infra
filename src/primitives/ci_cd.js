@@ -410,11 +410,31 @@ function registerCiCdRoutes(app, pool, verifyAgentAuth, auditChain) {
     });
   });
 
-  // POST /v1/_webhooks/github — trigger pipelines from external GitHub events
-  app.post('/v1/_webhooks/github', express.json({ limit: '1mb' }), async (req, res) => {
+  // POST /v1/_webhooks/github — trigger pipelines from external GitHub events.
+  // Verifies X-Hub-Signature-256 over the raw body using GITHUB_WEBHOOK_SECRET.
+  // Refuses in production if the secret isn't configured.
+  app.post('/v1/_webhooks/github', express.raw({ type: '*/*', limit: '1mb' }), async (req, res) => {
     try {
+      const secret = process.env.GITHUB_WEBHOOK_SECRET;
+      if (!secret) {
+        if (process.env.NODE_ENV === 'production') {
+          return res.status(503).json({ error: 'github_webhook_secret_not_configured' });
+        }
+      } else {
+        const sigHeader = req.headers['x-hub-signature-256'] || '';
+        const sig = sigHeader.startsWith('sha256=') ? sigHeader.slice(7) : '';
+        const cryptoLib = require('crypto');
+        const expected = cryptoLib.createHmac('sha256', secret).update(req.body).digest('hex');
+        const { safeTokenCompare } = require('../safe_compare');
+        if (!safeTokenCompare(expected, sig)) {
+          return res.status(401).json({ error: 'github_webhook_signature_invalid' });
+        }
+      }
+      // Parse JSON ourselves since we used express.raw
+      let payload = {};
+      try { payload = JSON.parse(req.body.toString('utf8')); }
+      catch { return res.status(400).json({ error: 'invalid_json' }); }
       const eventType = req.headers['x-github-event'] || 'push';
-      const payload = req.body || {};
       const repoFullName = payload.repository?.full_name;
       const branch = (payload.ref || '').replace(/^refs\/heads\//, '');
       const commitSha = payload.after || payload.pull_request?.head?.sha || null;

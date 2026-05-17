@@ -209,7 +209,7 @@ const transferSchema = z.object({
 
 function isAdmin(req) {
   const t = req.headers['x-admin-token'];
-  return t && t === process.env.OPERATOR_ADMIN_TOKEN;
+  return require('../safe_compare').safeTokenCompare(t, process.env.OPERATOR_ADMIN_TOKEN);
 }
 
 function registerBankCoreRoutes(app, pool, verifyAgentAuth, auditChain) {

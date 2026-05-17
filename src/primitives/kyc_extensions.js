@@ -558,7 +558,7 @@ function registerKycExtensionRoutes(app, pool, verifyAgentAuth, auditChain) {
       if (cached) return res.json(cached);
 
       // Recompute unless explicit tier supplied by admin
-      const isAdmin = req.headers['x-admin-token'] === process.env.OPERATOR_ADMIN_TOKEN;
+      const { safeTokenCompare: _stc } = require('../safe_compare'); const isAdmin = _stc(req.headers['x-admin-token'], process.env.OPERATOR_ADMIN_TOKEN);
       let tier;
       if (parse.data.tier !== undefined && isAdmin) {
         tier = parse.data.tier;

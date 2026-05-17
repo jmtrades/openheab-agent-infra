@@ -333,7 +333,7 @@ ${r.rows.map(p => `<item>
     author_did: z.string().optional()
   });
   app.post('/v1/blog/posts', express.json(), async (req, res) => {
-    if (req.headers['x-admin-token'] !== process.env.OPERATOR_ADMIN_TOKEN) return res.status(401).json({ error: 'admin_auth_required' });
+    const { safeTokenCompare: _stc } = require('../safe_compare'); if (!_stc(req.headers['x-admin-token'], process.env.OPERATOR_ADMIN_TOKEN)) return res.status(401).json({ error: 'admin_auth_required' });
     const p = postSchema.safeParse(req.body || {});
     if (!p.success) return res.status(400).json({ error: 'invalid_input', details: p.error.flatten() });
     const id = newId('post');

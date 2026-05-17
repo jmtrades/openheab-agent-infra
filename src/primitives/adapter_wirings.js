@@ -49,7 +49,7 @@ async function forward({ url, method = 'POST', headers = {}, body = null, stub =
   return json;
 }
 
-const isAdmin = (req) => req.headers['x-admin-token'] === process.env.OPERATOR_ADMIN_TOKEN;
+const { safeTokenCompare: _stc1 } = require('../safe_compare'); const isAdmin = (req) => _stc1(req.headers['x-admin-token'], process.env.OPERATOR_ADMIN_TOKEN);
 
 function registerAdapterWiringsRoutes(app, pool, verifyAgentAuth, auditChain) {
   const express = require('express');
@@ -252,15 +252,24 @@ function registerAdapterWiringsRoutes(app, pool, verifyAgentAuth, auditChain) {
   });
 
   // ===== Alchemy webhook receiver (incoming USDC deposits) =====
-  app.post('/v1/_webhooks/alchemy', express.json({ limit: '5mb' }), async (req, res) => {
-    // Verify signature if ALCHEMY_WEBHOOK_SIGNING_KEY is set
+  // Uses raw body so HMAC matches exactly what Alchemy signed; refuses unsigned
+  // events in production to prevent fake deposit notifications.
+  app.post('/v1/_webhooks/alchemy', express.raw({ type: '*/*', limit: '5mb' }), async (req, res) => {
     const sig = req.headers['x-alchemy-signature'];
     const key = process.env.ALCHEMY_WEBHOOK_SIGNING_KEY;
-    if (key && sig) {
-      const expected = crypto.createHmac('sha256', key).update(JSON.stringify(req.body)).digest('hex');
-      if (expected !== sig && process.env.NODE_ENV === 'production') return res.status(400).json({ error: 'signature_invalid' });
+    if (key) {
+      if (!sig) return res.status(401).json({ error: 'alchemy_signature_missing' });
+      const expected = crypto.createHmac('sha256', key).update(req.body).digest('hex');
+      const { safeTokenCompare } = require('../safe_compare');
+      if (!safeTokenCompare(expected, sig)) {
+        return res.status(401).json({ error: 'alchemy_signature_invalid' });
+      }
+    } else if (process.env.NODE_ENV === 'production') {
+      return res.status(503).json({ error: 'alchemy_webhook_signing_key_not_configured' });
     }
-    const event = req.body;
+    let event = {};
+    try { event = JSON.parse(req.body.toString('utf8')); }
+    catch { return res.status(400).json({ error: 'invalid_json' }); }
     // Process token transfer activity
     if (event?.event?.activity) {
       for (const act of event.event.activity) {

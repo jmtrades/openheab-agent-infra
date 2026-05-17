@@ -316,10 +316,34 @@ function registerVoiceAgentsRoutes(app, pool, verifyAgentAuth, auditChain) {
 
   // ---- Incoming call webhook (telephony provider → us) --------------------
   // Twilio sends form-encoded bodies; we accept both JSON and urlencoded.
+  // Verifies Twilio's X-Twilio-Signature when TWILIO_AUTH_TOKEN is configured.
+  // In production with no token configured, refuses to process events to
+  // avoid having unauth callers drive LLM inference on agent owners' dime.
   app.post('/v1/_webhooks/voice-agent',
     express.urlencoded({ extended: false }),
     express.json(),
     async (req, res) => {
+      // Twilio webhook validation. Per Twilio's spec, the signature is HMAC-SHA1
+      // over the full URL + sorted form params, base64-encoded.
+      const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN;
+      const sig = req.headers['x-twilio-signature'];
+      const isTwilioBody = !!(req.body && (req.body.CallSid || req.body.From));
+      if (twilioAuthToken && isTwilioBody) {
+        if (!sig) return res.status(401).json({ error: 'twilio_signature_missing' });
+        try {
+          const twilio = require('twilio');
+          const proto = req.headers['x-forwarded-proto'] || (req.secure ? 'https' : 'http');
+          const host = req.headers['x-forwarded-host'] || req.headers.host;
+          const url = `${proto}://${host}${req.originalUrl || req.url}`;
+          const valid = twilio.validateRequest(twilioAuthToken, sig, url, req.body || {});
+          if (!valid) return res.status(401).json({ error: 'twilio_signature_invalid' });
+        } catch (e) {
+          return res.status(500).json({ error: 'twilio_validation_failed', message: e.message });
+        }
+      } else if (isTwilioBody && process.env.NODE_ENV === 'production') {
+        // Twilio shape but no token configured — refuse in prod
+        return res.status(503).json({ error: 'twilio_auth_token_not_configured' });
+      }
       try {
         const body = req.body || {};
         const callerPhone = body.From || body.caller_phone;

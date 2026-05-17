@@ -6,6 +6,13 @@ require('dotenv').config();
 const express = require('express');
 require('express-async-errors'); // routes async-rejections to the errorHandler middleware
 const { Pool } = require('pg');
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[unhandledRejection]', reason instanceof Error ? reason.stack : reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('[uncaughtException]', err.stack || err.message);
+});
 const { migrateAll, registerAllRoutes } = require('./src/integration');
 const { registerStatusPage } = require('./src/status_page');
 const { registerPages } = require('./src/landing');
@@ -14,11 +21,16 @@ const { rateLimit, skipForHealth } = require('./src/rate_limit');
 const { requestId, jsonLogger, corsMiddleware, securityHeaders, metricsHandler,
         notFoundHandler, errorHandler, faviconHandler } = require('./src/observability');
 
+const dbUrl = process.env.DATABASE_URL || '';
+const wantSsl = dbUrl.includes('sslmode=require') || dbUrl.includes('sslmode=verify');
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL && process.env.DATABASE_URL.includes('sslmode=require')
-    ? { rejectUnauthorized: false } : undefined
+  connectionString: dbUrl,
+  ssl: wantSsl ? { rejectUnauthorized: process.env.PG_INSECURE_TLS !== 'true' } : undefined,
+  statement_timeout: 30_000,
+  connectionTimeoutMillis: 8_000,
+  application_name: 'openheab-local',
 });
+pool.on('error', (e) => console.error('[pg:pool]', e.message));
 
 const app = express();
 app.disable('x-powered-by');
@@ -30,8 +42,21 @@ app.get('/favicon.ico', faviconHandler);
 app.get('/favicon.svg', faviconHandler);
 app.get('/metrics', metricsHandler);
 app.use(rateLimit({ windowMs: 60_000, max: parseInt(process.env.RATE_LIMIT_PER_MIN || '600'), skip: skipForHealth }));
+const RAW_BODY_ROUTES = new Set([
+  '/v1/_webhooks/stripe',
+  '/v1/_webhooks/stripe-checkout',
+  '/v1/_webhooks/stripe-subscription',
+  '/v1/_webhooks/stripe-issuing',
+  '/v1/_webhooks/stripe-issuing-capture',
+  '/v1/_webhooks/stripe-real',
+  '/v1/_webhooks/github',
+  '/v1/_webhooks/slack-real',
+  '/v1/_webhooks/alchemy',
+  '/v1/_webhooks/payout-provider',
+]);
 app.use((req, res, next) => {
-  if (req.path === '/v1/_webhooks/stripe') return next();
+  if (RAW_BODY_ROUTES.has(req.path)) return next();
+  if (req.path.startsWith('/v1/_webhooks/workflow/')) return next();
   express.json({ limit: '4mb' })(req, res, next);
 });
 

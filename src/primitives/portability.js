@@ -214,8 +214,9 @@ function registerPortabilityRoutes(app, pool, verifyAgentAuth, auditChain) {
       const canonical = canonicalJson(manifest);
       const expectedHash = hashCanonical(canonical);
       const expectedSig = signManifest(canonical);
-      const hashValid = expectedHash === d.manifest_hash;
-      const sigValid = expectedSig === d.signature;
+      const { safeTokenCompare } = require('../safe_compare');
+      const hashValid = safeTokenCompare(expectedHash, d.manifest_hash);
+      const sigValid = safeTokenCompare(expectedSig, d.signature);
 
       if (!hashValid) return res.status(400).json({ error: 'manifest_hash_mismatch' });
       if (!sigValid) return res.status(400).json({ error: 'signature_invalid' });

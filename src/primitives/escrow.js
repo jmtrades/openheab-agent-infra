@@ -31,10 +31,13 @@ async function migrate(pool) {
       released_at           TIMESTAMPTZ,
       cancelled_at          TIMESTAMPTZ,
       claim_id              TEXT,
+      idempotency_key       TEXT,
       created_at            TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
     CREATE INDEX IF NOT EXISTS idx_escrows_payer ON escrows (payer_did);
     CREATE INDEX IF NOT EXISTS idx_escrows_payee ON escrows (payee_did);
+    ALTER TABLE escrows ADD COLUMN IF NOT EXISTS idempotency_key TEXT;
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_escrows_idem ON escrows (payer_did, idempotency_key) WHERE idempotency_key IS NOT NULL;
     CREATE INDEX IF NOT EXISTS idx_escrows_status ON escrows (status);
     CREATE INDEX IF NOT EXISTS idx_escrows_delivered ON escrows (delivered_at) WHERE status='delivered';
 
@@ -86,16 +89,51 @@ function registerEscrowRoutes(app, pool, verifyAgentAuth, auditChain) {
       const auth = await verifyAgentAuth(req, d.payer_did);
       if (!auth.valid) return res.status(401).json({ error: auth.error });
 
+      // Idempotency: if the payer sends X-Idempotency-Key and we've created
+      // an escrow with that key already, return the existing one (don't lock
+      // the same funds twice on a retry).
+      const idemKey = req.headers['x-idempotency-key'];
+      if (idemKey) {
+        const existing = await pool.query(
+          `SELECT escrow_id, payee_did, amount_raw, asset, status, review_window_hours
+             FROM escrows
+            WHERE payer_did = $1 AND idempotency_key = $2 LIMIT 1`,
+          [d.payer_did, String(idemKey)]
+        ).catch(() => ({ rows: [] }));
+        if (existing.rows[0]) {
+          res.setHeader('idempotent-replay', 'true');
+          return res.status(200).json({ ...existing.rows[0], payer_did: d.payer_did });
+        }
+      }
+
       const escrowId = genId('esc');
       const window = d.review_window_hours || DEFAULT_REVIEW_WINDOW_HOURS;
 
-      await pool.query(
-        `INSERT INTO escrows (escrow_id, payer_did, payee_did, amount_raw, chain,
-           asset, description, deliverable_url, status, review_window_hours)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'pending',$9)`,
-        [escrowId, d.payer_did, d.payee_did, d.amount_raw, d.chain || null,
-         d.asset, d.description || null, d.deliverable_url || null, window]
-      );
+      try {
+        await pool.query(
+          `INSERT INTO escrows (escrow_id, payer_did, payee_did, amount_raw, chain,
+             asset, description, deliverable_url, status, review_window_hours, idempotency_key)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'pending',$9,$10)`,
+          [escrowId, d.payer_did, d.payee_did, d.amount_raw, d.chain || null,
+           d.asset, d.description || null, d.deliverable_url || null, window,
+           idemKey ? String(idemKey) : null]
+        );
+      } catch (insertErr) {
+        // Unique-violation on (payer_did, idempotency_key) — race with concurrent retry.
+        if (insertErr.code === '23505' && idemKey) {
+          const existing = await pool.query(
+            `SELECT escrow_id, payee_did, amount_raw, asset, status, review_window_hours
+               FROM escrows
+              WHERE payer_did = $1 AND idempotency_key = $2 LIMIT 1`,
+            [d.payer_did, String(idemKey)]
+          ).catch(() => ({ rows: [] }));
+          if (existing.rows[0]) {
+            res.setHeader('idempotent-replay', 'true');
+            return res.status(200).json({ ...existing.rows[0], payer_did: d.payer_did });
+          }
+        }
+        throw insertErr;
+      }
 
       await logEvent(pool, escrowId, d.payer_did, 'opened', { amount_raw: d.amount_raw });
       await auditChain.append({

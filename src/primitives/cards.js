@@ -426,9 +426,40 @@ function registerCardRoutes(app, pool, verifyAgentAuth, auditChain) {
     (req, res) => handleCancelCard(req, res, pool, verifyAgentAuth, auditChain));
   app.get('/v1/agents/:did/cards/transactions',
     (req, res) => handleListTransactions(req, res, pool, verifyAgentAuth));
+  // Stripe Issuing webhooks: verify signature on raw body, then dispatch.
+  // Refuses to process unsigned events in production.
+  const express = require('express');
+  function verifyStripeIssuingSignature(req, res, next) {
+    const secret = process.env.STRIPE_WEBHOOK_SECRET || process.env.STRIPE_ISSUING_WEBHOOK_SECRET;
+    const stripe = (() => {
+      try { return require('stripe')(process.env.STRIPE_SECRET_KEY || 'sk_dummy'); }
+      catch { return null; }
+    })();
+    if (!secret || !stripe) {
+      if (process.env.NODE_ENV === 'production') {
+        return res.status(503).json({ error: 'stripe_issuing_webhook_secret_not_configured' });
+      }
+      // Dev fallback: parse raw body so handlers downstream see req.body
+      try { req.body = JSON.parse(req.body.toString('utf8')); next(); }
+      catch { res.status(400).json({ error: 'invalid_json' }); }
+      return;
+    }
+    const sig = req.headers['stripe-signature'];
+    if (!sig) return res.status(400).json({ error: 'stripe_signature_missing' });
+    try {
+      req.body = stripe.webhooks.constructEvent(req.body, sig, secret);
+      next();
+    } catch (e) {
+      return res.status(400).json({ error: `webhook_signature_invalid: ${e.message}` });
+    }
+  }
   app.post('/v1/_webhooks/stripe-issuing',
+    express.raw({ type: '*/*', limit: '2mb' }),
+    verifyStripeIssuingSignature,
     (req, res) => handleAuthWebhook(req, res, pool, auditChain));
   app.post('/v1/_webhooks/stripe-issuing-capture',
+    express.raw({ type: '*/*', limit: '2mb' }),
+    verifyStripeIssuingSignature,
     (req, res) => handleCaptureWebhook(req, res, pool, auditChain));
   registerCron(app, '/v1/_jobs/card-monthly-reset',
     async (req, res) => res.json(await resetMonthlySpent(pool)));

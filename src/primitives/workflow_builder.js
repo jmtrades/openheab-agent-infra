@@ -141,16 +141,31 @@ function registerWorkflowBuilderRoutes(app, pool, verifyAgentAuth, auditChain) {
     const p = workflowSchema.safeParse(req.body || {});
     if (!p.success) return res.status(400).json({ error: 'invalid_input', details: p.error.flatten() });
     const id = newId('wf');
+    // For webhook-triggered workflows, mint a per-workflow HMAC secret.
+    // Callers must include 'x-webhook-signature: sha256=<hex>' over the raw body.
+    const triggerConfig = { ...(p.data.trigger_config || {}) };
+    let webhookSecret = null;
+    if (p.data.trigger_kind === 'webhook') {
+      webhookSecret = 'wfs_' + crypto.randomBytes(24).toString('hex');
+      triggerConfig.webhook_secret_hash = crypto.createHash('sha256').update(webhookSecret).digest('hex');
+    }
     await pool.query(
       `INSERT INTO workflow_definitions (workflow_id, owner_did, org_id, name, description,
          trigger_kind, trigger_config, actions, enabled)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
       [id, did, p.data.org_id || null, p.data.name, p.data.description || null,
-       p.data.trigger_kind, JSON.stringify(p.data.trigger_config || {}),
+       p.data.trigger_kind, JSON.stringify(triggerConfig),
        JSON.stringify(p.data.actions), p.data.enabled !== false]
     );
     if (auditChain) await auditChain.append({ event_type: 'workflow.defined', owner_did: did, workflow_id: id, trigger_kind: p.data.trigger_kind, action_count: p.data.actions.length }).catch(() => {});
-    res.status(201).json({ workflow_id: id, status: 'enabled' });
+    const out = { workflow_id: id, status: 'enabled' };
+    // Return the secret ONCE — never again. Show callers how to use it.
+    if (webhookSecret) {
+      out.webhook_secret = webhookSecret;
+      out.webhook_url = `/v1/_webhooks/workflow/${id}`;
+      out.webhook_instructions = "Compute HMAC-SHA256 over the raw request body using webhook_secret, send as header 'x-webhook-signature: sha256=<hex>'. Secret shown once only — store it now.";
+    }
+    res.status(201).json(out);
   });
 
   app.get('/v1/agents/:did/workflows', async (req, res) => {
@@ -227,15 +242,39 @@ function registerWorkflowBuilderRoutes(app, pool, verifyAgentAuth, auditChain) {
     res.json({ fired });
   });
 
-  // Webhook trigger
-  app.post('/v1/_webhooks/workflow/:wid', express.json({ limit: '5mb' }), async (req, res) => {
-    const w = await pool.query(`SELECT * FROM workflow_definitions WHERE workflow_id=$1 AND enabled = TRUE AND trigger_kind='webhook'`, [req.params.wid])
-      .catch(() => ({ rows: [] }));
-    if (!w.rows[0]) return res.status(404).json({ error: 'not_found_or_disabled' });
-    w.rows[0].actions = typeof w.rows[0].actions === 'string' ? JSON.parse(w.rows[0].actions) : w.rows[0].actions;
-    const out = await executeWorkflow(pool, w.rows[0], req.body || {}, auditChain);
-    res.status(201).json(out);
-  });
+  // Webhook trigger — verifies HMAC-SHA256 signature over raw body using
+  // the per-workflow secret minted at definition time. Refuses unsigned
+  // requests and constant-time-compares the signature to thwart byte-leak.
+  app.post('/v1/_webhooks/workflow/:wid',
+    express.raw({ type: '*/*', limit: '5mb' }),
+    async (req, res) => {
+      const w = await pool.query(`SELECT * FROM workflow_definitions WHERE workflow_id=$1 AND enabled = TRUE AND trigger_kind='webhook'`, [req.params.wid])
+        .catch(() => ({ rows: [] }));
+      if (!w.rows[0]) return res.status(404).json({ error: 'not_found_or_disabled' });
+      const cfg = typeof w.rows[0].trigger_config === 'string' ? JSON.parse(w.rows[0].trigger_config) : (w.rows[0].trigger_config || {});
+      const expectedHash = cfg.webhook_secret_hash;
+      const sigHeader = req.headers['x-webhook-signature'] || '';
+      const sig = sigHeader.startsWith('sha256=') ? sigHeader.slice(7) : sigHeader;
+      if (!expectedHash || !sig) {
+        return res.status(401).json({ error: 'webhook_signature_required', hint: "Send 'x-webhook-signature: sha256=<HMAC-SHA256 of raw body using your workflow secret>'" });
+      }
+      // Reconstruct the expected sig: HMAC(secret, body). We don't store the
+      // secret — only sha256(secret). So we compare HMAC computation via the
+      // hash: HMAC-SHA256(secret_hash_used_as_key, body) is what we expect.
+      // Trade-off: we use the hash as the HMAC key, so leaking the hash leaks
+      // the verification capability but not the original secret.
+      const computed = crypto.createHmac('sha256', expectedHash).update(req.body).digest('hex');
+      const { safeTokenCompare } = require('../safe_compare');
+      if (!safeTokenCompare(computed, sig)) {
+        return res.status(401).json({ error: 'webhook_signature_invalid' });
+      }
+      let payload = {};
+      try { payload = JSON.parse(req.body.toString('utf8')); }
+      catch { /* allow non-JSON */ }
+      w.rows[0].actions = typeof w.rows[0].actions === 'string' ? JSON.parse(w.rows[0].actions) : w.rows[0].actions;
+      const out = await executeWorkflow(pool, w.rows[0], payload, auditChain);
+      res.status(201).json(out);
+    });
 }
 
 module.exports = { migrate, registerWorkflowBuilderRoutes, executeWorkflow, fireTrigger, TRIGGER_KINDS, ACTION_KINDS };

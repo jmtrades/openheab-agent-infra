@@ -122,7 +122,7 @@ function registerStripeAdapterRoutes(app, pool, verifyAgentAuth, auditChain) {
   });
 
   app.get('/v1/admin/stripe/events', async (req, res) => {
-    if (req.headers['x-admin-token'] !== process.env.OPERATOR_ADMIN_TOKEN) return res.status(401).json({ error: 'admin_auth_required' });
+    const { safeTokenCompare: _stc } = require('../safe_compare'); if (!_stc(req.headers['x-admin-token'], process.env.OPERATOR_ADMIN_TOKEN)) return res.status(401).json({ error: 'admin_auth_required' });
     const r = await pool.query(`SELECT event_id, kind, signature_ok, processed_at FROM stripe_events ORDER BY processed_at DESC LIMIT 200`).catch(() => ({ rows: [] }));
     res.json({ events: r.rows, configured: !!process.env.STRIPE_SECRET_KEY });
   });

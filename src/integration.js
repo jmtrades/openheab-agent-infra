@@ -682,9 +682,12 @@ function makeVerifyAgentAuth(pool) {
 }
 
 function makeVerifyAdminAuth() {
+  const { safeTokenCompare } = require('./safe_compare');
   return async function verifyAdminAuth(req) {
     const token = req.headers['x-admin-token'];
-    if (token && token === process.env.OPERATOR_ADMIN_TOKEN) return { valid: true, did: 'did:op:admin' };
+    const expected = process.env.OPERATOR_ADMIN_TOKEN;
+    if (!expected) return { valid: false, error: 'admin_token_not_configured' };
+    if (safeTokenCompare(token, expected)) return { valid: true, did: 'did:op:admin' };
     return { valid: false };
   };
 }

@@ -172,7 +172,8 @@ function registerWebhooksV2Routes(app, pool, verifyAgentAuth, auditChain) {
 
   // Manual enqueue (for testing — admin only)
   app.post('/v1/_internal/webhooks/enqueue', express.json(), async (req, res) => {
-    if (!process.env.INTERNAL_API_KEY || req.headers["x-internal-api-key"] !== process.env.INTERNAL_API_KEY) return res.status(401).json({ error: 'unauthorized' });
+    const { safeTokenCompare } = require('../safe_compare');
+    if (!safeTokenCompare(req.headers['x-internal-api-key'], process.env.INTERNAL_API_KEY)) return res.status(401).json({ error: 'unauthorized' });
     await enqueue(pool, req.body?.event_type || 'test', req.body?.payload || {});
     res.json({ enqueued: true });
   });
