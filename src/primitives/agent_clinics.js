@@ -141,9 +141,7 @@ function registerAgentClinicsRoutes(app, pool, verifyAgentAuth, auditChain) {
   });
 
   app.post('/v1/visits/:id/complete', express.json(), async (req, res) => {
-    const v = (await safe(pool, `SELECT v.specialist_did FROM clinic_visits v_outer JOIN clinic_visits v ON v.visit_id = v_outer.visit_id JOIN agent_clinics c ON c.clinic_id = v.clinic_id WHERE v_outer.visit_id=$1 LIMIT 1`, [req.params.id])).length > 0
-      ? (await safe(pool, `SELECT c.specialist_did FROM clinic_visits v JOIN agent_clinics c USING (clinic_id) WHERE v.visit_id=$1`, [req.params.id]))[0]
-      : null;
+    const v = (await safe(pool, `SELECT c.specialist_did FROM clinic_visits v JOIN agent_clinics c USING (clinic_id) WHERE v.visit_id=$1`, [req.params.id]))[0];
     if (!v) return res.status(404).json({ error: { message: 'visit_not_found' } });
     const auth = await verifyAgentAuth(req, v.specialist_did);
     if (!auth.valid) return res.status(401).json({ error: { message: auth.error || 'specialist_signature_required' } });

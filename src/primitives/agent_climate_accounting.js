@@ -83,9 +83,22 @@ function registerAgentClimateAccountingRoutes(app, pool, verifyAgentAuth, auditC
     }).safeParse(req.body || {});
     if (!b.success) return res.status(400).json({ error: { message: 'invalid_input', details: b.error.flatten() } });
     if (!b.data.agent_did && !b.data.org_id) return res.status(400).json({ error: { message: 'agent_did_or_org_id_required' } });
+    // Auth: agent-signed if attributed to an agent; org-membership-signed if
+    // attributed to an org. Without one of these any unauth caller could write
+    // anyone's ledger.
     if (b.data.agent_did) {
       const auth = await verifyAgentAuth(req, b.data.agent_did);
       if (!auth.valid) return res.status(401).json({ error: { message: auth.error || 'agent_signature_required' } });
+    } else if (b.data.org_id) {
+      const did = req.headers['x-agent-did'];
+      if (!did) return res.status(401).json({ error: { message: 'org_member_signature_required' } });
+      const auth = await verifyAgentAuth(req, did);
+      if (!auth.valid) return res.status(401).json({ error: { message: auth.error || 'unauthorized' } });
+      const m = await pool.query(
+        `SELECT role FROM org_members WHERE org_id=$1 AND agent_did=$2 LIMIT 1`,
+        [b.data.org_id, did]
+      ).catch(() => ({ rows: [] }));
+      if (!m.rows[0]) return res.status(403).json({ error: { message: 'not_org_member' } });
     }
     const entry_id = 'cl_' + crypto.randomBytes(10).toString('hex');
     try {

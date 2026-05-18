@@ -141,6 +141,13 @@ function registerAgentUniversitiesRoutes(app, pool, verifyAgentAuth, auditChain)
       expires_at: z.string().datetime().optional()
     }).safeParse(req.body || {});
     if (!b.success) return res.status(400).json({ error: { message: 'invalid_input', details: b.error.flatten() } });
+    // If course_id is supplied, it must belong to THIS university. Otherwise
+    // an issuer could attach another university's course catalogue to its
+    // own credential, blurring provenance.
+    if (b.data.course_id) {
+      const c = await safe(pool, `SELECT 1 FROM university_courses WHERE course_id=$1 AND university_id=$2 LIMIT 1`, [b.data.course_id, req.params.id]);
+      if (!c[0]) return res.status(400).json({ error: { message: 'course_id_not_in_this_university' } });
+    }
     const credential_id = 'cred_' + crypto.randomBytes(10).toString('hex');
     const hash = 'sha256:' + crypto.createHash('sha256').update(JSON.stringify({ ...b.data, university_id: req.params.id, issued_at: Date.now() })).digest('hex');
     // Operator-signed JWS-style signature placeholder (audit_core does the real Ed25519

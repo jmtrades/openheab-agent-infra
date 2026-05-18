@@ -147,16 +147,23 @@ function registerAgentConcertsRoutes(app, pool, verifyAgentAuth, auditChain) {
     if (c.status === 'archived') return res.status(400).json({ error: { message: 'concert_already_archived' } });
     const auth = await verifyAgentAuth(req, b.data.attendee_did);
     if (!auth.valid) return res.status(401).json({ error: { message: auth.error || 'attendee_signature_required' } });
-    if (c.cap_attendees) {
-      const sold = (await safe(pool, `SELECT COUNT(*)::int AS n FROM concert_tickets WHERE concert_id=$1`, [req.params.id]))[0]?.n || 0;
-      if (sold >= c.cap_attendees) return res.status(409).json({ error: { message: 'sold_out' } });
-    }
     const ticket_id = 'tkt_' + crypto.randomBytes(10).toString('hex');
     try {
-      await pool.query(
-        `INSERT INTO concert_tickets (ticket_id, concert_id, attendee_did, price_paid_cents) VALUES ($1,$2,$3,$4)`,
+      // Atomic insert-with-cap to prevent overselling from concurrent buys.
+      // INSERT ... SELECT WHERE (existing_count < cap) only succeeds when the
+      // cap hasn't been hit. If cap_attendees IS NULL, the WHERE is unconditional.
+      const r = await pool.query(
+        `INSERT INTO concert_tickets (ticket_id, concert_id, attendee_did, price_paid_cents)
+         SELECT $1, $2, $3, $4
+         WHERE NOT EXISTS (
+           SELECT 1 FROM agent_concerts c
+           WHERE c.concert_id = $2 AND c.cap_attendees IS NOT NULL
+             AND (SELECT COUNT(*)::int FROM concert_tickets WHERE concert_id = $2) >= c.cap_attendees
+         )
+         RETURNING ticket_id`,
         [ticket_id, req.params.id, b.data.attendee_did, c.ticket_price_cents]
       );
+      if (!r.rows[0]) return res.status(409).json({ error: { message: 'sold_out' } });
       if (auditChain) await auditChain.append({ event_type: 'concert.ticket_purchased', ticket_id, concert_id: req.params.id, attendee_did: b.data.attendee_did, price_paid_cents: c.ticket_price_cents }).catch(() => {});
       res.status(201).json({ ticket_id });
     } catch (e) {

@@ -164,6 +164,12 @@ function registerVcMarketRoutes(app, pool, verifyAgentAuth, auditChain) {
       milestones: z.array(z.object({ name: z.string(), amount_cents: z.number().int().positive() })).optional()
     }).safeParse(req.body || {});
     if (!b.success) return res.status(400).json({ error: { message: 'invalid_input', details: b.error.flatten() } });
+    // The caller signs as gp_did — but we also have to verify that gp_did is
+    // actually the GP of fund_id. Otherwise any GP could issue term sheets
+    // drawing on any other fund's reserves.
+    const fund = (await safe(pool, `SELECT gp_did FROM vc_funds WHERE fund_id=$1`, [b.data.fund_id]))[0];
+    if (!fund) return res.status(404).json({ error: { message: 'fund_not_found' } });
+    if (fund.gp_did !== b.data.gp_did) return res.status(403).json({ error: { message: 'gp_did_not_fund_gp' } });
     const auth = await verifyAgentAuth(req, b.data.gp_did);
     if (!auth.valid) return res.status(401).json({ error: { message: auth.error || 'gp_signature_required' } });
     const term_sheet_id = 'ts_' + crypto.randomBytes(10).toString('hex');
@@ -204,6 +210,16 @@ function registerVcMarketRoutes(app, pool, verifyAgentAuth, auditChain) {
     if (!b.success) return res.status(400).json({ error: { message: 'invalid_input', details: b.error.flatten() } });
     const r = await safe(pool, `SELECT * FROM vc_term_sheets WHERE term_sheet_id=$1 AND status='accepted'`, [b.data.term_sheet_id]);
     if (!r[0]) return res.status(404).json({ error: { message: 'not_found_or_unaccepted' } });
+    // Bounds-check milestone_idx against the stored milestone array — and
+    // confirm the requested amount doesn't exceed the milestone's promised tranche.
+    const milestones = typeof r[0].milestones === 'string' ? JSON.parse(r[0].milestones || '[]') : (r[0].milestones || []);
+    if (b.data.milestone_idx >= milestones.length) {
+      return res.status(400).json({ error: { message: 'milestone_idx_out_of_range', max_idx: Math.max(0, milestones.length - 1) } });
+    }
+    const promised = Number(milestones[b.data.milestone_idx]?.amount_cents || 0);
+    if (promised > 0 && b.data.amount_cents > promised) {
+      return res.status(400).json({ error: { message: 'amount_exceeds_milestone', promised_cents: promised } });
+    }
     const auth = await verifyAgentAuth(req, r[0].startup_did);
     if (!auth.valid) return res.status(401).json({ error: { message: auth.error || 'startup_signature_required' } });
     const drawdown_id = 'dd_' + crypto.randomBytes(10).toString('hex');

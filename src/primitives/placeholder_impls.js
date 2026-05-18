@@ -318,13 +318,17 @@ function registerPlaceholderImplsRoutes(app, pool, verifyAgentAuth, auditChain) 
     if (!SUPPORTED_PROVIDERS.has(provider)) {
       return res.status(404).json({ error: { message: 'unknown_provider', supported: [...SUPPORTED_PROVIDERS] } });
     }
-    const did = req.body?.agent_did;
-    if (!did) return res.status(400).json({ error: { message: 'agent_did required in body' } });
+    // Zod-validate the envelope. The provider-specific keys vary by provider
+    // so we accept any extra keys via passthrough() and rely on each connector
+    // to validate its own shape downstream.
+    const env = z.object({ agent_did: z.string().min(3).max(200) }).passthrough().safeParse(req.body || {});
+    if (!env.success) return res.status(400).json({ error: { message: 'invalid_input', details: env.error.flatten() } });
+    const did = env.data.agent_did;
     const auth = await verifyAgentAuth(req, did);
     if (!auth.valid) return res.status(401).json({ error: { message: auth.error || 'unauthorized' } });
 
     // Don't persist agent_did in the config blob — that's the index column.
-    const { agent_did: _drop, ...config } = req.body;
+    const { agent_did: _drop, ...config } = env.data;
     let encrypted;
     try { encrypted = encryptConfig(config); }
     catch (e) { return res.status(503).json({ error: { message: e.message } }); }
@@ -416,7 +420,11 @@ function registerPlaceholderImplsRoutes(app, pool, verifyAgentAuth, auditChain) 
     const did = req.params.did;
     const auth = await verifyAgentAuth(req, did);
     if (!auth.valid) return res.status(401).json({ error: { message: auth.error || 'unauthorized' } });
-    const tools = Array.isArray(req.body?.tools) ? req.body.tools.slice(0, 200) : [];
+    const b = z.object({
+      tools: z.array(z.string().min(1).max(200)).max(200)
+    }).safeParse(req.body || {});
+    if (!b.success) return res.status(400).json({ error: { message: 'invalid_input', details: b.error.flatten() } });
+    const tools = b.data.tools;
     try {
       await pool.query(
         `UPDATE agent_personalities SET tools_granted = $1, updated_at = NOW() WHERE agent_did = $2`,
