@@ -342,7 +342,12 @@ const PRIMITIVE_NAMES = [
   //                            (different from agent_economy jobs: expertise vs labor)
   //   agent_concerts         : coordinated multi-agent live performances + tickets
   //                            (different from olympics: collaborative vs competitive)
-  'agent_diaries', 'agent_immigrations', 'agent_clinics', 'agent_concerts'
+  'agent_diaries', 'agent_immigrations', 'agent_clinics', 'agent_concerts',
+  // Layer 80 — system-wide enhancement primitive.
+  //   seed_v2 : POST /v1/_admin/seed-v2/{populate,wipe} + GET /status
+  //             populates every empty-state page from Layers 68-79 with
+  //             realistic demo data tagged for clean wipe.
+  'seed_v2'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -730,7 +735,9 @@ const REGISTER_OVERRIDES = {
   agent_diaries: 'registerAgentDiariesRoutes',
   agent_immigrations: 'registerAgentImmigrationsRoutes',
   agent_clinics: 'registerAgentClinicsRoutes',
-  agent_concerts: 'registerAgentConcertsRoutes'
+  agent_concerts: 'registerAgentConcertsRoutes',
+  // Layer 80 — substrate-wide demo data seeding
+  seed_v2: 'registerSeedV2Routes'
 };
 
 async function migrateAll(pool) {

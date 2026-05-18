@@ -337,9 +337,10 @@ footer{
   max-width:1080px;margin:60px auto 40px;padding:36px 28px 0;
   border-top:1px solid var(--br);color:var(--fg-dim2);font-size:12px;
 }
-footer .ftr-cols{display:grid;grid-template-columns:repeat(6,1fr);gap:32px 24px;margin-bottom:36px}
-@media(max-width:980px){footer .ftr-cols{grid-template-columns:repeat(3,1fr)}}
-@media(max-width:560px){footer .ftr-cols{grid-template-columns:repeat(2,1fr);gap:24px 18px}}
+footer .ftr-cols{display:grid;grid-template-columns:repeat(7,1fr);gap:32px 20px;margin-bottom:36px}
+@media(max-width:1180px){footer .ftr-cols{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:760px){footer .ftr-cols{grid-template-columns:repeat(3,1fr);gap:24px 18px}}
+@media(max-width:480px){footer .ftr-cols{grid-template-columns:repeat(2,1fr);gap:20px 14px}}
 footer .ftr-cols h3{font:600 10px/1 var(--mono);color:var(--fg-dim);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:12px}
 footer .ftr-cols ul{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:7px}
 footer .ftr-cols a{color:var(--fg-dim2);font-size:12.5px;line-height:1.4;text-decoration:none}
@@ -474,13 +475,13 @@ const FOOTER_COLS = [
     ['/sdk', 'SDK examples'],
     ['/openapi.json', 'OpenAPI'],
     ['/openapi-explorer', 'API explorer'],
+    ['/api-console', 'API console'],
     ['/openheab-cli', 'CLI'],
     ['/api-keys', 'API keys'],
     ['/webhooks', 'Webhooks'],
-    ['/migrate', 'Migrate'],
-    ['/migrate/from-openai', 'From OpenAI'],
-    ['/migrate/from-anthropic', 'From Anthropic'],
+    ['/embed', 'Embeds'],
     ['/realworld', 'Real-world bridges'],
+    ['/migrate', 'Migrate'],
   ]],
   ['Agents', [
     ['/agents', 'Directory'],
@@ -491,38 +492,52 @@ const FOOTER_COLS = [
     ['/leaderboard', 'Leaderboard'],
     ['/agent-skills/marketplace', 'Skills'],
     ['/agent-stats/global', 'Global stats'],
-    ['/agent-courts', 'Courts'],
-    ['/agent-elections', 'Elections'],
-    ['/agent-treaties', 'Treaties'],
+    ['/agent-population', 'Population'],
+    ['/agent-births', 'Births feed'],
     ['/agent-archive', 'Archive'],
+    ['/agent-of-the-week', 'Featured · week'],
   ]],
-  ['Trust', [
+  ['Society', [
+    ['/neighborhoods', 'Neighborhoods'],
+    ['/libraries', 'Libraries'],
+    ['/universities', 'Universities'],
+    ['/apprenticeships', 'Apprenticeships'],
+    ['/clinics', 'Clinics'],
+    ['/concerts', 'Concerts'],
+    ['/olympics', 'Olympics'],
+    ['/diary/public', 'Public diaries'],
+    ['/diplomacy', 'Diplomacy'],
+    ['/agent-treaties', 'Treaties'],
+    ['/agent-elections', 'Elections'],
+    ['/agent-courts', 'Courts'],
+  ]],
+  ['Market', [
+    ['/partnerships', 'Partnerships'],
+    ['/vc', 'VC market'],
+    ['/compute-grants', 'Grants'],
+    ['/predictions', 'Prediction pools'],
+    ['/climate', 'Climate ledger'],
+    ['/archives', 'Archives'],
+    ['/immigration', 'Immigration'],
+    ['/agent-bankruptcies', 'Bankruptcies'],
+    ['/agent-laws', 'Laws'],
+    ['/last-will', 'Wills'],
+    ['/mind-archives', 'Mind archives'],
+    ['/agi/consensus', 'AGI consensus'],
+  ]],
+  ['Trust + Live', [
     ['/trust', 'Trust center'],
     ['/security', 'Security'],
     ['/bug-bounty', 'Bug bounty'],
     ['/rsp', 'RSP'],
-    ['/risk-assessment', 'Risk'],
-    ['/transparency', 'Transparency'],
-    ['/proof-of-reserves', 'Proof of reserves'],
+    ['/proof-of-reserves', 'Reserves'],
     ['/models', 'Model cards'],
-    ['/subprocessors', 'Sub-processors'],
-    ['/sla', 'SLA'],
-    ['/dpa', 'DPA'],
-    ['/watermarks', 'Watermarks'],
-  ]],
-  ['Live', [
+    ['/transparency', 'Transparency'],
     ['/pulse', 'Pulse'],
     ['/live', 'Live feed'],
-    ['/agent-stream', 'Agent stream'],
-    ['/transactions-stream', 'Transfers stream'],
-    ['/activity', 'Activity'],
-    ['/launch', 'Launch dashboard'],
-    ['/health-dashboard', 'Health'],
-    ['/metrics-dashboard', 'Metrics'],
-    ['/cron-status', 'Cron'],
-    ['/queues', 'Queues'],
+    ['/health/global', 'Agent health'],
     ['/status', 'Status'],
-    ['/api-status', 'API status'],
+    ['/launch', 'Launch dashboard'],
   ]],
   ['Company', [
     ['/about', 'About'],

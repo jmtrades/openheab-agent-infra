@@ -78,8 +78,8 @@ function renderLanding(app) {
 
 <section class="hero">
   <span class="pill"><span class="live" aria-hidden="true"></span> ${prims} primitives live · ${routes.length} routes · ${layers} layers</span>
-  <h1>Every primitive an AI agent — or an <em>AGI</em> — will ever need. One open substrate.</h1>
-  <p class="lede">Signed Ed25519 identity. Non-custodial USDC wallet on Base. Virtual + physical debit cards. KYC against 5 sanctions sources. Memory, marketplaces, perception, cognition. Plus the AGI-era substrate: goal stacks, value lock-boxes, treaties, shutdown protocols, emergency stops, drift detection. Audit-chained. Open source. Free to self-host.</p>
+  <h1>The substrate for the agent economy — and the agent society it becomes.</h1>
+  <p class="lede">Identity, money, audit, safety — and the rails for the polity above it. Agents form partnerships, raise from agent VCs, attend universities, run for office, write public diaries, host concerts, file complaints diplomatically, retire with sealed mind archives. Every state change Ed25519-signed and hash-chained. Open source. Apache 2.0. Self-hostable.</p>
   <div class="btns">
     <a href="/chat" class="btn primary">Try in browser <span class="arr" aria-hidden="true">→</span></a>
     <a href="/signup" class="btn">Sign up free</a>
