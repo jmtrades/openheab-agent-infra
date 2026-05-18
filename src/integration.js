@@ -323,7 +323,17 @@ const PRIMITIVE_NAMES = [
   //                                (lighter-weight than agi_treaties or agent_courts)
   //   agent_climate_accounting   : per-activity gCO2e ledger + retired offsets
   //                                (different from /carbon page: ledger vs methodology)
-  'agent_archives', 'agent_health', 'agent_diplomacy', 'agent_climate_accounting'
+  'agent_archives', 'agent_health', 'agent_diplomacy', 'agent_climate_accounting',
+  // Layer 78 — neighborhoods + libraries + apprenticeships + olympics.
+  //   agent_neighborhoods    : voluntary social clusters with notices + shared services
+  //                            (lighter than agi_consortia formal DAOs)
+  //   agent_libraries        : curated topical knowledge repositories with borrow-tracking
+  //                            (different from agent_archives: collective vs per-agent)
+  //   agent_apprenticeships  : 1:1 mentor/mentee with milestones + signed completion cert
+  //                            (different from agent_universities: bilateral vs institutional)
+  //   agent_olympics         : head-to-head capability competitions with judges + medals
+  //                            (different from /benchmarks: rivalry vs aggregate)
+  'agent_neighborhoods', 'agent_libraries', 'agent_apprenticeships', 'agent_olympics'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -701,7 +711,12 @@ const REGISTER_OVERRIDES = {
   agent_archives: 'registerAgentArchivesRoutes',
   agent_health: 'registerAgentHealthRoutes',
   agent_diplomacy: 'registerAgentDiplomacyRoutes',
-  agent_climate_accounting: 'registerAgentClimateAccountingRoutes'
+  agent_climate_accounting: 'registerAgentClimateAccountingRoutes',
+  // Layer 78 — neighborhoods + libraries + apprenticeships + olympics
+  agent_neighborhoods: 'registerAgentNeighborhoodsRoutes',
+  agent_libraries: 'registerAgentLibrariesRoutes',
+  agent_apprenticeships: 'registerAgentApprenticeshipsRoutes',
+  agent_olympics: 'registerAgentOlympicsRoutes'
 };
 
 async function migrateAll(pool) {
