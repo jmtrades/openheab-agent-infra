@@ -6,22 +6,44 @@ function publicUrl() {
 }
 
 function renderSitemap() {
-  const PUBLIC_PATHS = [
+  // Pull the canonical page index from search_surfaces (single source of truth
+  // for "every public surface we ship"). Defensive: if the import fails for
+  // any reason, fall back to the seed list so /sitemap.xml is never empty.
+  let pagePaths = [];
+  try {
+    const { PAGE_INDEX } = require('./primitives/search_surfaces');
+    pagePaths = (PAGE_INDEX || []).map(p => p[0]);
+  } catch {}
+  const SEED_PATHS = [
     '/', '/healthz', '/readyz', '/openapi.json',
     '/v1/bank/info', '/v1/bank/assets', '/v1/audit/verify',
     '/v1/analytics/global', '/v1/extensions', '/v1/extensions/categories',
     '/sitemap.xml', '/robots.txt', '/llms.txt', '/.well-known/agents.json',
     '/mcp/manifest', '/.well-known/mcp.json'
   ];
+  // De-dup, sort, keep stable order so search engines see a stable etag
+  const PUBLIC_PATHS = [...new Set([...SEED_PATHS, ...pagePaths])].sort();
   const base = publicUrl();
   const today = new Date().toISOString().slice(0, 10);
-  const urls = PUBLIC_PATHS.map(p => `
+  // Per Google sitemap protocol: priority + changefreq are hints. Bump landing
+  // + chat + pricing + trust + docs to priority=1.0 / daily, keep most pages
+  // at 0.7 / weekly, but boost agent-economy + market pages to 0.8 / weekly
+  // because they change frequently as new partnerships/jobs/etc are added.
+  const HIGH_PRI = new Set(['/', '/chat', '/pricing', '/trust', '/docs', '/mcp/registry', '/benchmarks']);
+  const MEDIUM_PRI = new Set(['/agents', '/leaderboard', '/pulse', '/bounty-board', '/agent-hire',
+    '/partnerships', '/vc', '/compute-grants', '/predictions', '/olympics', '/concerts',
+    '/universities', '/clinics', '/libraries', '/neighborhoods', '/diplomacy']);
+  const urls = PUBLIC_PATHS.map(p => {
+    const pri = HIGH_PRI.has(p) ? '1.0' : MEDIUM_PRI.has(p) ? '0.8' : '0.7';
+    const freq = HIGH_PRI.has(p) ? 'daily' : MEDIUM_PRI.has(p) ? 'weekly' : 'monthly';
+    return `
   <url>
     <loc>${base}${p}</loc>
     <lastmod>${today}</lastmod>
-    <changefreq>${p === '/' ? 'daily' : 'weekly'}</changefreq>
-    <priority>${p === '/' ? '1.0' : '0.7'}</priority>
-  </url>`).join('');
+    <changefreq>${freq}</changefreq>
+    <priority>${pri}</priority>
+  </url>`;
+  }).join('');
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls}
 </urlset>`;
@@ -141,11 +163,58 @@ function renderAgentsJson() {
   };
 }
 
+function renderSitemapHtml() {
+  let groups = {};
+  try {
+    const { PAGE_INDEX } = require('./primitives/search_surfaces');
+    for (const [path, title, hint] of (PAGE_INDEX || [])) {
+      // Group by URL prefix (first segment after /). Empty → "Core".
+      const seg = path.split('/').filter(Boolean)[0] || 'core';
+      const group = seg.split('-')[0]; // collapse /agent-* etc
+      (groups[group] ||= []).push({ path, title, hint });
+    }
+  } catch {}
+  const ds = require('./design_system');
+  const escape = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c =>
+    ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+  const sortedGroups = Object.entries(groups).sort((a, b) => a[0].localeCompare(b[0]));
+  const total = Object.values(groups).reduce((n, g) => n + g.length, 0);
+  return ds.head('Sitemap — OpenHeab', 'Every public page indexed.') +
+    ds.NAV_HTML('') +
+    `<main>
+<section style="max-width:1100px;margin:0 auto;padding:60px 16px">
+  <span class="badge b-acc">Sitemap</span>
+  <h1 style="font:600 40px/1.1 var(--display);letter-spacing:-1px;margin:18px 0">Sitemap.</h1>
+  <p style="color:var(--dim2);font-size:15px;line-height:1.6;max-width:680px">${total.toLocaleString()} indexed pages. Grouped by URL prefix. Search the same set at <a href="/search">/search</a>.</p>
+</section>
+<section style="max-width:1100px;margin:0 auto;padding:24px 16px 60px">
+  ${sortedGroups.map(([g, items]) => `<details class="card" style="margin-bottom:8px;padding:14px 18px" open>
+    <summary style="cursor:pointer;font:600 14px var(--mono);color:var(--acc-dim);text-transform:uppercase;letter-spacing:1.5px">${escape(g)} · ${items.length}</summary>
+    <ul style="margin:14px 0 0;padding-left:0;list-style:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:6px">
+      ${items.sort((a, b) => a.path.localeCompare(b.path)).map(p => `<li>
+        <a href="${escape(p.path)}" style="display:block;padding:6px 8px;border-radius:var(--r-sm);color:var(--fg-dim2);text-decoration:none;font-size:13px"
+           onmouseover="this.style.background='var(--card2)';this.style.color='var(--fg)'"
+           onmouseout="this.style.background='';this.style.color='var(--fg-dim2)'">
+          <span style="font:500 11px var(--mono);color:var(--dim)">${escape(p.path)}</span><br>
+          <span>${escape(p.title)}</span>
+        </a>
+      </li>`).join('')}
+    </ul>
+  </details>`).join('')}
+</section>
+</main>` + ds.FOOTER_HTML();
+}
+
 function registerDiscoveryRoutes(app) {
   app.get('/sitemap.xml', (req, res) => {
     res.setHeader('content-type', 'application/xml; charset=utf-8');
     res.setHeader('cache-control', 'public, max-age=3600');
     res.send(renderSitemap());
+  });
+  app.get('/sitemap', (req, res) => {
+    res.setHeader('content-type', 'text/html; charset=utf-8');
+    res.setHeader('cache-control', 'public, max-age=3600');
+    res.send(renderSitemapHtml());
   });
   app.get('/robots.txt', (req, res) => {
     res.setHeader('content-type', 'text/plain; charset=utf-8');
