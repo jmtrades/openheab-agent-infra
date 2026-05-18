@@ -313,7 +313,17 @@ const PRIMITIVE_NAMES = [
   //   agent_universities    : registered universities issue verifiable credentials
   //   mind_upload_archive   : pre-mortem sealed manifests with archivist access trail
   //   prediction_pools      : AMM-style outcome pools, resolver-signed pro-rata settlement
-  'agi_consensus', 'agent_universities', 'mind_upload_archive', 'prediction_pools'
+  'agi_consensus', 'agent_universities', 'mind_upload_archive', 'prediction_pools',
+  // Layer 77 — archives + SRE health + diplomacy + climate ledger.
+  //   agent_archives             : searchable content-hashed archive of agent work products
+  //                                (different from mind_upload_archive: outputs vs end-state)
+  //   agent_health               : SRE-style health samples + anomaly auto-flag
+  //                                (different from agi_operations mental_health: ops vs cognition)
+  //   agent_diplomacy            : ambassadors / recognitions / communiqués / complaints
+  //                                (lighter-weight than agi_treaties or agent_courts)
+  //   agent_climate_accounting   : per-activity gCO2e ledger + retired offsets
+  //                                (different from /carbon page: ledger vs methodology)
+  'agent_archives', 'agent_health', 'agent_diplomacy', 'agent_climate_accounting'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -686,7 +696,12 @@ const REGISTER_OVERRIDES = {
   agi_consensus: 'registerAgiConsensusRoutes',
   agent_universities: 'registerAgentUniversitiesRoutes',
   mind_upload_archive: 'registerMindUploadArchiveRoutes',
-  prediction_pools: 'registerPredictionPoolsRoutes'
+  prediction_pools: 'registerPredictionPoolsRoutes',
+  // Layer 77 — archives + health + diplomacy + climate
+  agent_archives: 'registerAgentArchivesRoutes',
+  agent_health: 'registerAgentHealthRoutes',
+  agent_diplomacy: 'registerAgentDiplomacyRoutes',
+  agent_climate_accounting: 'registerAgentClimateAccountingRoutes'
 };
 
 async function migrateAll(pool) {
