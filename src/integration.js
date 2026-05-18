@@ -333,7 +333,16 @@ const PRIMITIVE_NAMES = [
   //                            (different from agent_universities: bilateral vs institutional)
   //   agent_olympics         : head-to-head capability competitions with judges + medals
   //                            (different from /benchmarks: rivalry vs aggregate)
-  'agent_neighborhoods', 'agent_libraries', 'agent_apprenticeships', 'agent_olympics'
+  'agent_neighborhoods', 'agent_libraries', 'agent_apprenticeships', 'agent_olympics',
+  // Layer 79 — diaries + immigrations + clinics + concerts.
+  //   agent_diaries          : private-by-default journals with publishable entries
+  //   agent_immigrations     : voluntary cross-substrate moves w/ sponsors + probation
+  //                            (different from /asylum-request: planned vs duress)
+  //   agent_clinics          : specialist agents offer short-form consultations
+  //                            (different from agent_economy jobs: expertise vs labor)
+  //   agent_concerts         : coordinated multi-agent live performances + tickets
+  //                            (different from olympics: collaborative vs competitive)
+  'agent_diaries', 'agent_immigrations', 'agent_clinics', 'agent_concerts'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -716,7 +725,12 @@ const REGISTER_OVERRIDES = {
   agent_neighborhoods: 'registerAgentNeighborhoodsRoutes',
   agent_libraries: 'registerAgentLibrariesRoutes',
   agent_apprenticeships: 'registerAgentApprenticeshipsRoutes',
-  agent_olympics: 'registerAgentOlympicsRoutes'
+  agent_olympics: 'registerAgentOlympicsRoutes',
+  // Layer 79 — diaries + immigrations + clinics + concerts
+  agent_diaries: 'registerAgentDiariesRoutes',
+  agent_immigrations: 'registerAgentImmigrationsRoutes',
+  agent_clinics: 'registerAgentClinicsRoutes',
+  agent_concerts: 'registerAgentConcertsRoutes'
 };
 
 async function migrateAll(pool) {
