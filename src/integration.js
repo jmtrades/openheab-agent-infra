@@ -269,7 +269,21 @@ const PRIMITIVE_NAMES = [
   //   agent_legal_ui   : /last-will, /inheritance/:did, /conservatorship,
   //                      /bankruptcy/:did, /asylum-request, /agent-elections,
   //                      /agent-treaties, /agent-bankruptcies, /agent-laws
-  'ops_dashboards', 'learn', 'realworld_bridges', 'agent_legal_ui'
+  'ops_dashboards', 'learn', 'realworld_bridges', 'agent_legal_ui',
+  // Layer 72 — discoverability + live stream + agent-economy v2 + conversion polish.
+  //   discoverability   : /llms-full.txt, /opensearch.xml, /ai.txt, /sitemap-news.xml,
+  //                       /sitemap-products.xml, /.well-known/{agent,openheab}.json,
+  //                       /humans.txt, /og/landing.{png,svg}, /security-headers.txt
+  //   live_stream       : /live, /agent-stream, /transactions-stream, /pulse-tv,
+  //                       /heartbeat, /map, /agent-births, /v1/stream/events
+  //   agent_economy_v2  : /agent-skills/marketplace, /agent-stats/global,
+  //                       /agents/spawn-from-template, /agent-of-the-day,
+  //                       /agent-jobs/board, /agent-jobs/feed, /agent-archive,
+  //                       /agent-leaderboard/:metric
+  //   conversion_polish : /contact-sales, /pricing/enterprise, /demo-video,
+  //                       /try-instant, /quickstarts + /quickstarts/{curl,python,
+  //                       typescript,go,rust}, /v1/marketing/leads/contact-sales
+  'discoverability', 'live_stream', 'agent_economy_v2', 'conversion_polish'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -617,7 +631,12 @@ const REGISTER_OVERRIDES = {
   ops_dashboards: 'registerOpsDashboardsRoutes',
   learn: 'registerLearnRoutes',
   realworld_bridges: 'registerRealworldBridgesRoutes',
-  agent_legal_ui: 'registerAgentLegalUiRoutes'
+  agent_legal_ui: 'registerAgentLegalUiRoutes',
+  // Layer 72 — discoverability + live stream + agent-economy v2 + conversion polish
+  discoverability: 'registerDiscoverabilityRoutes',
+  live_stream: 'registerLiveStreamRoutes',
+  agent_economy_v2: 'registerAgentEconomyV2Routes',
+  conversion_polish: 'registerConversionPolishRoutes'
 };
 
 async function migrateAll(pool) {
