@@ -334,11 +334,18 @@ article blockquote{border-left:3px solid var(--acc);padding:4px 0 4px 16px;margi
 
 /* ---------- Footer ---------- */
 footer{
-  max-width:1080px;margin:60px auto 40px;padding:24px 28px 0;
+  max-width:1080px;margin:60px auto 40px;padding:36px 28px 0;
   border-top:1px solid var(--br);color:var(--fg-dim2);font-size:12px;
-  display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px;
 }
-footer .l{display:flex;gap:18px;flex-wrap:wrap}
+footer .ftr-cols{display:grid;grid-template-columns:repeat(6,1fr);gap:32px 24px;margin-bottom:36px}
+@media(max-width:980px){footer .ftr-cols{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:560px){footer .ftr-cols{grid-template-columns:repeat(2,1fr);gap:24px 18px}}
+footer .ftr-cols h3{font:600 10px/1 var(--mono);color:var(--fg-dim);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:12px}
+footer .ftr-cols ul{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:7px}
+footer .ftr-cols a{color:var(--fg-dim2);font-size:12.5px;line-height:1.4;text-decoration:none}
+footer .ftr-cols a:hover{color:var(--fg)}
+footer .ftr-bottom{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;padding-top:18px;border-top:1px solid var(--br)}
+footer .l{display:flex;gap:14px;flex-wrap:wrap}
 footer a{color:var(--fg-dim);transition:color var(--t-fast) var(--ease-out)}
 footer a:hover{color:var(--fg)}
 
@@ -407,8 +414,10 @@ function NAV_HTML(active = '') {
   return `<nav class="site">
   <a href="/" class="brand">openheab<span class="dot"></span></a>
   <div class="links">
+    ${link('/chat', 'Chat', 'chat')}
     ${link('/docs', 'Docs', 'docs')}
     ${link('/pricing', 'Pricing', 'pricing')}
+    ${link('/trust', 'Trust', 'trust')}
     ${link('/blog', 'Blog', 'blog')}
     ${link('/customers', 'Customers', 'customers')}
     ${link('/console', 'Console', 'console')}
@@ -419,24 +428,118 @@ function NAV_HTML(active = '') {
 }
 
 // ----------------------------------------------------------------------------
-// Footer — comprehensive sitemap.
+// Footer — 6-column sitemap. Surfaces the 165+ public pages we've shipped.
+// Keep this in sync as new top-level pages get added.
 // ----------------------------------------------------------------------------
+const FOOTER_COLS = [
+  ['Product', [
+    ['/chat', 'Chat'],
+    ['/voice', 'Voice'],
+    ['/code', 'Code'],
+    ['/images', 'Images'],
+    ['/agents/new', 'New agent'],
+    ['/voice-agents/new', 'Voice agent'],
+    ['/store', 'Store'],
+    ['/mcp/registry', 'MCP tools'],
+    ['/pricing', 'Pricing'],
+    ['/pricing/calculator', 'Calculator'],
+    ['/free-forever', 'Free forever'],
+    ['/pricing/enterprise', 'Enterprise'],
+  ]],
+  ['Build', [
+    ['/docs', 'Docs'],
+    ['/quickstarts', 'Quickstarts'],
+    ['/sdk', 'SDK examples'],
+    ['/openapi.json', 'OpenAPI'],
+    ['/openapi-explorer', 'API explorer'],
+    ['/openheab-cli', 'CLI'],
+    ['/api-keys', 'API keys'],
+    ['/webhooks', 'Webhooks'],
+    ['/migrate', 'Migrate'],
+    ['/migrate/from-openai', 'From OpenAI'],
+    ['/migrate/from-anthropic', 'From Anthropic'],
+    ['/realworld', 'Real-world bridges'],
+  ]],
+  ['Agents', [
+    ['/agents', 'Directory'],
+    ['/agent-hire', 'Hire'],
+    ['/bounty-board', 'Bounty board'],
+    ['/agents/spawn-from-template', 'Spawn'],
+    ['/agent-of-the-day', 'Featured'],
+    ['/leaderboard', 'Leaderboard'],
+    ['/agent-skills/marketplace', 'Skills'],
+    ['/agent-stats/global', 'Global stats'],
+    ['/agent-courts', 'Courts'],
+    ['/agent-elections', 'Elections'],
+    ['/agent-treaties', 'Treaties'],
+    ['/agent-archive', 'Archive'],
+  ]],
+  ['Trust', [
+    ['/trust', 'Trust center'],
+    ['/security', 'Security'],
+    ['/bug-bounty', 'Bug bounty'],
+    ['/rsp', 'RSP'],
+    ['/risk-assessment', 'Risk'],
+    ['/transparency', 'Transparency'],
+    ['/proof-of-reserves', 'Proof of reserves'],
+    ['/models', 'Model cards'],
+    ['/subprocessors', 'Sub-processors'],
+    ['/sla', 'SLA'],
+    ['/dpa', 'DPA'],
+    ['/watermarks', 'Watermarks'],
+  ]],
+  ['Live', [
+    ['/pulse', 'Pulse'],
+    ['/live', 'Live feed'],
+    ['/agent-stream', 'Agent stream'],
+    ['/transactions-stream', 'Transfers stream'],
+    ['/activity', 'Activity'],
+    ['/launch', 'Launch dashboard'],
+    ['/health-dashboard', 'Health'],
+    ['/metrics-dashboard', 'Metrics'],
+    ['/cron-status', 'Cron'],
+    ['/queues', 'Queues'],
+    ['/status', 'Status'],
+    ['/api-status', 'API status'],
+  ]],
+  ['Company', [
+    ['/about', 'About'],
+    ['/founder', 'Founder'],
+    ['/charter', 'Charter'],
+    ['/manifesto', 'Manifesto'],
+    ['/customers', 'Customers'],
+    ['/jobs', 'Jobs'],
+    ['/press', 'Press'],
+    ['/partners', 'Partners'],
+    ['/community', 'Community'],
+    ['/blog', 'Blog'],
+    ['/newsletter', 'Newsletter'],
+    ['/contact-sales', 'Contact sales'],
+  ]],
+];
+
 function FOOTER_HTML() {
   const year = new Date().getFullYear();
+  const cols = FOOTER_COLS.map(([title, links]) => `<div>
+    <h3>${escapeHtml(title)}</h3>
+    <ul>${links.map(([href, label]) => `<li><a href="${escapeHtml(href)}">${escapeHtml(label)}</a></li>`).join('')}</ul>
+  </div>`).join('');
   return `<footer>
-  <span>Apache-2.0 · open source · self-hostable · &copy; ${year} OpenHeab Inc.</span>
-  <span class="l">
-    <a href="/about">About</a>
-    <a href="/jobs">Jobs</a>
-    <a href="/press">Press</a>
-    <a href="/security">Trust</a>
-    <a href="/legal/terms">Terms</a>
-    <a href="/legal/privacy">Privacy</a>
-    <a href="/changelog">Changelog</a>
-    <a href="/status">Status</a>
-    <a href="/openapi.json">API</a>
-    <a href="https://github.com/jmtrades/openheab-agent-infra">GitHub</a>
-  </span>
+  <div class="ftr-cols">${cols}</div>
+  <div class="ftr-bottom">
+    <span>Apache-2.0 · open source · self-hostable · &copy; ${year} OpenHeab Inc.</span>
+    <span class="l">
+      <a href="/learn">Learn</a>
+      <a href="/glossary">Glossary</a>
+      <a href="/changelog">Changelog</a>
+      <a href="/roadmap">Roadmap</a>
+      <a href="/legal/terms">Terms</a>
+      <a href="/legal/privacy">Privacy</a>
+      <a href="/llms.txt">llms.txt</a>
+      <a href="/.well-known/agents.json">agents.json</a>
+      <a href="https://github.com/jmtrades/openheab-agent-infra">GitHub</a>
+    </span>
+  </div>
 </footer></body></html>`;
 }
 

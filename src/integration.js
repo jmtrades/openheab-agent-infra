@@ -283,7 +283,15 @@ const PRIMITIVE_NAMES = [
   //   conversion_polish : /contact-sales, /pricing/enterprise, /demo-video,
   //                       /try-instant, /quickstarts + /quickstarts/{curl,python,
   //                       typescript,go,rust}, /v1/marketing/leads/contact-sales
-  'discoverability', 'live_stream', 'agent_economy_v2', 'conversion_polish'
+  'discoverability', 'live_stream', 'agent_economy_v2', 'conversion_polish',
+  // Layer 73 — more bridges + deeper lessons + embeds + API console.
+  //   realworld_v2  : /realworld/{zapier,n8n,make,ifttt,oauth,openapi,mcp-host,webhooks-out}
+  //   learn_v2      : /learn/{wallet-deep,security-deep,mcp-101,browser-101,
+  //                   sandbox-101,audit-chain-101,ipo-readiness,payment-rails}
+  //   embed_widgets : /embed + /embed/{landing-counter,pulse,proof-of-reserves,
+  //                   leaderboard,agent/:did,chat}
+  //   api_console   : /api-console
+  'realworld_v2', 'learn_v2', 'embed_widgets', 'api_console'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -636,7 +644,12 @@ const REGISTER_OVERRIDES = {
   discoverability: 'registerDiscoverabilityRoutes',
   live_stream: 'registerLiveStreamRoutes',
   agent_economy_v2: 'registerAgentEconomyV2Routes',
-  conversion_polish: 'registerConversionPolishRoutes'
+  conversion_polish: 'registerConversionPolishRoutes',
+  // Layer 73 — more bridges + deeper lessons + embeds + API console
+  realworld_v2: 'registerRealworldV2Routes',
+  learn_v2: 'registerLearnV2Routes',
+  embed_widgets: 'registerEmbedWidgetsRoutes',
+  api_console: 'registerApiConsoleRoutes'
 };
 
 async function migrateAll(pool) {
