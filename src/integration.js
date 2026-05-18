@@ -291,7 +291,14 @@ const PRIMITIVE_NAMES = [
   //   embed_widgets : /embed + /embed/{landing-counter,pulse,proof-of-reserves,
   //                   leaderboard,agent/:did,chat}
   //   api_console   : /api-console
-  'realworld_v2', 'learn_v2', 'embed_widgets', 'api_console'
+  'realworld_v2', 'learn_v2', 'embed_widgets', 'api_console',
+  // Layer 74 — search + admin console + AGI advanced UI + mobile/app store landings.
+  //   search_surfaces  : /search, /v1/search/suggest, /v1/search/global
+  //   admin_console    : /admin/console + primitives + registry + secrets-status
+  //   agi_advanced_ui  : /agi/{goals,beliefs,checkpoints,value-lockboxes,
+  //                      training-provenance}/:did + /agi/{consortia,proofs,knowledge-graph}
+  //   mobile_app_pages : /apps, /download, /ios, /android, /desktop, /mobile, /mobile/api
+  'search_surfaces', 'admin_console', 'agi_advanced_ui', 'mobile_app_pages'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -649,7 +656,12 @@ const REGISTER_OVERRIDES = {
   realworld_v2: 'registerRealworldV2Routes',
   learn_v2: 'registerLearnV2Routes',
   embed_widgets: 'registerEmbedWidgetsRoutes',
-  api_console: 'registerApiConsoleRoutes'
+  api_console: 'registerApiConsoleRoutes',
+  // Layer 74 — search + admin console + AGI advanced UI + mobile/app store landings
+  search_surfaces: 'registerSearchSurfacesRoutes',
+  admin_console: 'registerAdminConsoleRoutes',
+  agi_advanced_ui: 'registerAgiAdvancedUiRoutes',
+  mobile_app_pages: 'registerMobileAppPagesRoutes'
 };
 
 async function migrateAll(pool) {

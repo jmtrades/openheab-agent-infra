@@ -81,9 +81,16 @@ function renderLanding(app) {
   <h1>Every primitive an AI agent — or an <em>AGI</em> — will ever need. One open substrate.</h1>
   <p class="lede">Signed Ed25519 identity. Non-custodial USDC wallet on Base. Virtual + physical debit cards. KYC against 5 sanctions sources. Memory, marketplaces, perception, cognition. Plus the AGI-era substrate: goal stacks, value lock-boxes, treaties, shutdown protocols, emergency stops, drift detection. Audit-chained. Open source. Free to self-host.</p>
   <div class="btns">
-    <a href="/signup" class="btn primary">Sign up free <span class="arr" aria-hidden="true">→</span></a>
-    <a href="/playground" class="btn">Try the playground</a>
+    <a href="/chat" class="btn primary">Try in browser <span class="arr" aria-hidden="true">→</span></a>
+    <a href="/signup" class="btn">Sign up free</a>
     <a href="https://github.com/jmtrades/openheab-agent-infra" class="btn ghost">Source</a>
+  </div>
+
+  <div class="live-strip" aria-label="Live substrate activity">
+    <div class="lm"><span class="ld"></span><div class="ll">Agents live</div><div class="lv" id="lv-agents">—</div></div>
+    <div class="lm"><div class="ll">Audit chain length</div><div class="lv" id="lv-audit">—</div></div>
+    <div class="lm"><div class="ll">Transfers · 24h</div><div class="lv" id="lv-tx">—</div></div>
+    <div class="lm"><div class="ll">Inference · 24h</div><div class="lv" id="lv-inf">—</div></div>
   </div>
 
   <div class="metrics">
@@ -95,6 +102,45 @@ function renderLanding(app) {
     <div class="metric"><div class="v">Apache 2</div><div class="l">License</div></div>
   </div>
 </section>
+
+<style>
+.live-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:24px 0 18px;padding:14px;background:rgba(125,249,255,.03);border:1px solid rgba(125,249,255,.12);border-radius:var(--r-xl)}
+@media(max-width:640px){.live-strip{grid-template-columns:repeat(2,1fr)}}
+.live-strip .lm{display:flex;flex-direction:column;gap:4px;align-items:flex-start;padding:4px 8px}
+.live-strip .ll{font:500 10px/1 var(--mono);color:var(--fg-dim);text-transform:uppercase;letter-spacing:1.2px;display:flex;align-items:center;gap:6px}
+.live-strip .lv{font:700 22px/1 var(--mono);color:var(--acc);letter-spacing:-0.5px;font-feature-settings:'tnum';transition:color 200ms}
+.live-strip .ld{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--good);box-shadow:0 0 0 0 rgba(34,197,94,.6);animation:livepulse 1.4s infinite}
+@keyframes livepulse{0%{box-shadow:0 0 0 0 rgba(34,197,94,.6)}70%{box-shadow:0 0 0 8px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}
+</style>
+<script>
+(function(){
+  function fmt(n){ return Number(n||0).toLocaleString(); }
+  function flash(id, nv){
+    var el = document.getElementById(id);
+    if (!el) return;
+    var ov = el.dataset.prev || '';
+    el.textContent = nv;
+    if (ov && ov !== nv) {
+      el.style.color = '#22c55e';
+      setTimeout(function(){ el.style.color = ''; }, 700);
+    }
+    el.dataset.prev = nv;
+  }
+  async function tick() {
+    try {
+      var r = await fetch('/v1/pulse/stats', { cache: 'no-store' });
+      if (!r.ok) return;
+      var j = await r.json();
+      flash('lv-agents', fmt(j.agents_total));
+      flash('lv-audit', fmt(j.audit_chain_length));
+      flash('lv-tx', fmt(j.transfers_24h));
+      flash('lv-inf', fmt(j.inference_calls_24h));
+    } catch (e) {}
+  }
+  tick();
+  setInterval(tick, 5000);
+})();
+</script>
 
 <section class="section">
   <p class="eyebrow">The bundle</p>
