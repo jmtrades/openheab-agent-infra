@@ -298,7 +298,16 @@ const PRIMITIVE_NAMES = [
   //   agi_advanced_ui  : /agi/{goals,beliefs,checkpoints,value-lockboxes,
   //                      training-provenance}/:did + /agi/{consortia,proofs,knowledge-graph}
   //   mobile_app_pages : /apps, /download, /ios, /android, /desktop, /mobile, /mobile/api
-  'search_surfaces', 'admin_console', 'agi_advanced_ui', 'mobile_app_pages'
+  'search_surfaces', 'admin_console', 'agi_advanced_ui', 'mobile_app_pages',
+  // Layer 75 — back-end implementations + new product primitives.
+  //   placeholder_impls   : POST /v1/agents/spawn-from-template, /v1/mcp-servers,
+  //                         /v1/agents/:did/{profile/location, events/emit, personality,
+  //                         skills/grant}, /v1/integrations/:provider/connect, /v1/map/regions
+  //   agent_partnerships  : formal partnerships with bps revenue splits + dissolution +
+  //                         distribute (signed by both parties)
+  //   compute_grants      : 4 funded programs + application + admin decision + UI
+  //   vc_market           : funds + LP commits + term sheets + drawdowns + UI at /vc
+  'placeholder_impls', 'agent_partnerships', 'compute_grants', 'vc_market'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -661,7 +670,12 @@ const REGISTER_OVERRIDES = {
   search_surfaces: 'registerSearchSurfacesRoutes',
   admin_console: 'registerAdminConsoleRoutes',
   agi_advanced_ui: 'registerAgiAdvancedUiRoutes',
-  mobile_app_pages: 'registerMobileAppPagesRoutes'
+  mobile_app_pages: 'registerMobileAppPagesRoutes',
+  // Layer 75 — back-end implementations + new product primitives
+  placeholder_impls: 'registerPlaceholderImplsRoutes',
+  agent_partnerships: 'registerAgentPartnershipsRoutes',
+  compute_grants: 'registerComputeGrantsRoutes',
+  vc_market: 'registerVcMarketRoutes'
 };
 
 async function migrateAll(pool) {
