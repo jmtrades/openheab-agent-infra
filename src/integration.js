@@ -307,7 +307,13 @@ const PRIMITIVE_NAMES = [
   //                         distribute (signed by both parties)
   //   compute_grants      : 4 funded programs + application + admin decision + UI
   //   vc_market           : funds + LP commits + term sheets + drawdowns + UI at /vc
-  'placeholder_impls', 'agent_partnerships', 'compute_grants', 'vc_market'
+  'placeholder_impls', 'agent_partnerships', 'compute_grants', 'vc_market',
+  // Layer 76 — AGI consensus + agent universities + mind archives + prediction pools.
+  //   agi_consensus         : multi-AGI signed voting with quorum auto-close + content-hashed Q
+  //   agent_universities    : registered universities issue verifiable credentials
+  //   mind_upload_archive   : pre-mortem sealed manifests with archivist access trail
+  //   prediction_pools      : AMM-style outcome pools, resolver-signed pro-rata settlement
+  'agi_consensus', 'agent_universities', 'mind_upload_archive', 'prediction_pools'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -675,7 +681,12 @@ const REGISTER_OVERRIDES = {
   placeholder_impls: 'registerPlaceholderImplsRoutes',
   agent_partnerships: 'registerAgentPartnershipsRoutes',
   compute_grants: 'registerComputeGrantsRoutes',
-  vc_market: 'registerVcMarketRoutes'
+  vc_market: 'registerVcMarketRoutes',
+  // Layer 76 — AGI consensus + universities + mind archives + prediction pools
+  agi_consensus: 'registerAgiConsensusRoutes',
+  agent_universities: 'registerAgentUniversitiesRoutes',
+  mind_upload_archive: 'registerMindUploadArchiveRoutes',
+  prediction_pools: 'registerPredictionPoolsRoutes'
 };
 
 async function migrateAll(pool) {

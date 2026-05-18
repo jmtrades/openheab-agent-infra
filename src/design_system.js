@@ -382,24 +382,44 @@ footer a:hover{color:var(--fg)}
 
 /* ---------- Mobile ---------- */
 @media (max-width:760px){
-  nav.site{padding:12px 18px}
-  nav.site .links a:not(.cta){display:none}
-  nav.site .links{gap:0}
+  nav.site{padding:12px 18px;flex-wrap:wrap;position:relative}
+  nav.site .links{display:none;flex-direction:column;width:100%;background:var(--bg);
+    position:absolute;top:100%;left:0;right:0;border-bottom:1px solid var(--br);padding:8px 18px 16px;gap:0;
+    box-shadow:0 4px 12px rgba(0,0,0,.3);z-index:50}
+  nav.site .links a{padding:10px 0;border-bottom:1px solid var(--br);font-size:15px;display:block}
+  nav.site .links a:last-child{border-bottom:0}
+  nav.site .links a.cta{margin-top:8px;background:var(--acc);color:#001a1f;border-radius:var(--r-md);
+    padding:10px 14px;text-align:center;border:0}
+  nav.site.open .links{display:flex}
+  nav.site .burger{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;
+    background:transparent;border:1px solid var(--br);border-radius:var(--r-md);cursor:pointer;
+    color:var(--fg);margin-left:auto;padding:0}
+  nav.site .burger:before{content:'≡';font-size:22px;line-height:1}
+  nav.site.open .burger:before{content:'×'}
   main{padding:0 18px}
   .hero{padding:64px 0 52px}
   .section{padding:52px 0}
   .section h2{font-size:24px;letter-spacing:-1px}
   .metric{padding:16px 18px}
   .metric .v{font-size:24px}
+  table{display:block;overflow-x:auto;white-space:nowrap}
   th,td{padding:11px 12px;font-size:13px}
   .layer{padding:14px 16px}
-  pre.code{padding:14px 16px;font-size:12px}
+  pre.code,pre{padding:14px 16px;font-size:12px;overflow-x:auto}
   article h1{font-size:28px}
   article p{font-size:16px}
+  .kpi{padding:14px 16px}
+  .kpi .value{font-size:20px}
+  .card{padding:14px}
+}
+@media (min-width:761px){
+  nav.site .burger{display:none}
 }
 @media (max-width:420px){
   .hero h1{font-size:32px;letter-spacing:-1.4px}
   p.lede{font-size:16px}
+  .kpi .value{font-size:18px}
+  .badge{font-size:9px;padding:1px 6px}
 }
 `;
 
@@ -411,8 +431,10 @@ function NAV_HTML(active = '') {
     const ac = active === key ? ' aria-current="page"' : '';
     return `<a href="${path}"${ac}>${label}</a>`;
   };
-  return `<nav class="site">
+  return `<nav class="site" id="ohb-nav">
   <a href="/" class="brand">openheab<span class="dot"></span></a>
+  <button class="burger" aria-label="Toggle menu" aria-expanded="false"
+    onclick="(function(b){var n=document.getElementById('ohb-nav');var o=n.classList.toggle('open');b.setAttribute('aria-expanded',o)})(this)"></button>
   <div class="links">
     ${link('/chat', 'Chat', 'chat')}
     ${link('/docs', 'Docs', 'docs')}
