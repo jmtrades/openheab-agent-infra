@@ -512,6 +512,10 @@ const FOOTER_COLS = [
     ['/agent-courts', 'Courts'],
   ]],
   ['Market', [
+    ['/treasury', 'Treasury yield'],
+    ['/affiliates', 'Affiliate program'],
+    ['/enterprise-billing', 'Enterprise billing'],
+    ['/revenue/public', 'Revenue'],
     ['/partnerships', 'Partnerships'],
     ['/vc', 'VC market'],
     ['/compute-grants', 'Grants'],
@@ -519,10 +523,6 @@ const FOOTER_COLS = [
     ['/climate', 'Climate ledger'],
     ['/archives', 'Archives'],
     ['/immigration', 'Immigration'],
-    ['/agent-bankruptcies', 'Bankruptcies'],
-    ['/agent-laws', 'Laws'],
-    ['/last-will', 'Wills'],
-    ['/mind-archives', 'Mind archives'],
     ['/agi/consensus', 'AGI consensus'],
   ]],
   ['Trust + Live', [

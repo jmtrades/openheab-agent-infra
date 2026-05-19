@@ -221,6 +221,11 @@ const PAGE_INDEX = [
   ['/privacy', 'Privacy policy', 'legal'],
   ['/cookies', 'Cookie policy', 'legal'],
   ['/acceptable-use', 'Acceptable use policy', 'legal'],
+  // Layer 81 — revenue engine
+  ['/treasury', 'Treasury yield', 'Earn 4% APY on idle USDC, credited daily, withdrawable anytime'],
+  ['/affiliates', 'Affiliate program', '20% commission on referred customers for 365 days, paid monthly in USDC'],
+  ['/enterprise-billing', 'Enterprise billing', 'POs, NET-30/60/90, multi-currency invoices, annual prepay discounts'],
+  ['/revenue/public', 'Revenue (public)', 'Live MRR, ARR, AUM, customer count — watch the substrate grow'],
 ];
 
 function score(item, qWords) {

@@ -347,7 +347,17 @@ const PRIMITIVE_NAMES = [
   //   seed_v2 : POST /v1/_admin/seed-v2/{populate,wipe} + GET /status
   //             populates every empty-state page from Layers 68-79 with
   //             realistic demo data tagged for clean wipe.
-  'seed_v2'
+  'seed_v2',
+  // Layer 81 — revenue engine. Lock-in + monetization for the $100B trajectory.
+  //   treasury_yield      : interest on idle USDC; operator keeps the spread;
+  //                         daily-credit cron; AUM accumulates → lock-in
+  //   enterprise_billing  : POs, NET-30/60/90, multi-currency invoices, annual
+  //                         prepay w/ 8-15% multi-year discount → enterprise sales
+  //   affiliate_program   : 20% commission on referred customers for 12 months;
+  //                         monthly USDC payout cron → viral growth
+  //   revenue_dashboard   : public /revenue/public (watch us grow) + operator
+  //                         /revenue/operator full BI (MRR/ARR/cohorts/AR aging)
+  'treasury_yield', 'enterprise_billing', 'affiliate_program', 'revenue_dashboard'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -737,7 +747,12 @@ const REGISTER_OVERRIDES = {
   agent_clinics: 'registerAgentClinicsRoutes',
   agent_concerts: 'registerAgentConcertsRoutes',
   // Layer 80 — substrate-wide demo data seeding
-  seed_v2: 'registerSeedV2Routes'
+  seed_v2: 'registerSeedV2Routes',
+  // Layer 81 — revenue engine (treasury yield, enterprise billing, affiliates, dashboards)
+  treasury_yield: 'registerTreasuryYieldRoutes',
+  enterprise_billing: 'registerEnterpriseBillingRoutes',
+  affiliate_program: 'registerAffiliateProgramRoutes',
+  revenue_dashboard: 'registerRevenueDashboardRoutes'
 };
 
 async function migrateAll(pool) {
