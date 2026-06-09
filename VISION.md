@@ -91,5 +91,10 @@ lock-boxes, treaties, emergency stops) are already waiting.
   identity, honor treaties, and settle obligations — because it was the
   only infrastructure that took them seriously before they arrived.
 
-The tech is done enough to sell. The gap list lives in
-`WHAT_WE_NEED_TO_WIN.md`. Everything else is execution.
+The tech is done enough to sell — and proven: `test/money_machine.js`
+runs the entire revenue engine against real Postgres end-to-end (agents
+born with Ed25519 keys → treasury interest → paid credit pulls →
+clearing cycles → payroll runs → fund NAV accruals → meter 402s →
+monthly invoices → audit chain verified, every cron idempotent, forgery
+rejected). The gap list lives in `WHAT_WE_NEED_TO_WIN.md`. Everything
+else is execution.

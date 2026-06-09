@@ -3,6 +3,57 @@
 All notable changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versions follow [SemVer 2.0.0](https://semver.org/).
 
+## [0.4.1] — 2026-06-09
+
+The it-actually-works release. First full verification of the substrate
+against real PostgreSQL 16 — which surfaced and fixed 6 latent migration bugs
+the mock-pool tests could never catch, then proved the entire revenue engine
+end-to-end with a new 21-test lifecycle suite.
+
+### Fixed — 6 real-database migration bugs
+
+Because each primitive's migration runs as one multi-statement query, a single
+failing statement silently aborted everything after it — leaving 14 tables
+uncreated in production and several features querying schemas that didn't
+exist:
+
+- **bank_chain** — its on-chain `bank_transactions` (keyed by `tx_hash`, with
+  `from_did`/`to_did`) collided with bank's cents-ledger table of the same
+  name and was never created. Renamed to `chain_transactions`; `kyc_advanced`
+  source-of-funds checks (which expected the chain schema) now point at it.
+- **evals** — benchmark `eval_runs` collided with eval's QA-suite `eval_runs`.
+  Renamed to `benchmark_runs`; leaderboards and seed benchmarks now persist.
+- **workflow_builder** — its `workflow_runs` collided with workflows'.
+  Renamed to `workflow_builder_runs`; the `/queues` ops dashboard's
+  queued-run counter (which matched the builder's status vocabulary) updated.
+- **status_uptime** — `uptime_checks` + `uptime_incidents` collided with
+  monitoring's same-named tables (different schemas). Renamed to
+  `status_page_checks`/`status_page_incidents`; `zero_config_self_run`
+  auto-incidents and the `feeds_and_probes` incident feed (both of which
+  expected the status-page schema and were silently broken) updated.
+- **cost** — `date_trunc('month', timestamptz)` is STABLE, not IMMUTABLE;
+  the expression index aborted the cost migration. Removed (covered by the
+  plain `(agent_did, created_at)` index).
+- **revenue_engine** — `WHERE end_at > NOW()` in an index predicate is not
+  IMMUTABLE; aborted the migration. Now a plain `(kind, end_at)` index.
+
+All 322 primitive migrations now complete with **zero warnings**, creating
+**847 tables** (14 more than before the fixes).
+
+### Added — test/money_machine.js (21 tests, real Postgres)
+
+Hermetic end-to-end proof of the money machine: drops + remigrates the schema
+(asserting zero warnings), provisions real Ed25519 agents, signs every request
+the way `verifyAgentAuth` verifies, and walks the full economy: treasury
+enroll → interest cron; paid credit pull → FCRA pull log; clearing obligations
+→ multilateral netting with exact compression math; payroll stream → run with
+exact gross/withheld/fee/net; fund buy → NAV accrual → redeem with pro-rata
+basis; meter counters → 402 over allowance (anonymous never blocked) →
+monthly invoice rollup. Asserts every cron is idempotent on rerun, every
+wedge recorded operator revenue, the audit chain verifies end-to-end, and
+signature forgery / DID impersonation is rejected with 401.
+`npm run test:money` (skips cleanly when no database is configured).
+
 ## [0.4.0] — 2026-06-09
 
 The monetization release. Usage now meets a price: the substrate's 14 revenue

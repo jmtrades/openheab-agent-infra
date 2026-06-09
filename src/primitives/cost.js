@@ -29,7 +29,6 @@ async function migrate(pool) {
     );
     CREATE INDEX IF NOT EXISTS idx_cost_events_agent ON cost_events (agent_did, created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_cost_events_resource ON cost_events (agent_did, resource_type, created_at DESC);
-    CREATE INDEX IF NOT EXISTS idx_cost_events_period ON cost_events (agent_did, date_trunc('month', created_at));
     CREATE INDEX IF NOT EXISTS idx_cost_events_reference ON cost_events (reference_id) WHERE reference_id IS NOT NULL;
 
     CREATE TABLE IF NOT EXISTS cost_budgets (

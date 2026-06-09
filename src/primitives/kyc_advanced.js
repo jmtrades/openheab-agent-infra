@@ -300,7 +300,7 @@ async function computeRiskScore(pool, subjectDid, orgId = null) {
   try {
     const r = await pool.query(`
       SELECT COUNT(*)::int AS c, COALESCE(SUM(gross_amount), 0)::bigint AS total_raw
-      FROM bank_transactions WHERE from_did = $1 AND created_at > NOW() - INTERVAL '30 days'
+      FROM chain_transactions WHERE from_did = $1 AND created_at > NOW() - INTERVAL '30 days'
     `, [subjectDid]).catch(() => ({ rows: [{ c: 0, total_raw: 0 }] }));
     if (r.rows[0].c > 1000) txnScore = 60;
     else if (r.rows[0].c > 200) txnScore = 30;

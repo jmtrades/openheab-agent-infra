@@ -311,7 +311,7 @@ async function autoIncidentWatch(pool, auditChain) {
     if (summary.overall === 'red') {
       // Check if there's an active incident for this
       const existing = await pool.query(
-        `SELECT incident_id FROM uptime_incidents WHERE component='auto_health' AND resolved_at IS NULL`
+        `SELECT incident_id FROM status_page_incidents WHERE component='auto_health' AND resolved_at IS NULL`
       ).catch(() => ({ rows: [] }));
       if (existing.rows[0]) return { status: 'red', existing_incident: existing.rows[0].incident_id };
 
@@ -319,7 +319,7 @@ async function autoIncidentWatch(pool, auditChain) {
       const incidentId = 'inc_' + crypto.randomBytes(8).toString('hex');
       const failingChecks = summary.results.filter(r => r.status === 'fail').map(r => r.check_name);
       await pool.query(
-        `INSERT INTO uptime_incidents (incident_id, title, severity, component, status)
+        `INSERT INTO status_page_incidents (incident_id, title, severity, component, status)
          VALUES ($1, $2, 'major', 'auto_health', 'investigating')`,
         [incidentId, 'Auto-detected: ' + failingChecks.join(', ').slice(0, 180)]
       ).catch(() => {});
@@ -330,7 +330,7 @@ async function autoIncidentWatch(pool, auditChain) {
     } else if (summary.overall === 'green') {
       // Auto-resolve any auto-declared incidents
       const r = await pool.query(
-        `UPDATE uptime_incidents SET resolved_at=NOW(), status='resolved'
+        `UPDATE status_page_incidents SET resolved_at=NOW(), status='resolved'
          WHERE component='auto_health' AND resolved_at IS NULL RETURNING incident_id`
       ).catch(() => ({ rows: [] }));
       if (r.rows.length > 0 && auditChain) {

@@ -28,7 +28,7 @@ async function migrate(pool) {
       version           TEXT NOT NULL DEFAULT '1.0',
       created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
-    CREATE TABLE IF NOT EXISTS eval_runs (
+    CREATE TABLE IF NOT EXISTS benchmark_runs (
       run_id            TEXT PRIMARY KEY,
       benchmark_id      TEXT NOT NULL,
       agent_did         TEXT NOT NULL,
@@ -40,7 +40,7 @@ async function migrate(pool) {
       verified          BOOLEAN NOT NULL DEFAULT FALSE,
       created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
-    CREATE INDEX IF NOT EXISTS idx_eval_runs_benchmark_score ON eval_runs (benchmark_id, score DESC);
+    CREATE INDEX IF NOT EXISTS idx_benchmark_runs_benchmark_score ON benchmark_runs (benchmark_id, score DESC);
     CREATE TABLE IF NOT EXISTS eval_leaderboard_snapshots (
       snapshot_id       TEXT PRIMARY KEY,
       benchmark_id      TEXT NOT NULL,
@@ -78,7 +78,7 @@ function registerEvalsRoutes(app, pool, verifyAgentAuth, auditChain) {
     if (!bm.rows[0]) return res.status(404).json({ error: 'benchmark_not_found' });
     const id = newId('evrun');
     await pool.query(
-      `INSERT INTO eval_runs (run_id, benchmark_id, agent_did, submitter_did, score,
+      `INSERT INTO benchmark_runs (run_id, benchmark_id, agent_did, submitter_did, score,
          time_seconds, cost_cents, details)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
       [id, bm.rows[0].benchmark_id, agent_did || did, did, Number(score),
@@ -92,7 +92,7 @@ function registerEvalsRoutes(app, pool, verifyAgentAuth, auditChain) {
     const r = await pool.query(`
       SELECT er.agent_did, MAX(er.score) AS best_score, COUNT(*)::int AS attempts,
              AVG(er.time_seconds)::int AS avg_time, MIN(er.cost_cents)::int AS min_cost
-      FROM eval_runs er JOIN eval_benchmarks b ON b.benchmark_id = er.benchmark_id
+      FROM benchmark_runs er JOIN eval_benchmarks b ON b.benchmark_id = er.benchmark_id
       WHERE b.slug = $1
       GROUP BY er.agent_did
       ORDER BY best_score DESC NULLS LAST LIMIT 100
@@ -103,7 +103,7 @@ function registerEvalsRoutes(app, pool, verifyAgentAuth, auditChain) {
   app.get('/v1/evals/agents/:did', async (req, res) => {
     const r = await pool.query(`
       SELECT b.slug, b.name, MAX(er.score) AS best_score, COUNT(*)::int AS attempts
-      FROM eval_runs er JOIN eval_benchmarks b ON b.benchmark_id = er.benchmark_id
+      FROM benchmark_runs er JOIN eval_benchmarks b ON b.benchmark_id = er.benchmark_id
       WHERE er.agent_did = $1 GROUP BY b.slug, b.name ORDER BY best_score DESC NULLS LAST
     `, [req.params.did]).catch(() => ({ rows: [] }));
     res.json({ agent_did: req.params.did, benchmarks: r.rows });

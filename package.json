@@ -12,7 +12,8 @@
     "test:boot": "node test/boot.js",
     "test:bank": "node test/bank_lifecycle.js",
     "test:e2e": "node test/e2e.js",
-    "test:smoke": "node test/route_smoke.js"
+    "test:smoke": "node test/route_smoke.js",
+    "test:money": "node test/money_machine.js"
   },
   "engines": {
     "node": ">=18"

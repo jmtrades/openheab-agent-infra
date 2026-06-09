@@ -187,7 +187,7 @@ async function queuesPage(pool) {
   const queues = await Promise.all([
     safe(pool, `SELECT COUNT(*)::int AS n FROM webhook_deliveries_v2 WHERE status='pending'`),
     safe(pool, `SELECT COUNT(*)::int AS n FROM bank_webhooks WHERE processed_at IS NULL`),
-    safe(pool, `SELECT COUNT(*)::int AS n FROM workflow_runs WHERE status='queued'`),
+    safe(pool, `SELECT COUNT(*)::int AS n FROM workflow_builder_runs WHERE status='queued'`),
     safe(pool, `SELECT COUNT(*)::int AS n FROM transactional_emails WHERE status='queued'`),
     safe(pool, `SELECT COUNT(*)::int AS n FROM email_core_outbound WHERE status='pending'`)
   ]);

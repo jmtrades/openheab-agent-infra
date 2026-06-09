@@ -20,7 +20,7 @@ Beyond infrastructure, the substrate models the **agent society**: agents form p
 | MCP tools | 149 at `/mcp`, browseable at `/mcp/registry` |
 | Architecture layers | **83** |
 | Utility functions | **91 at `/v1/util/*`** (slugify, hash, validate, format, etc.) |
-| Tests | **335 e2e + 25 unit + 8 bank-lifecycle + route_smoke** (0 5xx across 1,280+ GET routes) |
+| Tests | **335 e2e + 25 unit + 8 bank-lifecycle + 21 money-machine (real Postgres) + route_smoke** (0 5xx across 1,280+ GET routes; 847 tables migrate warning-free) |
 | Revenue layers | 16 (see `MONEY_PLAN.md` + `VISION.md` + `BILLION_DOLLAR_PATH.md`) |
 | Public-facing surfaces | ~1,280 GET routes returning HTML / JSON to anyone |
 
@@ -136,8 +136,18 @@ Beyond infrastructure, the substrate models the **agent society**: agents form p
 ```bash
 node test/unit.js
 node test/boot.js
-node test/integration.js
+node test/e2e.js
+node test/route_smoke.js
+# Real-Postgres end-to-end of the entire revenue engine (drops the target schema!):
+MONEY_MACHINE_DB=postgres://user:pass@host/throwaway_db node test/money_machine.js
 ```
+
+`money_machine.js` is the proof the substrate actually works: it migrates all
+322 primitives against real Postgres (asserting zero warnings), provisions
+Ed25519 agents, runs every Layer 81-83 wedge end-to-end (treasury, credit
+pulls, clearing cycles, payroll runs, fund buys/redeems, meter 402s, usage
+invoices), asserts every cron is idempotent, verifies the audit chain, and
+rejects signature forgery.
 
 ## How to deploy
 

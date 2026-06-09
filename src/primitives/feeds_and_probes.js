@@ -85,7 +85,7 @@ async function renderStatusRss(pool) {
   try {
     const r = await pool.query(
       `SELECT incident_id, title, status, severity, component, started_at, resolved_at
-       FROM uptime_incidents ORDER BY started_at DESC LIMIT 50`
+       FROM status_page_incidents ORDER BY started_at DESC LIMIT 50`
     ).catch(() => ({ rows: [] }));
     recent = r.rows;
   } catch {}

@@ -39,7 +39,7 @@ async function migrate(pool) {
     CREATE INDEX IF NOT EXISTS idx_workflow_definitions_owner ON workflow_definitions (owner_did, enabled);
     CREATE INDEX IF NOT EXISTS idx_workflow_definitions_trigger ON workflow_definitions (trigger_kind, enabled);
 
-    CREATE TABLE IF NOT EXISTS workflow_runs (
+    CREATE TABLE IF NOT EXISTS workflow_builder_runs (
       run_id            TEXT PRIMARY KEY,
       workflow_id       TEXT NOT NULL,
       trigger_payload   JSONB,
@@ -50,7 +50,7 @@ async function migrate(pool) {
       action_results    JSONB,
       created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
-    CREATE INDEX IF NOT EXISTS idx_workflow_runs_workflow ON workflow_runs (workflow_id, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_wfb_runs_workflow ON workflow_builder_runs (workflow_id, created_at DESC);
   `);
 }
 
@@ -77,7 +77,7 @@ const workflowSchema = z.object({
 async function executeWorkflow(pool, workflow, triggerPayload, auditChain) {
   const runId = newId('wfr');
   await pool.query(
-    `INSERT INTO workflow_runs (run_id, workflow_id, trigger_payload, status, started_at)
+    `INSERT INTO workflow_builder_runs (run_id, workflow_id, trigger_payload, status, started_at)
      VALUES ($1,$2,$3,'running',NOW())`,
     [runId, workflow.workflow_id, JSON.stringify(triggerPayload || {})]
   ).catch(() => {});
@@ -96,7 +96,7 @@ async function executeWorkflow(pool, workflow, triggerPayload, auditChain) {
   }
 
   await pool.query(
-    `UPDATE workflow_runs SET status=$1, finished_at=NOW(), action_results=$2 WHERE run_id=$3`,
+    `UPDATE workflow_builder_runs SET status=$1, finished_at=NOW(), action_results=$2 WHERE run_id=$3`,
     [status, JSON.stringify(results), runId]
   ).catch(() => {});
   await pool.query(
@@ -213,7 +213,7 @@ function registerWorkflowBuilderRoutes(app, pool, verifyAgentAuth, auditChain) {
     const did = req.params.did;
     const auth = await verifyAgentAuth(req, did);
     if (!auth.valid) return res.status(401).json({ error: auth.error });
-    const r = await pool.query(`SELECT run_id, status, started_at, finished_at, error FROM workflow_runs
+    const r = await pool.query(`SELECT run_id, status, started_at, finished_at, error FROM workflow_builder_runs
                                 WHERE workflow_id=$1 ORDER BY created_at DESC LIMIT 100`, [req.params.wid])
       .catch(() => ({ rows: [] }));
     res.json({ runs: r.rows });
