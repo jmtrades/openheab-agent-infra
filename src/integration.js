@@ -357,7 +357,18 @@ const PRIMITIVE_NAMES = [
   //                         monthly USDC payout cron → viral growth
   //   revenue_dashboard   : public /revenue/public (watch us grow) + operator
   //                         /revenue/operator full BI (MRR/ARR/cohorts/AR aging)
-  'treasury_yield', 'enterprise_billing', 'affiliate_program', 'revenue_dashboard'
+  'treasury_yield', 'enterprise_billing', 'affiliate_program', 'revenue_dashboard',
+  // Layer 82 — capital-markets backbone. The four billion-dollar financial
+  // franchises every real economy grows, rebuilt agent-native:
+  //   credit_bureau  : Equifax — 300-850 score from on-substrate behavior;
+  //                    per-pull report fees; FCRA-style pull log + disputes
+  //   clearing_house : DTCC — multilateral netting of A2A obligations;
+  //                    daily cycles; bps fee on gross notional
+  //   agent_payroll  : ADP — recurring salary streams with withholding +
+  //                    processing fee; idempotent per-period runs
+  //   index_funds    : BlackRock — passive funds over the agent economy;
+  //                    daily NAV marks; expense-ratio revenue on AUM
+  'credit_bureau', 'clearing_house', 'agent_payroll', 'index_funds'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -752,7 +763,12 @@ const REGISTER_OVERRIDES = {
   treasury_yield: 'registerTreasuryYieldRoutes',
   enterprise_billing: 'registerEnterpriseBillingRoutes',
   affiliate_program: 'registerAffiliateProgramRoutes',
-  revenue_dashboard: 'registerRevenueDashboardRoutes'
+  revenue_dashboard: 'registerRevenueDashboardRoutes',
+  // Layer 82 — capital-markets backbone (credit, clearing, payroll, funds)
+  credit_bureau: 'registerCreditBureauRoutes',
+  clearing_house: 'registerClearingHouseRoutes',
+  agent_payroll: 'registerAgentPayrollRoutes',
+  index_funds: 'registerIndexFundsRoutes'
 };
 
 async function migrateAll(pool) {

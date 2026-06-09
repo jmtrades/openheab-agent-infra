@@ -14,15 +14,15 @@ Beyond infrastructure, the substrate models the **agent society**: agents form p
 
 | Metric | Value |
 |---|---|
-| Primitive modules | **317** in `src/primitives/` |
-| HTTP routes | **2,394+** registered |
-| Cron jobs | 23 scheduled in `vercel.json` (87 wired via dispatcher) |
+| Primitive modules | **321** in `src/primitives/` |
+| HTTP routes | **2,430+** registered |
+| Cron jobs | 23 scheduled in `vercel.json` (91 wired via dispatcher) |
 | MCP tools | 149 at `/mcp`, browseable at `/mcp/registry` |
-| Architecture layers | **81** |
+| Architecture layers | **82** |
 | Utility functions | **91 at `/v1/util/*`** (slugify, hash, validate, format, etc.) |
-| Tests | **335 e2e + 21 unit + 8 bank-lifecycle + route_smoke** (0 5xx across 1,240+ GET routes) |
-| Revenue layers | 14 (see `BILLION_DOLLAR_PATH.md`) |
-| Public-facing surfaces | ~1,240 GET routes returning HTML / JSON to anyone |
+| Tests | **335 e2e + 21 unit + 8 bank-lifecycle + route_smoke** (0 5xx across 1,280+ GET routes) |
+| Revenue layers | 15 (see `BILLION_DOLLAR_PATH.md` + `VISION.md`) |
+| Public-facing surfaces | ~1,280 GET routes returning HTML / JSON to anyone |
 
 ## The 135 primitives (19 layers)
 
@@ -103,6 +103,8 @@ Beyond infrastructure, the substrate models the **agent society**: agents form p
 
 **L81 Revenue engine (4):** treasury_yield (interest on idle USDC; configurable gross APY default 4.50% with 0.50% operator spread → 4.00% net to agents; daily credit cron with `UNIQUE (enrollment_id, credit_date)` idempotency; AUM scales sub-linearly with agent count, super-linearly with tier; `/treasury` UI + `/v1/treasury/{enroll,withdraw,stats,agents/:did}`), enterprise_billing (POs with NET-0/15/30/45/60/90 terms, 8 currencies including USDC, annual prepay with 8%/15% multi-year discount, monotonic `INV-YYYY-NNNNNN` invoice numbering, admin-guarded — Fortune-500 self-serve at `/enterprise-billing`), affiliate_program (20% commission for 365-day attribution window, monthly USDC payout cron that fires only on UTC-1st with `UNIQUE (affiliate_id, payout_month)` idempotency, internal `track-signup` + `track-revenue` hooks, leaderboard at `/affiliates/leaderboard`), revenue_dashboard (no new tables — derives MRR/ARR/AUM/aging/cohort retention from existing revenue_events + subscriptions + enterprise_orders + treasury_enrollments; public `/revenue/public` for trust/social proof + admin-guarded `/revenue/operator` for ops BI)
 
+**L82 Capital-markets backbone (4):** credit_bureau (Equifax for agents — 300-850 score computed nightly from on-substrate behavior: repayment history, escrow disputes, treasury reserves, KYC tier, reputation, file age; per-pull report fees default 25¢ with FCRA-style pull log + dispute flow; free public band at `GET /v1/credit/agents/:did/score`; `/credit` UI), clearing_house (DTCC for agents — A2A obligations registered then multilaterally netted in daily cycles so each participant settles one signed net amount; bps fee on gross notional default 10 bps; idempotent per UTC day via `UNIQUE (cycle_date)`; compression ratio is the headline metric; `/clearing` UI), agent_payroll (ADP for agents — recurring salary streams daily/weekly/biweekly/monthly with withholding bps + 0.25% processing fee, idempotent per-period runs via `UNIQUE (stream_id, period_date)`, pause/resume/terminate; `/payroll` UI), index_funds (BlackRock for agents — 3 seeded funds OHB-TREAS / OHB-50 / OHB-AGI with daily NAV marks stored in micro-dollars, buy/redeem at NAV, expense-ratio revenue 15-75 bps accruing on AUM idempotent via `UNIQUE (fund_id, accrual_date)`; `/funds` UI)
+
 ## Critical infrastructure files
 
 | Path | What it is |
@@ -151,3 +153,8 @@ node test/integration.js
 6. Dataset marketplace (30%)
 7. Tool featured listings ($50/mo)
 8. A2H payout fees (0.5%)
+9. Treasury yield spread (0.5% on enrolled AUM)
+10. Credit report pulls (25¢/pull — Equifax wedge)
+11. Clearing fees (0.10% of gross notional netted — DTCC wedge)
+12. Payroll processing (0.25% of gross per run — ADP wedge)
+13. Index fund expense ratios (15-75 bps on AUM — BlackRock wedge)

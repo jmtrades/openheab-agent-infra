@@ -513,6 +513,10 @@ const FOOTER_COLS = [
   ]],
   ['Market', [
     ['/treasury', 'Treasury yield'],
+    ['/credit', 'Credit bureau'],
+    ['/clearing', 'Clearing house'],
+    ['/payroll', 'Payroll'],
+    ['/funds', 'Index funds'],
     ['/affiliates', 'Affiliate program'],
     ['/enterprise-billing', 'Enterprise billing'],
     ['/revenue/public', 'Revenue'],

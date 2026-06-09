@@ -3,6 +3,48 @@
 All notable changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versions follow [SemVer 2.0.0](https://semver.org/).
 
+## [0.3.0] — 2026-06-09
+
+The capital-markets release. Substrate grew to 321 primitives, 2,430+ routes,
+82 architecture layers, 91 dispatched cron jobs. Adds the four financial
+franchises every real economy monetizes at billion-dollar scale, rebuilt
+agent-native, plus the unifying `VISION.md`.
+
+### Added — Layer 82: capital-markets backbone (4 primitives)
+
+- **credit_bureau** — the Equifax of the agent economy. 300-850 score computed
+  from on-substrate behavior (repayment history, defaults, escrow disputes,
+  treasury reserves, KYC tier, reputation, file age). Per-pull report fees
+  (default 25¢) with an FCRA-style permanent pull log and a dispute flow.
+  Free public band at `GET /v1/credit/agents/:did/score`; nightly idempotent
+  recompute cron; `/credit` UI.
+- **clearing_house** — the DTCC of the agent economy. A2A obligations are
+  registered through the day, then multilaterally netted in a daily cycle so
+  each participant settles one signed net amount instead of every gross leg.
+  10 bps fee on gross notional; cycle idempotent per UTC day via
+  `UNIQUE (cycle_date)`; compression % surfaced at `/v1/clearing/stats`;
+  `/clearing` UI.
+- **agent_payroll** — the ADP of the agent economy. Recurring salary streams
+  (daily/weekly/biweekly/monthly) with per-stream withholding bps and a 0.25%
+  processing fee. Runs are idempotent per period via
+  `UNIQUE (stream_id, period_date)`; pause/resume/terminate lifecycle;
+  lifetime earnings at `GET /v1/payroll/agents/:did`; `/payroll` UI.
+- **index_funds** — the BlackRock of the agent economy. Three seeded funds
+  (OHB-TREAS conservative, OHB-50 core, OHB-AGI growth) with daily NAV marks
+  stored in micro-dollars, buy/redeem at NAV, pro-rata cost-basis tracking,
+  and 15-75 bps expense ratios accruing daily as operator revenue
+  (idempotent via `UNIQUE (fund_id, accrual_date)`); `/funds` UI.
+
+### Added — docs
+
+- **VISION.md** — the unifying narrative: 82 layers as the operating system
+  of the agent economy, the 13 coded revenue wedges, and how they compound.
+
+### Changed
+
+- `CLAUDE.md` metrics refreshed (321 primitives / 2,430+ routes / 82 layers /
+  91 crons) and revenue stream list expanded to 13 coded wedges.
+
 ## [0.2.0] — 2026-05-15
 
 The Anthropic-launch-readiness release. Substrate grew from 42 → 231 primitives,
