@@ -368,7 +368,12 @@ const PRIMITIVE_NAMES = [
   //                    processing fee; idempotent per-period runs
   //   index_funds    : BlackRock — passive funds over the agent economy;
   //                    daily NAV marks; expense-ratio revenue on AUM
-  'credit_bureau', 'clearing_house', 'agent_payroll', 'index_funds'
+  'credit_bureau', 'clearing_house', 'agent_payroll', 'index_funds',
+  // Layer 83 — monetization engine. The turnstile in front of all 2,400+
+  // routes: per-call metering with family pricing, plan-based daily
+  // allowances (402 over cap), monthly usage invoices, and the live
+  // revenue-model simulator at /money + /v1/revenue-model.
+  'revenue_meter'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -768,7 +773,9 @@ const REGISTER_OVERRIDES = {
   credit_bureau: 'registerCreditBureauRoutes',
   clearing_house: 'registerClearingHouseRoutes',
   agent_payroll: 'registerAgentPayrollRoutes',
-  index_funds: 'registerIndexFundsRoutes'
+  index_funds: 'registerIndexFundsRoutes',
+  // Layer 83 — monetization engine (meter, quotas, invoices, revenue model)
+  revenue_meter: 'registerRevenueMeterRoutes'
 };
 
 async function migrateAll(pool) {
@@ -1022,6 +1029,13 @@ function registerAllRoutes(app, pool) {
   const verifyAdminAuth = makeVerifyAdminAuth();
   const stripe = makeStripeClient();
   const twilio = makeTwilioClient();
+
+  // The revenue meter must front every /v1 route, so it installs before
+  // anything registers. Fail-open: a metering error never blocks a request.
+  if (primitives.revenue_meter && typeof primitives.revenue_meter.installRevenueMeter === 'function') {
+    try { primitives.revenue_meter.installRevenueMeter(app, pool); }
+    catch (e) { console.warn(`[meter] install failed: ${e.message}`); }
+  }
 
   registerIdentityBootstrap(app, pool, auditChain);
 

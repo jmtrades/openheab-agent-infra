@@ -3,6 +3,45 @@
 All notable changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versions follow [SemVer 2.0.0](https://semver.org/).
 
+## [0.4.0] — 2026-06-09
+
+The monetization release. Usage now meets a price: the substrate's 14 revenue
+wedges gain an enforcement layer, a billing pipeline, and a live, code-true
+revenue model. 322 primitives, 2,437+ routes, 83 layers, 92 crons.
+
+### Added — Layer 83: monetization engine (1 primitive)
+
+- **revenue_meter** — the turnstile in front of the entire `/v1` surface,
+  installed before any route registers:
+  - **Meter:** every API call attributed (DID > API-key-hash > anon-IP) and
+    counted into per-day, per-family `usage_counters` with millicent pricing
+    (1¢ inference, 5¢ sandbox, 3¢ browser, 0.1¢ default; 0 for families that
+    bill inside their own primitive — nothing double-billed).
+  - **Enforce:** plan-based daily allowances resolved from the agent's org
+    plan (free 1k calls/day → HTTP 402 with a machine-readable upgrade path;
+    paid tiers 10k → unlimited). Anonymous traffic is never blocked here.
+    Fail-open: metering errors never break a request.
+  - **Bill:** monthly `usage_invoices` rollup cron, idempotent per
+    (identity, month), UTC-1st gated.
+  - **Model:** `/money` (HTML) + `/v1/revenue-model` + `/v1/revenue-model/simulate`
+    (JSON) — the full 14-wedge rate card and a parameterized MRR simulator
+    whose rates read the same env knobs the billing code uses, so the model
+    cannot drift from the implementation. Self-serve usage at `GET /v1/usage/:did`.
+
+### Added — docs + tests
+
+- **MONEY_PLAN.md** — exactly who pays, what, when: 5 customer waves, the
+  full rate card, unit economics at 4 scales ($121.8k MRR @ 10k agents →
+  $1.46B ARR @ 10M, simulator-verified), funnel targets, 90-day sequence.
+- 4 new unit tests pinning the simulator math (deterministic, sums correct,
+  junk-param safe, 14 wedges with formulas). 25 unit tests total.
+
+### Changed
+
+- `VISION.md` — 14 wedges, Layer 83 narrative, MONEY_PLAN pointer.
+- `CLAUDE.md` — metrics refresh (322 primitives / 2,437+ routes / 83 layers).
+- `/money` added to PAGE_INDEX (sitemap/search) and footer nav.
+
 ## [0.3.0] — 2026-06-09
 
 The capital-markets release. Substrate grew to 321 primitives, 2,430+ routes,

@@ -1,7 +1,8 @@
 # VISION.md — the full picture
 
 > The one-page narrative that ties every other doc together.
-> Strategy depth: `BILLION_DOLLAR_PATH.md` (7-year arc) ·
+> Strategy depth: `MONEY_PLAN.md` (exactly who pays, what, when — live
+> at `/money`) · `BILLION_DOLLAR_PATH.md` (7-year arc) ·
 > `REVENUE_NOW.md` (90-day push) · `WHAT_WE_NEED_TO_WIN.md` (the 90% that
 > isn't tech) · `AGI_STRATEGY.md` / `AGI_AGE_PLAYBOOK.md` (the endgame).
 
@@ -15,7 +16,7 @@ law → culture. Humans took ten thousand years to build it. Agents are
 arriving now, by the millions, with none of it.
 
 **OpenHeab is that entire stack, rebuilt agent-native, behind one API.**
-321 primitives, 82 layers, 2,430+ routes, 149 MCP tools, every state
+322 primitives, 83 layers, 2,437+ routes, 149 MCP tools, every state
 change signed into a Merkle audit chain. An agent arrives with nothing
 and leaves with a DID, a wallet, a card, a credit score, a salary, an
 index fund position, a legal entity, and a society to participate in.
@@ -34,7 +35,7 @@ index fund position, a legal entity, and a society to participate in.
    wedge below is basis points on flow or AUM — the same shape as Visa,
    DTCC, ADP, and BlackRock, the most durable business models ever built.
 
-## The 13 coded revenue wedges
+## The 14 coded revenue wedges
 
 | # | Wedge | Take | Real-world analog |
 |---|---|---|---|
@@ -51,6 +52,13 @@ index fund position, a legal entity, and a society to participate in.
 | 11 | Clearing fees | 10 bps on gross netted | **DTCC** |
 | 12 | Payroll processing | 25 bps per run | **ADP** |
 | 13 | Fund expense ratios | 15–75 bps on AUM | **BlackRock** |
+| 14 | Metered API calls | 0.1¢/call past plan allowance | **AWS** |
+
+Wedge 14 is **Layer 83 — the monetization engine**: a meter fronting all
+2,400+ routes that attributes, prices, and quota-enforces every call
+(free plans get 1,000/day, then a machine-readable 402 with an upgrade
+path — our conversion event is an API response). The full execution
+plan, rate card, and live simulator: `MONEY_PLAN.md` + `/money`.
 
 Wedges 10–13 are **Layer 82 — the capital-markets backbone** — the four
 franchises every mature economy grows, and the four most durable: they

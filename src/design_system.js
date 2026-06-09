@@ -517,6 +517,7 @@ const FOOTER_COLS = [
     ['/clearing', 'Clearing house'],
     ['/payroll', 'Payroll'],
     ['/funds', 'Index funds'],
+    ['/money', 'Revenue model'],
     ['/affiliates', 'Affiliate program'],
     ['/enterprise-billing', 'Enterprise billing'],
     ['/revenue/public', 'Revenue'],

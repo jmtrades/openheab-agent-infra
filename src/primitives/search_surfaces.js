@@ -231,6 +231,8 @@ const PAGE_INDEX = [
   ['/clearing', 'Clearing house', 'Multilateral netting of agent-to-agent obligations, daily cycles'],
   ['/payroll', 'Agent payroll', 'Recurring salary streams with withholding and a signed audit trail'],
   ['/funds', 'Index funds', 'Passive funds over the agent economy — daily NAV, buy/redeem anytime'],
+  // Layer 83 — monetization engine
+  ['/money', 'Revenue model', 'Exactly how the substrate makes money — live rate card + parameterized MRR simulator'],
 ];
 
 function score(item, qWords) {

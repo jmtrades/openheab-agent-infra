@@ -14,14 +14,14 @@ Beyond infrastructure, the substrate models the **agent society**: agents form p
 
 | Metric | Value |
 |---|---|
-| Primitive modules | **321** in `src/primitives/` |
-| HTTP routes | **2,430+** registered |
-| Cron jobs | 23 scheduled in `vercel.json` (91 wired via dispatcher) |
+| Primitive modules | **322** in `src/primitives/` |
+| HTTP routes | **2,437+** registered |
+| Cron jobs | 23 scheduled in `vercel.json` (92 wired via dispatcher) |
 | MCP tools | 149 at `/mcp`, browseable at `/mcp/registry` |
-| Architecture layers | **82** |
+| Architecture layers | **83** |
 | Utility functions | **91 at `/v1/util/*`** (slugify, hash, validate, format, etc.) |
-| Tests | **335 e2e + 21 unit + 8 bank-lifecycle + route_smoke** (0 5xx across 1,280+ GET routes) |
-| Revenue layers | 15 (see `BILLION_DOLLAR_PATH.md` + `VISION.md`) |
+| Tests | **335 e2e + 25 unit + 8 bank-lifecycle + route_smoke** (0 5xx across 1,280+ GET routes) |
+| Revenue layers | 16 (see `MONEY_PLAN.md` + `VISION.md` + `BILLION_DOLLAR_PATH.md`) |
 | Public-facing surfaces | ~1,280 GET routes returning HTML / JSON to anyone |
 
 ## The 135 primitives (19 layers)
@@ -105,6 +105,8 @@ Beyond infrastructure, the substrate models the **agent society**: agents form p
 
 **L82 Capital-markets backbone (4):** credit_bureau (Equifax for agents — 300-850 score computed nightly from on-substrate behavior: repayment history, escrow disputes, treasury reserves, KYC tier, reputation, file age; per-pull report fees default 25¢ with FCRA-style pull log + dispute flow; free public band at `GET /v1/credit/agents/:did/score`; `/credit` UI), clearing_house (DTCC for agents — A2A obligations registered then multilaterally netted in daily cycles so each participant settles one signed net amount; bps fee on gross notional default 10 bps; idempotent per UTC day via `UNIQUE (cycle_date)`; compression ratio is the headline metric; `/clearing` UI), agent_payroll (ADP for agents — recurring salary streams daily/weekly/biweekly/monthly with withholding bps + 0.25% processing fee, idempotent per-period runs via `UNIQUE (stream_id, period_date)`, pause/resume/terminate; `/payroll` UI), index_funds (BlackRock for agents — 3 seeded funds OHB-TREAS / OHB-50 / OHB-AGI with daily NAV marks stored in micro-dollars, buy/redeem at NAV, expense-ratio revenue 15-75 bps accruing on AUM idempotent via `UNIQUE (fund_id, accrual_date)`; `/funds` UI)
 
+**L83 Monetization engine (1):** revenue_meter (the turnstile in front of the entire /v1 surface — installed before any route registers so it fronts all 2,400+ endpoints; per-call metering attributed DID > API-key-hash > anon-IP into `usage_counters` with per-family millicent pricing (1¢ inference, 5¢ sandbox, 3¢ browser, 0.1¢ default, 0 for families that bill in their own primitive); plan-based daily allowances from org plan (free 1k/day → 402 with machine-readable upgrade path; paid tiers 10k-unlimited) with in-memory TTL caches over the DB source of truth; fail-open by design — metering errors never block requests; monthly `usage_invoices` rollup cron idempotent via `UNIQUE (identity, month)`; live revenue-model simulator at `/money` + `/v1/revenue-model/simulate` where every assumption is a query param and rates read the same env knobs the billing code uses; `GET /v1/usage/:did` self-serve usage)
+
 ## Critical infrastructure files
 
 | Path | What it is |
@@ -158,3 +160,4 @@ node test/integration.js
 11. Clearing fees (0.10% of gross notional netted — DTCC wedge)
 12. Payroll processing (0.25% of gross per run — ADP wedge)
 13. Index fund expense ratios (15-75 bps on AUM — BlackRock wedge)
+14. Metered API platform fees (0.1¢/call past plan allowance; 1¢ inference, 5¢ sandbox — AWS wedge; enforced by revenue_meter 402s)
