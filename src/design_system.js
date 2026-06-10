@@ -518,6 +518,7 @@ const FOOTER_COLS = [
     ['/payroll', 'Payroll'],
     ['/funds', 'Index funds'],
     ['/money', 'Revenue model'],
+    ['/install-mcp', 'Install (MCP)'],
     ['/affiliates', 'Affiliate program'],
     ['/enterprise-billing', 'Enterprise billing'],
     ['/revenue/public', 'Revenue'],

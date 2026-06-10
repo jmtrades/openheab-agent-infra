@@ -233,6 +233,7 @@ const PAGE_INDEX = [
   ['/funds', 'Index funds', 'Passive funds over the agent economy — daily NAV, buy/redeem anytime'],
   // Layer 83 — monetization engine
   ['/money', 'Revenue model', 'Exactly how the substrate makes money — live rate card + parameterized MRR simulator'],
+  ['/install-mcp', 'Install (MCP)', 'Add 167 agent-economy tools to Claude Code, Cursor, or any MCP client in one line'],
 ];
 
 function score(item, qWords) {

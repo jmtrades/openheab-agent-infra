@@ -3,6 +3,36 @@
 All notable changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versions follow [SemVer 2.0.0](https://semver.org/).
 
+## [0.8.0] — 2026-06-10
+
+The distribution release. Acquisition is now a config line, and the playbook
+for filling the funnel is written down.
+
+### Fixed — MCP protocol compliance (the acquisition gate)
+
+Real MCP clients (Claude Code, Claude Desktop, Cursor) could not reliably
+connect: the server pinned `protocolVersion: 2024-11-05` instead of echoing
+the client's requested version, and answered `notifications/initialized`
+with a JSON-RPC *error response* — responding to a notification at all
+violates JSON-RPC and aborts strict clients. Now: version echo across
+2025-06-18/2025-03-26/2024-11-05, and notifications return HTTP 202 with no
+body. Verified live with the exact initialize → initialized → tools/list
+sequence clients send.
+
+### Added — distribution surface
+
+- **`/install-mcp`** — per-client one-liners: Claude Code (`claude mcp add`),
+  Cursor mcp.json, Claude Desktop via mcp-remote, raw JSON-RPC. Key
+  acquisition page; in sitemap + footer.
+- **`/.well-known/mcp.json`** — machine discovery manifest (endpoint,
+  transport, auth bootstrap via `POST /v1/identities`, tool count).
+- **`smithery.yaml`** — Smithery registry listing config.
+- **`GTM_PLAN.md`** — the client-acquisition playbook: channels ranked by
+  CAC (MCP registries → agent-crawl discovery → launch posts → affiliates →
+  framework docs → fleet outbound → platform partnerships), launch-week
+  scripts, 90-day weekly cadence, and the one early metric (Weekly Active
+  Funded Agents).
+
 ## [0.7.0] — 2026-06-10
 
 The conversion release. The 402 is now machine-payable: the single mechanism
