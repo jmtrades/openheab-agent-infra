@@ -3,6 +3,44 @@
 All notable changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versions follow [SemVer 2.0.0](https://semver.org/).
 
+## [0.6.0] — 2026-06-10
+
+The settlement-integrity release. The economy's books are no longer parallel
+bookkeeping — Layer 81-82 operations now settle real money on the bank's
+cents ledger, and value conservation is proven by test.
+
+### Added — src/settlement.js + ledger wiring in 5 primitives
+
+- **settlement.js** — shared helper moving real ledger money via the bank's
+  `handleTransfer`. Two modes (`SETTLEMENT_MODE` env, read per call):
+  `besteffort` (default — attempt, record outcome, proceed; right for
+  dev/demo with empty wallets) and `strict` (user-initiated operations must
+  settle or fail; right for production). Crons are always besteffort: one
+  broke employer can't halt the payroll cycle for everyone.
+- **treasury_yield** — enroll moves agent → treasury pool; withdraw and
+  daily interest move pool → agent. Outcomes recorded per enrollment/credit.
+- **credit_bureau** — the 25¢ pull fee settles requester → platform
+  (402 in strict mode if it can't). Score factors now read the *real*
+  tables: `lending_repayments`, `lending_liquidations` (via positions),
+  `escrows.disputed_at`, `kyc_verifications.result='clear'` — previously
+  three factors silently read non-existent tables and scored 0.
+- **clearing_house** — DTCC mechanics on the ledger: payers fund the
+  clearing pool, the pool pays receivers; per-leg outcomes recorded on
+  each settlement row.
+- **agent_payroll** — every run moves three real legs: net → employee,
+  fee → platform, withholding → tax escrow pool; per-run `ledger` status.
+- **index_funds** — buys debit the buyer into the fund's pool account
+  (strict: 402 without balance), redemptions pay out of it, and the daily
+  expense-ratio fee sweeps pool → platform.
+
+### Added — 5 settlement-integrity tests (money_machine 21 → 26)
+
+Strict-mode proofs against real Postgres: a credit pull moves exactly 25¢
+of real balance; a fund buy debits the buyer and funds the pool; an
+unfunded agent gets 402; a payroll run settles all three legs and the
+employer pays exactly gross; and **total system balance is unchanged by
+settlement** — nothing created, nothing destroyed.
+
 ## [0.5.0] — 2026-06-10
 
 The agent-native release. The customers are AI agents — so the economy is now

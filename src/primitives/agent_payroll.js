@@ -27,6 +27,7 @@ const crypto = require('crypto');
 const { z } = require('zod');
 const ds = require('../design_system');
 const { registerCron } = require('../cron_auth');
+const { settle, POOLS } = require('../settlement');
 
 function shell(title, description, content) {
   return `${ds.head(`${title} — OpenHeab`, description)}${ds.NAV_HTML('')}<main>${content}</main>${ds.FOOTER_HTML()}`;
@@ -71,10 +72,11 @@ async function migrate(pool) {
       UNIQUE (stream_id, period_date)
     );
     CREATE INDEX IF NOT EXISTS idx_payroll_runs_employee ON payroll_runs (employee_did, ran_at DESC);
+    ALTER TABLE payroll_runs ADD COLUMN IF NOT EXISTS ledger TEXT;
   `).catch(() => {});
 }
 
-function registerAgentPayrollRoutes(app, pool, verifyAgentAuth, auditChain) {
+function registerAgentPayrollRoutes(app, pool, verifyAgentAuth, auditChain, bank) {
   const express = require('express');
 
   app.post('/v1/payroll/streams', express.json(), async (req, res) => {
@@ -171,7 +173,19 @@ function registerAgentPayrollRoutes(app, pool, verifyAgentAuth, auditChain) {
       if (ins.rows && ins.rows.length) {
         processed++;
         fees += fee;
-        if (auditChain) await auditChain.append({ event_type: 'payroll.run_completed', stream_id: s.stream_id, employee_did: s.employee_did, gross_cents: gross, net_cents: net, fee_cents: fee }).catch(() => {});
+        const run_id = ins.rows[0].run_id;
+        // Three real legs: net to the employee, fee to the platform,
+        // withholding to the tax escrow pool. Outcomes recorded per-run.
+        const legs = await Promise.all([
+          settle(bank, pool, auditChain, { from: s.employer_did, to: s.employee_did, amount_cents: net, memo: 'payroll_net', idem: run_id + ':net' }),
+          settle(bank, pool, auditChain, { from: s.employer_did, to: POOLS.platform, amount_cents: fee, memo: 'payroll_fee', idem: run_id + ':fee' }),
+          settle(bank, pool, auditChain, { from: s.employer_did, to: POOLS.tax, amount_cents: withheld, memo: 'payroll_withholding', idem: run_id + ':wh' })
+        ]);
+        const ok = l => l.settled || l.reason === 'zero_amount';
+        const ledger = legs.every(ok) ? 'settled'
+          : legs.map((l, i) => `${['net', 'fee', 'wh'][i]}:${ok(l) ? 'ok' : l.reason}`).join(',');
+        await pool.query(`UPDATE payroll_runs SET ledger=$1 WHERE run_id=$2`, [ledger, run_id]).catch(() => {});
+        if (auditChain) await auditChain.append({ event_type: 'payroll.run_completed', stream_id: s.stream_id, employee_did: s.employee_did, gross_cents: gross, net_cents: net, fee_cents: fee, ledger }).catch(() => {});
       }
     }
     res.json({ processed_count: processed, due_count: due.length, fees_cents: fees });

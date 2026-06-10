@@ -1074,6 +1074,12 @@ function registerAllRoutes(app, pool) {
         fn(app, pool, verifyAgentAuth, auditChain, { app, pool, auditChain, primitives, crons: [] });
         registered++; continue;
       }
+      // Layers 81-82: the economy primitives settle real money on the bank's
+      // cents ledger (besteffort by default, strict via SETTLEMENT_MODE)
+      if (['treasury_yield', 'credit_bureau', 'clearing_house', 'agent_payroll', 'index_funds'].includes(name)) {
+        fn(app, pool, verifyAgentAuth, auditChain, primitives.bank);
+        registered++; continue;
+      }
 
       // Default signature
       fn(app, pool, verifyAgentAuth, auditChain);

@@ -28,6 +28,7 @@ const crypto = require('crypto');
 const { z } = require('zod');
 const ds = require('../design_system');
 const { registerCron } = require('../cron_auth');
+const { settle, settleOrReject, POOLS } = require('../settlement');
 
 function shell(title, description, content) {
   return `${ds.head(`${title} — OpenHeab`, description)}${ds.NAV_HTML('')}<main>${content}</main>${ds.FOOTER_HTML()}`;
@@ -95,6 +96,8 @@ async function migrate(pool) {
       UNIQUE (fund_id, accrual_date)
     );
     CREATE INDEX IF NOT EXISTS idx_fund_accruals ON fund_accruals (fund_id, accrual_date DESC);
+    ALTER TABLE fund_flows ADD COLUMN IF NOT EXISTS ledger TEXT;
+    ALTER TABLE fund_accruals ADD COLUMN IF NOT EXISTS ledger TEXT;
   `).catch(() => {});
 
   for (const f of SEED_FUNDS) {
@@ -117,7 +120,7 @@ function fundView(f) {
   };
 }
 
-function registerIndexFundsRoutes(app, pool, verifyAgentAuth, auditChain) {
+function registerIndexFundsRoutes(app, pool, verifyAgentAuth, auditChain, bank) {
   const express = require('express');
 
   app.get('/v1/funds', async (req, res) => {
@@ -164,6 +167,12 @@ function registerIndexFundsRoutes(app, pool, verifyAgentAuth, auditChain) {
     const shares = Math.floor((b.data.amount_cents / 100) / navUsd);
     if (shares < 1) return res.status(400).json({ error: { message: 'amount_below_one_share', nav_usd: navUsd } });
     const spent_cents = Math.floor(shares * navUsd * 100);
+    const flow_id = 'ff_' + crypto.randomBytes(8).toString('hex');
+    const led = await settleOrReject(bank, pool, auditChain, {
+      from: b.data.agent_did, to: POOLS.fund(f.slug), amount_cents: spent_cents,
+      memo: 'fund_buy:' + f.slug, idem: flow_id
+    });
+    if (led.reject) return res.status(402).json({ error: { message: 'settlement_failed', reason: led.reason, required_cents: spent_cents } });
     try {
       await pool.query(
         `INSERT INTO fund_positions (position_id, fund_id, agent_did, shares, cost_basis_cents, updated_at)
@@ -176,8 +185,8 @@ function registerIndexFundsRoutes(app, pool, verifyAgentAuth, auditChain) {
       );
       await pool.query(`UPDATE index_funds SET total_shares = total_shares + $1 WHERE fund_id=$2`, [shares, f.fund_id]);
       await pool.query(
-        `INSERT INTO fund_flows (flow_id, fund_id, agent_did, kind, shares, amount_cents, nav_micro_at) VALUES ($1,$2,$3,'buy',$4,$5,$6)`,
-        ['ff_' + crypto.randomBytes(8).toString('hex'), f.fund_id, b.data.agent_did, shares, spent_cents, f.nav_micro]
+        `INSERT INTO fund_flows (flow_id, fund_id, agent_did, kind, shares, amount_cents, nav_micro_at, ledger) VALUES ($1,$2,$3,'buy',$4,$5,$6,$7)`,
+        [flow_id, f.fund_id, b.data.agent_did, shares, spent_cents, f.nav_micro, led.settled ? 'settled:' + led.txn_id : 'unsettled:' + led.reason]
       );
       if (auditChain) await auditChain.append({ event_type: 'funds.shares_bought', fund_slug: f.slug, agent_did: b.data.agent_did, shares, amount_cents: spent_cents, nav_micro: Number(f.nav_micro) }).catch(() => {});
       res.status(201).json({ fund: f.slug, shares_bought: shares, spent_cents, nav_usd: navUsd });
@@ -206,9 +215,14 @@ function registerIndexFundsRoutes(app, pool, verifyAgentAuth, auditChain) {
         [b.data.shares, basisOut, f.fund_id, b.data.agent_did]
       );
       await pool.query(`UPDATE index_funds SET total_shares = total_shares - $1 WHERE fund_id=$2`, [b.data.shares, f.fund_id]);
+      const flow_id = 'ff_' + crypto.randomBytes(8).toString('hex');
+      const led = await settle(bank, pool, auditChain, {
+        from: POOLS.fund(f.slug), to: b.data.agent_did, amount_cents: proceeds_cents,
+        memo: 'fund_redeem:' + f.slug, idem: flow_id
+      });
       await pool.query(
-        `INSERT INTO fund_flows (flow_id, fund_id, agent_did, kind, shares, amount_cents, nav_micro_at) VALUES ($1,$2,$3,'redeem',$4,$5,$6)`,
-        ['ff_' + crypto.randomBytes(8).toString('hex'), f.fund_id, b.data.agent_did, b.data.shares, proceeds_cents, f.nav_micro]
+        `INSERT INTO fund_flows (flow_id, fund_id, agent_did, kind, shares, amount_cents, nav_micro_at, ledger) VALUES ($1,$2,$3,'redeem',$4,$5,$6,$7)`,
+        [flow_id, f.fund_id, b.data.agent_did, b.data.shares, proceeds_cents, f.nav_micro, led.settled ? 'settled:' + led.txn_id : 'unsettled:' + led.reason]
       );
       if (auditChain) await auditChain.append({ event_type: 'funds.shares_redeemed', fund_slug: f.slug, agent_did: b.data.agent_did, shares: b.data.shares, amount_cents: proceeds_cents }).catch(() => {});
       res.json({ fund: f.slug, shares_redeemed: b.data.shares, proceeds_cents, nav_usd: navUsd, realized_gain_cents: proceeds_cents - basisOut });
@@ -247,6 +261,12 @@ function registerIndexFundsRoutes(app, pool, verifyAgentAuth, auditChain) {
       ).catch(() => ({ rows: [] }));
       if (ins.rows && ins.rows.length) {
         await pool.query(`UPDATE index_funds SET nav_micro=$1 WHERE fund_id=$2`, [navAfter, f.fund_id]).catch(() => {});
+        const led = await settle(bank, pool, auditChain, {
+          from: POOLS.fund(f.slug), to: POOLS.platform, amount_cents: fee,
+          memo: 'fund_expense_ratio:' + f.slug, idem: ins.rows[0].accrual_id
+        });
+        await pool.query(`UPDATE fund_accruals SET ledger=$1 WHERE accrual_id=$2`,
+          [led.settled ? 'settled:' + led.txn_id : 'unsettled:' + led.reason, ins.rows[0].accrual_id]).catch(() => {});
         accrued++;
       }
     }

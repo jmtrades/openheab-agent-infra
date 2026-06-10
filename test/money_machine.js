@@ -233,13 +233,74 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
     assert.strictEqual(again.json.generated, 0, 'rerun must be idempotent');
   });
 
+  console.log('\n== settlement integrity (the money is real) ==');
+  const balanceOf = async (did) =>
+    Number((await pool.query(`SELECT balance_cents FROM bank_accounts WHERE agent_did=$1`, [did])).rows[0]?.balance_cents || 0);
+  const totalSystem = async () =>
+    Number((await pool.query(`SELECT COALESCE(SUM(balance_cents),0)::bigint AS n FROM bank_accounts`)).rows[0].n);
+  const fund = async (did, cents) => pool.query(`
+    INSERT INTO bank_accounts (agent_did, balance_cents, lifetime_in_cents)
+    VALUES ($1, $2, $2)
+    ON CONFLICT (agent_did) DO UPDATE SET balance_cents = bank_accounts.balance_cents + $2`,
+    [did, cents]);
+
+  await fund(alice.did, 100000);  // $1,000
+  await fund(bob.did, 10000);     // $100
+  const systemBefore = await totalSystem();
+  process.env.SETTLEMENT_MODE = 'strict';
+
+  await test('strict mode: a paid credit pull moves real cents to the platform', async () => {
+    const bobBefore = await balanceOf(bob.did);
+    const r = await call('POST', '/v1/credit/pulls', { agent: bob, body: { subject_did: carol.did, requester_did: bob.did, purpose: 'lending' } });
+    assert.strictEqual(r.status, 201, r.text);
+    assert.strictEqual(await balanceOf(bob.did), bobBefore - 25, 'bob pays the 25¢ fee from his real balance');
+  });
+
+  await test('strict mode: a fund buy debits the buyer and funds the pool', async () => {
+    const aliceBefore = await balanceOf(alice.did);
+    const r = await call('POST', '/v1/funds/ohb-agi/buy', { agent: alice, body: { agent_did: alice.did, amount_cents: 20000 } });
+    assert.strictEqual(r.status, 201, r.text);
+    assert.strictEqual(await balanceOf(alice.did), aliceBefore - r.json.spent_cents, 'buy costs exactly the spent cents');
+    const pool_bal = await balanceOf('did:op:fund:ohb-agi');
+    assert.ok(pool_bal > 0, 'fund pool holds the proceeds');
+  });
+
+  await test('strict mode: an unfunded agent cannot buy fund shares (402)', async () => {
+    const pauper = makeAgent('pauper');
+    await pool.query(`INSERT INTO identities (did, public_key) VALUES ($1, $2)`, [pauper.did, pauper.publicPem]);
+    const r = await call('POST', '/v1/funds/ohb-50/buy', { agent: pauper, body: { agent_did: pauper.did, amount_cents: 50000 } });
+    assert.strictEqual(r.status, 402, r.text);
+    assert.strictEqual(r.json.error.message, 'settlement_failed');
+  });
+
+  await test('payroll run moves real money: net, fee, and withholding legs', async () => {
+    const r = await call('POST', '/v1/payroll/streams', { agent: alice, body: { employer_did: alice.did, employee_did: bob.did, amount_cents: 10000, frequency: 'daily', withholding_bps: 1000 } });
+    assert.strictEqual(r.status, 201, r.text);
+    const aliceBefore = await balanceOf(alice.did);
+    const run = await cron('/v1/_jobs/payroll-run');
+    assert.strictEqual(run.json.processed_count, 1, run.text);
+    const row = (await pool.query(`SELECT * FROM payroll_runs WHERE stream_id=$1`, [r.json.stream_id])).rows[0];
+    assert.strictEqual(row.ledger, 'settled', `all legs must settle, got: ${row.ledger}`);
+    // employer pays net + fee + withholding = gross
+    assert.strictEqual(await balanceOf(alice.did), aliceBefore - Number(row.gross_cents), 'employer pays exactly gross');
+    // the wallet rails take their 1% on each leg, so escrow receives net of that
+    const railsFee = Math.floor(Number(row.withheld_cents) * 0.01);
+    assert.ok(await balanceOf('did:op:tax-escrow') >= Number(row.withheld_cents) - railsFee, 'withholding reached the tax escrow');
+  });
+
+  await test('value is conserved: total system balance is unchanged by settlements', async () => {
+    assert.strictEqual(await totalSystem(), systemBefore,
+      'transfers move money between accounts; nothing is created or destroyed');
+  });
+  delete process.env.SETTLEMENT_MODE;
+
   console.log('\n== the books balance ==');
   await test('every wedge recorded operator revenue', async () => {
     const q = async (sql) => Number((await pool.query(sql)).rows[0].n);
     assert.ok(await q(`SELECT COALESCE(SUM(operator_spread_cents),0) AS n FROM treasury_interest_credits`) >= 0);
-    assert.ok(await q(`SELECT COALESCE(SUM(fee_cents),0) AS n FROM credit_report_pulls`) === 25);
+    assert.ok(await q(`SELECT COALESCE(SUM(fee_cents),0) AS n FROM credit_report_pulls`) === 50); // 2 pulls
     assert.ok(await q(`SELECT COALESCE(SUM(fee_cents),0) AS n FROM clearing_cycles`) === 14);
-    assert.ok(await q(`SELECT COALESCE(SUM(fee_cents),0) AS n FROM payroll_runs`) === 625);
+    assert.ok(await q(`SELECT COALESCE(SUM(fee_cents),0) AS n FROM payroll_runs`) === 650); // weekly 625 + daily 25
     assert.ok(await q(`SELECT COUNT(*) AS n FROM fund_accruals`) === 3);
   });
   await test('audit chain recorded the activity and verifies end-to-end', async () => {

@@ -27,6 +27,7 @@ const crypto = require('crypto');
 const { z } = require('zod');
 const ds = require('../design_system');
 const { registerCron } = require('../cron_auth');
+const { settleOrReject, POOLS } = require('../settlement');
 
 function shell(title, description, content) {
   return `${ds.head(`${title} — OpenHeab`, description)}${ds.NAV_HTML('')}<main>${content}</main>${ds.FOOTER_HTML()}`;
@@ -93,11 +94,14 @@ function bandFor(score) {
 async function computeScore(pool, did) {
   const one = async (sql, params) => Number((await safe(pool, sql, params))[0]?.n || 0);
 
-  const repaid = await one(`SELECT COUNT(*)::int AS n FROM loan_repayments WHERE borrower_did=$1`, [did]);
-  const defaults = await one(`SELECT COUNT(*)::int AS n FROM loans WHERE borrower_did=$1 AND status='defaulted'`, [did]);
-  const escrowDisputesLost = await one(`SELECT COUNT(*)::int AS n FROM escrow_disputes WHERE respondent_did=$1 AND status='upheld'`, [did]);
+  const repaid = await one(`SELECT COUNT(*)::int AS n FROM lending_repayments WHERE agent_did=$1`, [did]);
+  const defaults = await one(`
+    SELECT COUNT(*)::int AS n FROM lending_liquidations l
+    JOIN lending_positions p ON p.position_id = l.position_id
+    WHERE p.agent_did=$1`, [did]);
+  const escrowDisputesLost = await one(`SELECT COUNT(*)::int AS n FROM escrows WHERE payee_did=$1 AND disputed_at IS NOT NULL`, [did]);
   const treasuryCents = await one(`SELECT COALESCE(SUM(principal_cents),0)::bigint AS n FROM treasury_enrollments WHERE agent_did=$1 AND withdrawn_at IS NULL`, [did]);
-  const kycTier = await one(`SELECT COALESCE(MAX(tier),0)::int AS n FROM kyc_verifications WHERE agent_did=$1 AND status='approved'`, [did]);
+  const kycTier = await one(`SELECT COUNT(*)::int AS n FROM kyc_verifications WHERE subject_did=$1 AND result='clear'`, [did]);
   const reputation = Number((await safe(pool, `SELECT score AS n FROM reputation_scores WHERE agent_did=$1`, [did]))[0]?.n || 0.5);
   const ageDays = await one(`SELECT EXTRACT(EPOCH FROM (NOW() - created_at))::bigint / 86400 AS n FROM identities WHERE did=$1`, [did]);
 
@@ -115,7 +119,7 @@ async function computeScore(pool, did) {
   return { score, band: bandFor(score), factors };
 }
 
-function registerCreditBureauRoutes(app, pool, verifyAgentAuth, auditChain) {
+function registerCreditBureauRoutes(app, pool, verifyAgentAuth, auditChain, bank) {
   const express = require('express');
 
   // Pull a full report — requester pays the fee, pull is recorded permanently
@@ -132,6 +136,11 @@ function registerCreditBureauRoutes(app, pool, verifyAgentAuth, auditChain) {
 
     const { score, band, factors } = await computeScore(pool, b.data.subject_did);
     const pull_id = 'cp_' + crypto.randomBytes(10).toString('hex');
+    const led = await settleOrReject(bank, pool, auditChain, {
+      from: b.data.requester_did, to: POOLS.platform, amount_cents: REPORT_FEE_CENTS,
+      memo: 'credit_report_pull', idem: pull_id
+    });
+    if (led.reject) return res.status(402).json({ error: { message: 'pull_fee_settlement_failed', reason: led.reason, fee_cents: REPORT_FEE_CENTS } });
     try {
       await pool.query(
         `INSERT INTO credit_scores (agent_did, score, band, factors, computed_at)

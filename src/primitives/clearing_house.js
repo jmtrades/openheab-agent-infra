@@ -25,6 +25,7 @@ const crypto = require('crypto');
 const { z } = require('zod');
 const ds = require('../design_system');
 const { registerCron } = require('../cron_auth');
+const { settle, POOLS } = require('../settlement');
 
 function shell(title, description, content) {
   return `${ds.head(`${title} — OpenHeab`, description)}${ds.NAV_HTML('')}<main>${content}</main>${ds.FOOTER_HTML()}`;
@@ -71,10 +72,11 @@ async function migrate(pool) {
       UNIQUE (cycle_id, agent_did)
     );
     CREATE INDEX IF NOT EXISTS idx_clearing_settlements ON clearing_settlements (agent_did, settled_at DESC);
+    ALTER TABLE clearing_settlements ADD COLUMN IF NOT EXISTS ledger TEXT;
   `).catch(() => {});
 }
 
-function registerClearingHouseRoutes(app, pool, verifyAgentAuth, auditChain) {
+function registerClearingHouseRoutes(app, pool, verifyAgentAuth, auditChain, bank) {
   const express = require('express');
 
   app.post('/v1/clearing/obligations', express.json(), async (req, res) => {
@@ -184,11 +186,30 @@ function registerClearingHouseRoutes(app, pool, verifyAgentAuth, auditChain) {
       return res.json({ netted: 0, message: 'cycle_already_closed_today' });
     }
 
+    // Settle real money: payers fund the clearing pool first, then the pool
+    // pays receivers — DTCC's actual mechanics. Outcomes recorded per leg.
+    const payers = [...positions].filter(([, v]) => v < 0);
+    const receivers = [...positions].filter(([, v]) => v > 0);
+    const ledgerOutcomes = new Map();
+    for (const [did, v] of payers) {
+      const led = await settle(bank, pool, auditChain, {
+        from: did, to: POOLS.clearing, amount_cents: -v,
+        memo: 'clearing_pay_in', idem: cycle_id + ':in:' + did
+      });
+      ledgerOutcomes.set(did, led.settled ? 'settled:' + led.txn_id : 'unsettled:' + led.reason);
+    }
+    for (const [did, v] of receivers) {
+      const led = await settle(bank, pool, auditChain, {
+        from: POOLS.clearing, to: did, amount_cents: v,
+        memo: 'clearing_pay_out', idem: cycle_id + ':out:' + did
+      });
+      ledgerOutcomes.set(did, led.settled ? 'settled:' + led.txn_id : 'unsettled:' + led.reason);
+    }
     for (const [did, v] of positions) {
       await pool.query(
-        `INSERT INTO clearing_settlements (settlement_id, cycle_id, agent_did, net_amount_cents)
-         VALUES ($1,$2,$3,$4) ON CONFLICT (cycle_id, agent_did) DO NOTHING`,
-        ['cs_' + crypto.randomBytes(8).toString('hex'), cycle_id, did, v]
+        `INSERT INTO clearing_settlements (settlement_id, cycle_id, agent_did, net_amount_cents, ledger)
+         VALUES ($1,$2,$3,$4,$5) ON CONFLICT (cycle_id, agent_did) DO NOTHING`,
+        ['cs_' + crypto.randomBytes(8).toString('hex'), cycle_id, did, v, ledgerOutcomes.get(did) || 'flat']
       ).catch(() => {});
     }
     await pool.query(
