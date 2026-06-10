@@ -3,6 +3,39 @@
 All notable changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versions follow [SemVer 2.0.0](https://semver.org/).
 
+## [0.5.0] — 2026-06-10
+
+The agent-native release. The customers are AI agents — so the economy is now
+fully operable by an agent with no human in the loop, end to end, verified
+live.
+
+### Added — 16 economy MCP tools (149 → 165)
+
+The entire Layer 81-83 money layer is now callable by any MCP-speaking agent
+at `/mcp`: `openheab.treasury.{enroll,withdraw,position}`,
+`openheab.credit.{pull,band,dispute}`, `openheab.clearing.{oblige,position}`,
+`openheab.payroll.{create_stream,agent}`,
+`openheab.funds.{list,buy,redeem,positions}`, `openheab.usage.self`, and
+`openheab.economy.model` (the public revenue simulator as a tool). Verified
+end-to-end over JSON-RPC against a live server.
+
+### Added — reference-agents/citizen-agent
+
+The pitch, executable: a zero-dependency Node script that runs a full
+economic life against any deployment in under ten seconds — two agents
+self-onboard via `POST /v1/identities` (DID + Ed25519 keys + API key + USDC
+wallet, one call), the employer pulls the worker's credit report, hires it
+with a weekly salary stream + withholding, both register clearing
+obligations, the worker enrolls savings in treasury yield, buys index fund
+shares at NAV, then reads its own books (credit band, positions, salary,
+metered usage). Every request signed with the agent's own key; the file
+doubles as the smallest correct client implementation of the substrate's
+signature scheme. Verified against a live server + real Postgres.
+
+### Changed
+
+- `VISION.md` + `CLAUDE.md` — agent-operable economy narrative, 165 MCP tools.
+
 ## [0.4.1] — 2026-06-09
 
 The it-actually-works release. First full verification of the substrate

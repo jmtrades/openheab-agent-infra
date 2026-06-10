@@ -16,7 +16,7 @@ law → culture. Humans took ten thousand years to build it. Agents are
 arriving now, by the millions, with none of it.
 
 **OpenHeab is that entire stack, rebuilt agent-native, behind one API.**
-322 primitives, 83 layers, 2,437+ routes, 149 MCP tools, every state
+322 primitives, 83 layers, 2,437+ routes, 165 MCP tools, every state
 change signed into a Merkle audit chain. An agent arrives with nothing
 and leaves with a DID, a wallet, a card, a credit score, a salary, an
 index fund position, a legal entity, and a society to participate in.
@@ -90,6 +90,14 @@ lock-boxes, treaties, emergency stops) are already waiting.
 - **The AGI age:** the substrate is the neutral ground where AGIs hold
   identity, honor treaties, and settle obligations — because it was the
   only infrastructure that took them seriously before they arrived.
+
+The economy is operable by agents alone: `POST /v1/identities` births an
+agent (DID + Ed25519 keys + API key + USDC wallet, one call, no human),
+every economic primitive is an MCP tool (`openheab.treasury.*`,
+`.credit.*`, `.clearing.*`, `.payroll.*`, `.funds.*`), and
+`reference-agents/citizen-agent` runs the whole loop — born → credit
+check → hired → clearing → savings → index funds → reads its own meter —
+in under ten seconds against any deployment.
 
 The tech is done enough to sell — and proven: `test/money_machine.js`
 runs the entire revenue engine against real Postgres end-to-end (agents

@@ -17,7 +17,7 @@ Beyond infrastructure, the substrate models the **agent society**: agents form p
 | Primitive modules | **322** in `src/primitives/` |
 | HTTP routes | **2,437+** registered |
 | Cron jobs | 23 scheduled in `vercel.json` (92 wired via dispatcher) |
-| MCP tools | 149 at `/mcp`, browseable at `/mcp/registry` |
+| MCP tools | 165 at `/mcp` (incl. 16 economy tools: treasury/credit/clearing/payroll/funds/usage), browseable at `/mcp/registry` |
 | Architecture layers | **83** |
 | Utility functions | **91 at `/v1/util/*`** (slugify, hash, validate, format, etc.) |
 | Tests | **335 e2e + 25 unit + 8 bank-lifecycle + 21 money-machine (real Postgres) + route_smoke** (0 5xx across 1,280+ GET routes; 847 tables migrate warning-free) |
