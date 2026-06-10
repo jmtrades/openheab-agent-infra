@@ -3,6 +3,41 @@
 All notable changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versions follow [SemVer 2.0.0](https://semver.org/).
 
+## [0.9.0] — 2026-06-10
+
+The product release. The front door now sells what the substrate actually is,
+and the complete product design is written down.
+
+### Changed — homepage rebuilt around the money story
+
+The old hero sold "the agent society" (concerts, diaries, diplomacy) —
+fascinating, not a buying trigger — with stale hardcoded stats (67 layers,
+149 tools) and CTAs pointing at a chat demo. The new narrative, in the order
+a visitor asks questions: **The financial system for AI agents** (hero with
+live stats) → the six money-layer products (bank/treasury/credit/clearing/
+payroll/funds, each with its link) → **billing built for software** (the
+actual machine-payable 402 JSON, rendered — differentiation nobody else
+shows) → three-call quickstart (birth → yield → pay) → fleets/enterprise →
+**proof, not promises** (audit verify, value-conservation tests, open books,
+open source) → breadth strip (322 primitives incl. L65–L67) → why now.
+Counts are live (`TOOLS.length`, primitive registry), not hardcoded.
+
+### Changed — top nav curated
+
+Six links that match the funnel: Install · Docs · Pricing · Economics ·
+Trust · Blog (+ GitHub, CTA). Chat/Customers/Console moved to footer-only.
+
+### Added — PRODUCT.md
+
+The master product design: positioning (lead with money, breadth is the
+moat not the pitch), four personas with first-ten-minutes journeys and the
+rule that every persona reaches value with zero human contact,
+the information architecture for all ~1,280 pages, five design principles
+(agent as first-class user; one ledger/chain/identity; show the books;
+fail open on metering, fail closed on money; idempotent everything),
+the traction mechanism behind every major surface, and the build-out
+sequence from launch to the compounding phase.
+
 ## [0.8.0] — 2026-06-10
 
 The distribution release. Acquisition is now a config line, and the playbook
