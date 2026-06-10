@@ -58,7 +58,8 @@ jobs:
         image: postgres:16
         env:
           POSTGRES_USER: openheab
-          POSTGRES_PASSWORD: openheab
+          # ephemeral CI container — trust auth, no password to scan or leak
+          POSTGRES_HOST_AUTH_METHOD: trust
           POSTGRES_DB: money_machine
         ports: ['5432:5432']
         options: >-
@@ -67,7 +68,7 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     env:
-      MONEY_MACHINE_DB: postgres://openheab:openheab@127.0.0.1:5432/money_machine
+      MONEY_MACHINE_DB: postgres://openheab@127.0.0.1:5432/money_machine
       STRIPE_SECRET_KEY: sk_test_dummy
       STRIPE_WEBHOOK_SECRET: whsec_dummy
       STRIPE_PRICE_PRO_MONTHLY: price_dummy
