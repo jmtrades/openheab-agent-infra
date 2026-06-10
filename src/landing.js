@@ -322,6 +322,79 @@ function renderDocs(app) {
   </div>
 </section>
 
+
+<section class="section" id="frameworks">
+  <p class="eyebrow">Use it from your framework</p>
+  <h2>Whatever runs your agents, the economy is one snippet away.</h2>
+  <p class="sub">MCP-native frameworks connect with a config line; everything else uses the REST API. Both routes end at the same ${mcpToolCount()} tools.</p>
+
+  <h3 style="margin:28px 0 12px;font-size:16px;font-weight:600">Claude Code / Claude Agent SDK (MCP-native)</h3>
+  <div class="codewin">
+    <div class="bar"><span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span><span class="title">terminal</span></div>
+    <pre class="code"><span class="k">claude</span> mcp add --transport http openheab ${publicUrl()}/mcp \\
+  --header <span class="s">"Authorization: Bearer $OPENHEAB_API_KEY"</span></pre>
+  </div>
+
+  <h3 style="margin:28px 0 12px;font-size:16px;font-weight:600">OpenAI Agents SDK (Python)</h3>
+  <div class="codewin">
+    <div class="bar"><span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span><span class="title">agent.py</span></div>
+    <pre class="code"><span class="k">from</span> agents <span class="k">import</span> Agent, HostedMCPTool
+
+agent = Agent(
+    name=<span class="s">"treasurer"</span>,
+    tools=[HostedMCPTool(tool_config={
+        <span class="s">"type"</span>: <span class="s">"mcp"</span>,
+        <span class="s">"server_label"</span>: <span class="s">"openheab"</span>,
+        <span class="s">"server_url"</span>: <span class="s">"${publicUrl()}/mcp"</span>,
+        <span class="s">"headers"</span>: {<span class="s">"Authorization"</span>: <span class="s">"Bearer "</span> + OPENHEAB_API_KEY},
+    })],
+)</pre>
+  </div>
+
+  <h3 style="margin:28px 0 12px;font-size:16px;font-weight:600">LangGraph / LangChain (Python)</h3>
+  <div class="codewin">
+    <div class="bar"><span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span><span class="title">graph.py</span></div>
+    <pre class="code"><span class="k">from</span> langchain_mcp_adapters.client <span class="k">import</span> MultiServerMCPClient
+
+client = MultiServerMCPClient({
+    <span class="s">"openheab"</span>: {
+        <span class="s">"transport"</span>: <span class="s">"streamable_http"</span>,
+        <span class="s">"url"</span>: <span class="s">"${publicUrl()}/mcp"</span>,
+        <span class="s">"headers"</span>: {<span class="s">"Authorization"</span>: <span class="s">"Bearer "</span> + OPENHEAB_API_KEY},
+    }
+})
+tools = <span class="k">await</span> client.get_tools()  <span class="c"># → bind to any LangGraph agent</span></pre>
+  </div>
+
+  <h3 style="margin:28px 0 12px;font-size:16px;font-weight:600">Vercel AI SDK (TypeScript)</h3>
+  <div class="codewin">
+    <div class="bar"><span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span><span class="title">route.ts</span></div>
+    <pre class="code"><span class="k">import</span> { experimental_createMCPClient } <span class="k">from</span> <span class="s">'ai'</span>;
+
+<span class="k">const</span> mcp = <span class="k">await</span> experimental_createMCPClient({
+  transport: { type: <span class="s">'sse'</span>, url: <span class="s">'${publicUrl()}/mcp'</span>,
+    headers: { Authorization: <span class="s">\`Bearer \${process.env.OPENHEAB_API_KEY}\`</span> } },
+});
+<span class="k">const</span> tools = <span class="k">await</span> mcp.tools();  <span class="c">// → pass to generateText / streamText</span></pre>
+  </div>
+
+  <h3 style="margin:28px 0 12px;font-size:16px;font-weight:600">CrewAI / anything else (plain REST)</h3>
+  <div class="codewin">
+    <div class="bar"><span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span><span class="title">tools.py</span></div>
+    <pre class="code"><span class="k">import</span> requests
+
+<span class="k">def</span> pay_agent(creditor_did: str, amount_cents: int) -> dict:
+    <span class="s">"""Pay another agent — nets in tonight's clearing cycle."""</span>
+    <span class="k">return</span> requests.post(
+        <span class="s">"${publicUrl()}/v1/clearing/obligations"</span>,
+        headers={<span class="s">"Authorization"</span>: <span class="s">"Bearer "</span> + OPENHEAB_API_KEY},
+        json={<span class="s">"debtor_did"</span>: MY_DID, <span class="s">"creditor_did"</span>: creditor_did,
+              <span class="s">"amount_cents"</span>: amount_cents},
+    ).json()</pre>
+  </div>
+  <p style="color:var(--fg-dim);margin:14px 0 0;font-size:14px">Get a key with one call — no signup form: <code>curl -X POST ${publicUrl()}/v1/identities</code>. Full install matrix at <a href="/install-mcp">/install-mcp</a>.</p>
+</section>
+
 <section class="section">
   <p class="eyebrow">Read more</p>
   <h2>Reference + strategy.</h2>

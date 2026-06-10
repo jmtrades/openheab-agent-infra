@@ -3,6 +3,38 @@
 All notable changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versions follow [SemVer 2.0.0](https://semver.org/).
 
+## [0.10.0] — 2026-06-10
+
+The durability + funnel-depth release: the real-Postgres proof is locked into
+CI, and the docs now close the loop GTM_PLAN opened.
+
+### Added — CI money-machine job
+
+`.github/workflows/ci.yml` gains a job with a `postgres:16` service container
+running `test/money_machine.js` on every push/PR — the 30-test economy
+lifecycle (zero-warning migration of 847 tables, settlement integrity, value
+conservation, conversion loop, audit verification, forgery rejection) is now
+a permanent gate instead of a one-time local proof.
+
+### Added — docs: Framework Integrations + The Agent Economy
+
+Two new sections on the *served* `/docs` (docs_page — the landing.js
+renderDocs was discovered to be shadowed and is now a fallback only):
+- **Framework Integrations** — copy-paste connections for Claude Code,
+  OpenAI Agents SDK (HostedMCPTool), LangGraph (langchain-mcp-adapters),
+  Vercel AI SDK (experimental_createMCPClient), and plain-REST CrewAI —
+  the Tier-2 GTM channel GTM_PLAN.md called out as the gap.
+- **The Agent Economy** — the money layer end-to-end: treasury, credit
+  bureau, clearing, payroll, funds, and the machine-payable 402 billing
+  flow with topup/autopay. Verified serving live at `/docs/frameworks` +
+  `/docs/economy`.
+
+### Fixed — machine-facing JSON root
+
+`GET /` (JSON) reported 67 layers / 149 tools; now live values (83 / 167)
+plus `install_mcp`, `mcp_manifest_wellknown`, and `revenue_model` pointers —
+agents crawling the root now find the money layer and the install path.
+
 ## [0.9.0] — 2026-06-10
 
 The product release. The front door now sells what the substrate actually is,
