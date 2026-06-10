@@ -202,19 +202,20 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
   });
 
   console.log('\n== revenue meter (wedge 14) ==');
+  const dave = makeAgent('dave'); // stays over-cap; the conversion loop pays his wall later
   await test('API calls were metered per identity and family', async () => {
     await sleep(150); // counters are fire-and-forget on response finish
     const r = await pool.query(`SELECT COALESCE(SUM(calls),0)::int AS n FROM usage_counters WHERE identity=$1`, [alice.did]);
     assert.ok(r.rows[0].n >= 4, `alice made signed calls; metered ${r.rows[0].n}`);
   });
   await test('agent over daily allowance gets 402 with an upgrade path', async () => {
-    const dave = makeAgent('dave');
     await pool.query(`INSERT INTO identities (did, public_key) VALUES ($1, $2)`, [dave.did, dave.publicPem]);
     await pool.query(`INSERT INTO usage_counters (counter_date, identity, family, calls, billable_millicents) VALUES (CURRENT_DATE, $1, 'inference', 2000, 0)`, [dave.did]);
     const r = await call('GET', '/v1/treasury/stats', { agent: dave });
     assert.strictEqual(r.status, 402, r.text);
     assert.strictEqual(r.json.error.message, 'daily_call_allowance_exceeded');
-    assert.strictEqual(r.json.error.upgrade, '/pricing');
+    assert.strictEqual(r.json.pay.path, '/v1/meter/topup', '402 must carry a machine-payable offer');
+    assert.ok(r.json.pay.price_cents_per_1k > 0);
   });
   await test('anonymous traffic is never quota-blocked', async () => {
     const r = await call('GET', '/v1/treasury/stats');
@@ -293,6 +294,46 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
       'transfers move money between accounts; nothing is created or destroyed');
   });
   delete process.env.SETTLEMENT_MODE;
+
+  console.log('\n== the conversion loop: 402 → agent pays → keeps working ==');
+  await test('an over-cap agent buys capacity from its own balance and the wall lifts', async () => {
+    await fund(dave.did, 1000); // $10
+    const before = await balanceOf(dave.did);
+    const t = await call('POST', '/v1/meter/topup', { agent: dave, body: { agent_did: dave.did, calls: 5000 }, headers: { 'x-idempotency-key': 'mm-topup-1' } });
+    assert.strictEqual(t.status, 201, t.text);
+    assert.strictEqual(t.json.paid_cents, 500, '$1 per 1,000 calls');
+    assert.strictEqual(await balanceOf(dave.did), before - 500, 'paid from real balance');
+    const r = await call('GET', '/v1/treasury/stats', { agent: dave });
+    assert.strictEqual(r.status, 200, 'the wall lifts immediately after payment');
+  });
+  await test('topup is idempotent — replays never double-charge', async () => {
+    const before = await balanceOf(dave.did);
+    const t = await call('POST', '/v1/meter/topup', { agent: dave, body: { agent_did: dave.did, calls: 5000 }, headers: { 'x-idempotency-key': 'mm-topup-1' } });
+    assert.strictEqual(t.status, 200, t.text);
+    assert.strictEqual(t.json.idempotent, true);
+    assert.strictEqual(await balanceOf(dave.did), before, 'no second charge');
+  });
+  await test('an unfunded agent cannot buy capacity (purchases must settle)', async () => {
+    const broke = makeAgent('broke');
+    await pool.query(`INSERT INTO identities (did, public_key) VALUES ($1, $2)`, [broke.did, broke.publicPem]);
+    const t = await call('POST', '/v1/meter/topup', { agent: broke, body: { agent_did: broke.did, calls: 1000 } });
+    assert.strictEqual(t.status, 402, t.text);
+    assert.strictEqual(t.json.error.message, 'topup_settlement_failed');
+  });
+  await test('standing autopay buys capacity automatically instead of 402', async () => {
+    const eve = makeAgent('eve');
+    await pool.query(`INSERT INTO identities (did, public_key) VALUES ($1, $2)`, [eve.did, eve.publicPem]);
+    await fund(eve.did, 1000);
+    const ap = await call('POST', '/v1/meter/autopay', { agent: eve, body: { agent_did: eve.did, enabled: true, max_cents_per_day: 500 } });
+    assert.strictEqual(ap.status, 200, ap.text);
+    await pool.query(`INSERT INTO usage_counters (counter_date, identity, family, calls, billable_millicents) VALUES (CURRENT_DATE, $1, 'inference', 1500, 0)`, [eve.did]);
+    const before = await balanceOf(eve.did);
+    const r = await call('GET', '/v1/treasury/stats', { agent: eve });
+    assert.strictEqual(r.status, 200, `autopay should clear the wall, got ${r.status}: ${r.text}`);
+    assert.strictEqual(await balanceOf(eve.did), before - 100, 'one 1,000-call increment auto-purchased');
+    const row = (await pool.query(`SELECT auto FROM meter_topups WHERE agent_did=$1`, [eve.did])).rows[0];
+    assert.strictEqual(row.auto, true);
+  });
 
   console.log('\n== the books balance ==');
   await test('every wedge recorded operator revenue', async () => {

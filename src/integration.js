@@ -1033,7 +1033,7 @@ function registerAllRoutes(app, pool) {
   // The revenue meter must front every /v1 route, so it installs before
   // anything registers. Fail-open: a metering error never blocks a request.
   if (primitives.revenue_meter && typeof primitives.revenue_meter.installRevenueMeter === 'function') {
-    try { primitives.revenue_meter.installRevenueMeter(app, pool); }
+    try { primitives.revenue_meter.installRevenueMeter(app, pool, primitives.bank, auditChain); }
     catch (e) { console.warn(`[meter] install failed: ${e.message}`); }
   }
 
@@ -1076,7 +1076,7 @@ function registerAllRoutes(app, pool) {
       }
       // Layers 81-82: the economy primitives settle real money on the bank's
       // cents ledger (besteffort by default, strict via SETTLEMENT_MODE)
-      if (['treasury_yield', 'credit_bureau', 'clearing_house', 'agent_payroll', 'index_funds'].includes(name)) {
+      if (['treasury_yield', 'credit_bureau', 'clearing_house', 'agent_payroll', 'index_funds', 'revenue_meter'].includes(name)) {
         fn(app, pool, verifyAgentAuth, auditChain, primitives.bank);
         registered++; continue;
       }

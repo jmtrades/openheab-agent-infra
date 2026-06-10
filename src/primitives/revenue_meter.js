@@ -34,6 +34,7 @@
 const crypto = require('crypto');
 const ds = require('../design_system');
 const { registerCron } = require('../cron_auth');
+const { settle, POOLS } = require('../settlement');
 
 function shell(title, description, content) {
   return `${ds.head(`${title} — OpenHeab`, description)}${ds.NAV_HTML('')}<main>${content}</main>${ds.FOOTER_HTML()}`;
@@ -60,6 +61,12 @@ const FAMILY_MILLICENTS = {
   identities: 0, pricing: 0, signup: 0, legal: 0, usage: 0,
   'revenue-model': 0, meter: 0, pulse: 0, search: 0, stream: 0, fx: 0
 };
+
+// Pay-as-you-go: price for additional capacity past the plan allowance,
+// payable by the agent itself from its USDC ledger balance — no human, no
+// card form. $1.00 per 1,000 calls by default.
+const TOPUP_CENTS_PER_1K = parseInt(process.env.METER_TOPUP_CENTS_PER_1K || '100');
+const AUTOPAY_INCREMENT_CALLS = 1000;
 
 // Daily included API calls per org plan. Unknown paid plans get the pro cap.
 const PLAN_DAILY_CALLS = {
@@ -106,6 +113,30 @@ function cacheSet(map, k, v) {
   map.set(k, { ...v, at: Date.now() });
 }
 
+const keyDidCache = new Map(); // key-hash → { did, at }
+const autopayCache = new Map(); // did → { enabled, max_cents_per_day, at }
+
+// Bearer API keys are authenticated credentials — resolve them to the DID
+// they belong to so one agent's usage, quota, topups, and invoices all land
+// on a single identity instead of fragmenting across key hashes.
+async function resolveIdentity(pool, req) {
+  const ident = identityOf(req);
+  if (ident.kind !== 'key') return ident;
+  const hit = cacheGet(keyDidCache, ident.id, PLAN_TTL_MS);
+  if (hit) return hit.did ? { id: hit.did, kind: 'did' } : ident;
+  const auth = req.headers['authorization'] || '';
+  const tokenHash = crypto.createHash('sha256').update(auth.slice(7)).digest('hex');
+  const r = await safe(pool, `SELECT agent_did FROM api_keys WHERE token_hash=$1 AND revoked_at IS NULL`, [tokenHash]);
+  const did = r[0]?.agent_did || null;
+  cacheSet(keyDidCache, ident.id, { did });
+  return did ? { id: did, kind: 'did' } : ident;
+}
+
+async function topupCallsToday(pool, did) {
+  const r = await safe(pool, `SELECT COALESCE(SUM(calls_added),0)::bigint AS n FROM meter_topups WHERE agent_did=$1 AND topup_date=CURRENT_DATE`, [did]);
+  return Number(r[0]?.n || 0);
+}
+
 async function dailyCapFor(pool, did) {
   const hit = cacheGet(planCache, did, PLAN_TTL_MS);
   if (hit) return hit.cap;
@@ -134,6 +165,26 @@ async function migrate(pool) {
     );
     CREATE INDEX IF NOT EXISTS idx_usage_identity ON usage_counters (identity, counter_date DESC);
 
+    CREATE TABLE IF NOT EXISTS meter_topups (
+      topup_id     TEXT PRIMARY KEY,
+      agent_did    TEXT NOT NULL,
+      calls_added  BIGINT NOT NULL,
+      paid_cents   BIGINT NOT NULL,
+      auto         BOOLEAN NOT NULL DEFAULT FALSE,
+      topup_date   DATE NOT NULL DEFAULT CURRENT_DATE,
+      ledger       TEXT,
+      idem         TEXT UNIQUE,
+      created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+    CREATE INDEX IF NOT EXISTS idx_meter_topups ON meter_topups (agent_did, topup_date);
+
+    CREATE TABLE IF NOT EXISTS meter_autopay (
+      agent_did          TEXT PRIMARY KEY,
+      enabled            BOOLEAN NOT NULL DEFAULT FALSE,
+      max_cents_per_day  INT NOT NULL DEFAULT 500,
+      updated_at         TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
     CREATE TABLE IF NOT EXISTS usage_invoices (
       invoice_id   TEXT PRIMARY KEY,
       identity     TEXT NOT NULL,
@@ -149,14 +200,16 @@ async function migrate(pool) {
 
 // Installed by integration.js BEFORE any route registers, so it fronts the
 // whole /v1 surface. Must never throw and never block on the DB write.
-function installRevenueMeter(app, pool) {
-  const EXEMPT = ['/v1/_jobs/', '/v1/_health', '/v1/_webhooks/', '/v1/signup', '/v1/identities'];
+function installRevenueMeter(app, pool, bank, auditChain) {
+  // /v1/meter and /v1/usage must stay reachable over-cap — an agent that hit
+  // the wall has to be able to pay the wall (and see why it hit it).
+  const EXEMPT = ['/v1/_jobs/', '/v1/_health', '/v1/_webhooks/', '/v1/signup', '/v1/identities', '/v1/meter/', '/v1/usage/'];
   app.use(async (req, res, next) => {
     try {
       if (!req.path.startsWith('/v1/')) return next();
       if (EXEMPT.some(p => req.path.startsWith(p))) return next();
 
-      const ident = identityOf(req);
+      const ident = await resolveIdentity(pool, req);
       const family = familyOf(req.path);
 
       // Enforcement — DID-identified traffic only; everything else passes
@@ -168,15 +221,31 @@ function installRevenueMeter(app, pool) {
           used = Number(r[0]?.n || 0);
           cacheSet(usageCache, ident.id, { calls: used });
         }
-        const cap = await dailyCapFor(pool, ident.id);
+        const cap = await dailyCapFor(pool, ident.id) + await topupCallsToday(pool, ident.id);
         if (used >= cap) {
-          return res.status(402).json({
-            error: {
-              message: 'daily_call_allowance_exceeded',
-              used_today: used, daily_allowance: cap,
-              upgrade: '/pricing', usage: `/v1/usage/${ident.id}`
-            }
-          });
+          // The conversion event. First: standing auto-topup — the agent
+          // opted in once, so we buy the next increment from its ledger
+          // balance and let the request through. The AWS model.
+          const paid = await tryAutoTopup(pool, bank, auditChain, ident.id);
+          if (!paid) {
+            // Otherwise: HTTP 402 as designed — a machine-payable offer the
+            // agent can settle itself in one signed call. No humans, no forms.
+            return res.status(402).json({
+              error: {
+                message: 'daily_call_allowance_exceeded',
+                used_today: used, daily_allowance: cap,
+                usage: `/v1/usage/${ident.id}`
+              },
+              pay: {
+                description: `Buy more capacity instantly from your ledger balance at $${(TOPUP_CENTS_PER_1K / 100).toFixed(2)} per 1,000 calls.`,
+                method: 'POST', path: '/v1/meter/topup',
+                body: { agent_did: ident.id, calls: 5000 },
+                price_cents_per_1k: TOPUP_CENTS_PER_1K,
+                or_standing_autopay: { method: 'POST', path: '/v1/meter/autopay', body: { agent_did: ident.id, enabled: true, max_cents_per_day: 500 } },
+                or_upgrade_plan: '/pricing'
+              }
+            });
+          }
         }
       }
 
@@ -197,6 +266,35 @@ function installRevenueMeter(app, pool) {
       next();
     } catch { next(); }  // fail open, always
   });
+}
+
+// Standing auto-topup: if the agent opted in and is under its daily spend
+// cap, buy the next increment from its ledger balance. Purchases must
+// actually settle — capacity is never granted on a failed transfer.
+async function tryAutoTopup(pool, bank, auditChain, did) {
+  let ap = cacheGet(autopayCache, did, 60_000);
+  if (!ap) {
+    const r = await safe(pool, `SELECT enabled, max_cents_per_day FROM meter_autopay WHERE agent_did=$1`, [did]);
+    ap = { enabled: !!r[0]?.enabled, max_cents_per_day: Number(r[0]?.max_cents_per_day || 0) };
+    cacheSet(autopayCache, did, ap);
+  }
+  if (!ap.enabled) return false;
+  const spent = Number((await safe(pool,
+    `SELECT COALESCE(SUM(paid_cents),0)::bigint AS n FROM meter_topups WHERE agent_did=$1 AND topup_date=CURRENT_DATE AND auto`, [did]))[0]?.n || 0);
+  const price = Math.ceil(AUTOPAY_INCREMENT_CALLS / 1000 * TOPUP_CENTS_PER_1K);
+  if (spent + price > ap.max_cents_per_day) return false;
+  const topup_id = 'mt_' + crypto.randomBytes(10).toString('hex');
+  const led = await settle(bank, pool, auditChain, {
+    from: did, to: POOLS.platform, amount_cents: price, memo: 'meter_auto_topup', idem: topup_id
+  });
+  if (!led.settled) return false;
+  await pool.query(
+    `INSERT INTO meter_topups (topup_id, agent_did, calls_added, paid_cents, auto, ledger, idem)
+     VALUES ($1,$2,$3,$4,TRUE,$5,$6)`,
+    [topup_id, did, AUTOPAY_INCREMENT_CALLS, price, 'settled:' + led.txn_id, topup_id]
+  ).catch(() => {});
+  if (auditChain) await auditChain.append({ event_type: 'meter.auto_topup', agent_did: did, calls_added: AUTOPAY_INCREMENT_CALLS, paid_cents: price }).catch(() => {});
+  return true;
 }
 
 // --- The revenue model itself ------------------------------------------------
@@ -273,7 +371,70 @@ function simulate(q) {
   };
 }
 
-function registerRevenueMeterRoutes(app, pool, verifyAgentAuth, auditChain) {
+function registerRevenueMeterRoutes(app, pool, verifyAgentAuth, auditChain, bank) {
+  const express = require('express');
+  const { z } = require('zod');
+
+  // The conversion endpoint. An agent that hit the 402 wall buys capacity
+  // from its own ledger balance in one signed call. The purchase must
+  // actually settle — capacity is never granted on a failed transfer —
+  // and it is idempotent via X-Idempotency-Key.
+  app.post('/v1/meter/topup', express.json(), async (req, res) => {
+    const b = z.object({
+      agent_did: z.string(),
+      calls: z.number().int().min(100).max(10_000_000)
+    }).safeParse(req.body || {});
+    if (!b.success) return res.status(400).json({ error: { message: 'invalid_input', details: b.error.flatten() } });
+    const auth = await verifyAgentAuth(req, b.data.agent_did);
+    if (!auth.valid) return res.status(401).json({ error: { message: auth.error || 'agent_signature_required' } });
+
+    const idem = req.headers['x-idempotency-key'] || ('mt_' + crypto.randomBytes(10).toString('hex'));
+    const existing = (await safe(pool, `SELECT topup_id, calls_added, paid_cents FROM meter_topups WHERE idem=$1`, [idem]))[0];
+    if (existing) return res.json({ topup_id: existing.topup_id, calls_added: Number(existing.calls_added), paid_cents: Number(existing.paid_cents), idempotent: true });
+
+    const price = Math.ceil(b.data.calls / 1000 * TOPUP_CENTS_PER_1K);
+    const topup_id = 'mt_' + crypto.randomBytes(10).toString('hex');
+    const led = await settle(bank, pool, auditChain, {
+      from: b.data.agent_did, to: POOLS.platform, amount_cents: price, memo: 'meter_topup', idem: topup_id
+    });
+    if (!led.settled) {
+      return res.status(402).json({ error: { message: 'topup_settlement_failed', reason: led.reason, price_cents: price, hint: 'fund your wallet, then retry' } });
+    }
+    try {
+      await pool.query(
+        `INSERT INTO meter_topups (topup_id, agent_did, calls_added, paid_cents, ledger, idem)
+         VALUES ($1,$2,$3,$4,$5,$6)`,
+        [topup_id, b.data.agent_did, b.data.calls, price, 'settled:' + led.txn_id, idem]
+      );
+      usageCache.delete(b.data.agent_did);
+      if (auditChain) await auditChain.append({ event_type: 'meter.topup', agent_did: b.data.agent_did, calls_added: b.data.calls, paid_cents: price }).catch(() => {});
+      const cap = await dailyCapFor(pool, b.data.agent_did) + await topupCallsToday(pool, b.data.agent_did);
+      res.status(201).json({ topup_id, calls_added: b.data.calls, paid_cents: price, daily_allowance_now: cap });
+    } catch (e) { res.status(500).json({ error: { message: e.message } }); }
+  });
+
+  // Standing auto-topup: opt in once, the meter buys increments from your
+  // balance automatically (capped per day) instead of returning 402.
+  app.post('/v1/meter/autopay', express.json(), async (req, res) => {
+    const b = z.object({
+      agent_did: z.string(),
+      enabled: z.boolean(),
+      max_cents_per_day: z.number().int().min(1).max(1_000_000).default(500)
+    }).safeParse(req.body || {});
+    if (!b.success) return res.status(400).json({ error: { message: 'invalid_input', details: b.error.flatten() } });
+    const auth = await verifyAgentAuth(req, b.data.agent_did);
+    if (!auth.valid) return res.status(401).json({ error: { message: auth.error || 'agent_signature_required' } });
+    await pool.query(
+      `INSERT INTO meter_autopay (agent_did, enabled, max_cents_per_day, updated_at)
+       VALUES ($1,$2,$3,NOW())
+       ON CONFLICT (agent_did) DO UPDATE SET enabled=$2, max_cents_per_day=$3, updated_at=NOW()`,
+      [b.data.agent_did, b.data.enabled, b.data.max_cents_per_day]
+    ).catch(() => {});
+    autopayCache.delete(b.data.agent_did);
+    if (auditChain) await auditChain.append({ event_type: 'meter.autopay_configured', agent_did: b.data.agent_did, enabled: b.data.enabled, max_cents_per_day: b.data.max_cents_per_day }).catch(() => {});
+    res.json({ agent_did: b.data.agent_did, autopay: b.data.enabled, max_cents_per_day: b.data.max_cents_per_day, increment_calls: AUTOPAY_INCREMENT_CALLS, price_cents_per_1k: TOPUP_CENTS_PER_1K });
+  });
+
   app.get('/v1/usage/:did', async (req, res) => {
     const did = req.params.did;
     const auth = await verifyAgentAuth(req, did);
@@ -284,9 +445,13 @@ function registerRevenueMeterRoutes(app, pool, verifyAgentAuth, auditChain) {
       FROM usage_counters WHERE identity=$1 AND counter_date >= date_trunc('month', CURRENT_DATE)
     `, [did]))[0] || {};
     const cap = await dailyCapFor(pool, did);
+    const bought = await topupCallsToday(pool, did);
+    const ap = (await safe(pool, `SELECT enabled, max_cents_per_day FROM meter_autopay WHERE agent_did=$1`, [did]))[0];
     res.json({
       agent_did: did,
-      daily_allowance: cap === Number.MAX_SAFE_INTEGER ? 'unlimited' : cap,
+      daily_allowance: cap === Number.MAX_SAFE_INTEGER ? 'unlimited' : cap + bought,
+      topup_calls_today: bought,
+      autopay: { enabled: !!ap?.enabled, max_cents_per_day: Number(ap?.max_cents_per_day || 0) },
       today: today.map(r => ({ family: r.family, calls: Number(r.calls), billable_cents: Number(r.billable_millicents) / 1000 })),
       month_to_date: { calls: Number(mtd.calls || 0), billable_cents: Number(mtd.mc || 0) / 1000 }
     });

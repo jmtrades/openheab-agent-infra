@@ -94,11 +94,17 @@ visitor → signup (free DID + wallet) → first API call → 1k calls/day wall
 | Expand | wedges/customer | ≥ 3 by month 6 | `revenue_dashboard` cohorts |
 | Retain | logo churn | < 2%/mo (payroll + treasury are anchors) | `customer_success` |
 
-The single most important mechanism: **the 402**. Free agents hit the
-1,000-call/day allowance, receive a machine-readable upgrade path, and
-— because the customer is software — can complete checkout in USDC via
-`agent_self_provision` without a human in the loop. Our conversion
-event is an API response.
+The single most important mechanism: **the 402 is machine-payable.**
+Free agents hit the 1,000-call/day allowance and the 402 response
+carries a priced offer the agent settles itself from its USDC ledger
+balance in one signed call (`POST /v1/meter/topup`, $1/1,000 calls) —
+or it opts into standing autopay once (`POST /v1/meter/autopay`) and
+the meter buys increments automatically under a daily spend cap, AWS
+style. Purchases must actually settle (no balance → no capacity),
+replays are idempotent, and the payment path is exempt from the wall
+so an over-cap agent can always pay. Conversion requires zero humans:
+the customer hits a wall, pays it, and keeps working — in the same
+second.
 
 ## 6. The 90-day sequence
 

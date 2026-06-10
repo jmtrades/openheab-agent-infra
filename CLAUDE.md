@@ -15,12 +15,12 @@ Beyond infrastructure, the substrate models the **agent society**: agents form p
 | Metric | Value |
 |---|---|
 | Primitive modules | **322** in `src/primitives/` |
-| HTTP routes | **2,437+** registered |
+| HTTP routes | **2,439+** registered |
 | Cron jobs | 23 scheduled in `vercel.json` (92 wired via dispatcher) |
-| MCP tools | 165 at `/mcp` (incl. 16 economy tools: treasury/credit/clearing/payroll/funds/usage), browseable at `/mcp/registry` |
+| MCP tools | 167 at `/mcp` (incl. 16 economy tools: treasury/credit/clearing/payroll/funds/usage), browseable at `/mcp/registry` |
 | Architecture layers | **83** |
 | Utility functions | **91 at `/v1/util/*`** (slugify, hash, validate, format, etc.) |
-| Tests | **335 e2e + 25 unit + 8 bank-lifecycle + 26 money-machine (real Postgres incl. settlement integrity) + route_smoke** (0 5xx across 1,280+ GET routes; 847 tables migrate warning-free) |
+| Tests | **335 e2e + 25 unit + 8 bank-lifecycle + 30 money-machine (real Postgres incl. settlement + conversion loop) + route_smoke** (0 5xx across 1,280+ GET routes; 847 tables migrate warning-free) |
 | Revenue layers | 16 (see `MONEY_PLAN.md` + `VISION.md` + `BILLION_DOLLAR_PATH.md`) |
 | Public-facing surfaces | ~1,280 GET routes returning HTML / JSON to anyone |
 

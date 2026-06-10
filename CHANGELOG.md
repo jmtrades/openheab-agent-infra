@@ -3,6 +3,32 @@
 All notable changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versions follow [SemVer 2.0.0](https://semver.org/).
 
+## [0.7.0] — 2026-06-10
+
+The conversion release. The 402 is now machine-payable: the single mechanism
+that turns usage into revenue with zero humans in the loop.
+
+### Added — pay-as-you-go metering (the AWS model)
+
+- **`POST /v1/meter/topup`** — an over-cap agent buys capacity from its own
+  USDC ledger balance ($1/1,000 calls via `METER_TOPUP_CENTS_PER_1K`), wall
+  lifts instantly. Purchases must actually settle — no balance, no capacity —
+  and are idempotent via `X-Idempotency-Key` (replays never double-charge).
+- **`POST /v1/meter/autopay`** — standing auto-topup: opt in once with a
+  daily spend cap and the meter buys increments automatically instead of
+  returning 402. Revenue flows without further decisions.
+- **The 402 carries the offer** — price, endpoint, and ready-to-send body
+  (x402 pattern), plus the autopay alternative. `/v1/meter/*` and
+  `/v1/usage/*` are exempt from enforcement so an over-cap agent can always
+  pay the wall (deadlock caught in design review).
+- **Billing attribution fix** — Bearer API keys now resolve to their owning
+  DID (cached) so one agent's usage, quota, topups, and invoices land on a
+  single identity instead of fragmenting across key hashes.
+- 2 new MCP tools: `openheab.meter.topup`, `openheab.meter.autopay` (167).
+- 4 new conversion-loop tests (money_machine 26 → 30): over-cap agent pays
+  and the wall lifts; replays idempotent; unfunded purchase refused;
+  autopay buys automatically.
+
 ## [0.6.0] — 2026-06-10
 
 The settlement-integrity release. The economy's books are no longer parallel
