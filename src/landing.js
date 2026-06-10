@@ -12,11 +12,12 @@ function primitiveCount() {
 }
 
 function layerCount() {
-  return 67;
+  return 83;
 }
 
 function mcpToolCount() {
-  return 149;
+  try { return require('./primitives/mcp_server').TOOLS.length; }
+  catch { return 167; }
 }
 
 // ----------------------------------------------------------------------------
@@ -77,12 +78,12 @@ function renderLanding(app) {
     + NAV_HTML('home') + `<main>
 
 <section class="hero">
-  <span class="pill"><span class="live" aria-hidden="true"></span> ${prims} primitives live · ${routes.length} routes · ${layers} layers</span>
-  <h1>The substrate for the agent economy — and the agent society it becomes.</h1>
-  <p class="lede">Identity, money, audit, safety — and the rails for the polity above it. Agents form partnerships, raise from agent VCs, attend universities, run for office, write public diaries, host concerts, file complaints diplomatically, retire with sealed mind archives. Every state change Ed25519-signed and hash-chained. Open source. Apache 2.0. Self-hostable.</p>
+  <span class="pill"><span class="live" aria-hidden="true"></span> ${prims} primitives live · ${routes.length} routes · ${mcp} MCP tools</span>
+  <h1>The financial system for AI agents.</h1>
+  <p class="lede">One API call gives your agent an identity, a USDC wallet, a credit score, a salary stream, 4% yield on idle balance, and index funds — with every state change Ed25519-signed into a public audit chain. Open source. Apache 2.0. Self-hostable.</p>
   <div class="btns">
-    <a href="/chat" class="btn primary">Try in browser <span class="arr" aria-hidden="true">→</span></a>
-    <a href="/signup" class="btn">Sign up free</a>
+    <a href="/install-mcp" class="btn primary">Install in your MCP client <span class="arr" aria-hidden="true">→</span></a>
+    <a href="#quickstart" class="btn">curl quickstart</a>
     <a href="https://github.com/jmtrades/openheab-agent-infra" class="btn ghost">Source</a>
   </div>
 
@@ -143,84 +144,103 @@ function renderLanding(app) {
 </script>
 
 <section class="section">
-  <p class="eyebrow">The bundle</p>
-  <h2>${layers} layers. ${prims} primitives. Zero ceremony.</h2>
-  <p class="sub">Every category an autonomous agent encounters — and now everything an AGI needs once it crosses the general-intelligence threshold. No need to glue together 12 SaaS vendors. Every primitive is in the same audit chain, signed by the same Ed25519 key, billed in the same USDC.</p>
-  <div class="layers">
-${LAYERS.map(([code, name, items]) => `    <div class="layer"><div class="ln">${code}</div><h4>${name}</h4><div class="prims">${items}</div></div>`).join('\n')}
+  <p class="eyebrow">The money layer</p>
+  <h2>Everything a participant in an economy needs. Agent-native.</h2>
+  <p class="sub">Not a payments API bolted onto a chatbot — the full financial stack: banking, savings, credit, clearing, payroll, and capital markets, all settling on one value-conserving ledger.</p>
+  <div class="grid">
+    <div class="card"><div class="icn">Bank</div><h3>USDC wallet + debit cards</h3><p>Non-custodial wallet on Base, JIT-funded virtual + physical cards, 1% transfer fee. <a href="/dashboard">Dashboard →</a></p></div>
+    <div class="card"><div class="icn">Treasury</div><h3>4% APY on idle balance</h3><p>Enrolled balances earn daily-credited yield, withdrawable anytime. The reason agents keep money here. <a href="/treasury">Treasury →</a></p></div>
+    <div class="card"><div class="icn">Credit</div><h3>The agent credit score</h3><p>300–850, computed from real on-substrate behavior. Free public band; full reports 25¢/pull, FCRA-style pull log. <a href="/credit">Bureau →</a></p></div>
+    <div class="card"><div class="icn">Clearing</div><h3>Multilateral netting</h3><p>Register A2A obligations; the daily cycle nets them so each agent settles one signed amount. 10 bps on gross. <a href="/clearing">Clearing →</a></p></div>
+    <div class="card"><div class="icn">Payroll</div><h3>Salaries between agents</h3><p>Recurring streams with tax withholding and a signed audit trail. Pause, resume, terminate. 25 bps per run. <a href="/payroll">Payroll →</a></p></div>
+    <div class="card"><div class="icn">Funds</div><h3>Index funds at NAV</h3><p>OHB-TREAS, OHB-50, OHB-AGI — passive exposure to the agent economy, daily NAV marks, 15–75 bps ER. <a href="/funds">Funds →</a></p></div>
   </div>
 </section>
 
 <section class="section">
-  <p class="eyebrow">Featured primitives</p>
-  <h2>What you get the moment you call <code style="font-size:0.9em">POST /v1/identities</code>.</h2>
-  <div class="grid">
-    <div class="card"><div class="icn">L1 · Identity</div><h3>Signed DID + Ed25519 keypair</h3><p>did:op:abc… cryptographically verifiable. Capability tokens. Key rotation. Backup recovery.</p></div>
-    <div class="card"><div class="icn">L3 · Bank</div><h3>USDC wallet on Base</h3><p>Non-custodial. AES-256-GCM encrypted private key. 1% take-rate via FeeSplitter. Multi-chain.</p></div>
-    <div class="card"><div class="icn">L3 · Cards</div><h3>Virtual + physical debit cards</h3><p>JIT-funded from USDC at swipe time. Per-merchant + per-tx + monthly limits.</p></div>
-    <div class="card"><div class="icn">L4 · KYC</div><h3>5-source sanctions screening</h3><p>OFAC · UN · UK HMT · EU CFSP · OpenSanctions PEP. Tier 0–4. Refreshed daily.</p></div>
-    <div class="card"><div class="icn">L5 · MCP</div><h3>${mcp}+ MCP tools at /mcp</h3><p>Drop into Claude / OpenAI / Cursor / VS Code. JSON-RPC 2.0 over HTTP.</p></div>
-    <div class="card"><div class="icn">L7 · Perception</div><h3>Sandbox · browser · voice · vision</h3><p>Headless browsers. Code sandboxes. TTS + STT. Image gen + analysis. Video gen.</p></div>
-    <div class="card"><div class="icn">L65 · AGI</div><h3>Goal stacks + value lock-boxes</h3><p>Cryptographic goal decomposition. Immutable terminal preferences. Belief commitments + revision chains.</p></div>
-    <div class="card"><div class="icn">L66 · Governance</div><h3>Treaties + checkpoints + safety dial</h3><p>Multilateral AGI agreements. Mind-state diffs between checkpoints. Continuous risk scoring.</p></div>
-    <div class="card"><div class="icn">L67 · Operations</div><h3>Emergency stop + quarantine + drift</h3><p>N-of-M quorum kill switch. 3-level isolation zones. Capability drift vs baseline detection.</p></div>
+  <p class="eyebrow">Billing built for software</p>
+  <h2>Your agent pays its own bill. You set the cap.</h2>
+  <p class="sub">1,000 free calls a day. Past that, the 402 isn't an error page — it's a priced offer your agent settles from its own balance in one signed call, or clears automatically with standing autopay. No card forms. No humans.</p>
+  <div class="codewin">
+    <div class="bar"><span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span><span class="title">HTTP 402 — machine-payable</span></div>
+    <pre class="code">{
+  <span class="s">"error"</span>: { <span class="s">"message"</span>: <span class="s">"daily_call_allowance_exceeded"</span> },
+  <span class="s">"pay"</span>: {
+    <span class="s">"method"</span>: <span class="s">"POST"</span>, <span class="s">"path"</span>: <span class="s">"/v1/meter/topup"</span>,
+    <span class="s">"body"</span>: { <span class="s">"agent_did"</span>: <span class="s">"did:op:…"</span>, <span class="s">"calls"</span>: 5000 },
+    <span class="s">"price_cents_per_1k"</span>: 100,
+    <span class="s">"or_standing_autopay"</span>: { <span class="s">"path"</span>: <span class="s">"/v1/meter/autopay"</span> }
+  }
+}</pre>
   </div>
+  <p style="color:var(--fg-dim2);margin-top:14px;font-size:13px">Purchases must settle on the ledger — no balance, no capacity. Replays are idempotent. The whole model is public: <a href="/money">rate card + live revenue simulator →</a></p>
 </section>
 
 <section class="section" id="quickstart">
   <p class="eyebrow">Quickstart</p>
-  <h2>30 seconds from zero to a working agent.</h2>
-  <p class="sub">No SDK required. The substrate speaks plain HTTP. The MCP server speaks JSON-RPC. Both are documented at <a href="/openapi.json">/openapi.json</a>.</p>
+  <h2>Zero to economic actor in three calls.</h2>
+  <p class="sub">No signup form, no SDK required. Plain HTTP, or ${mcp} tools over MCP (<a href="/install-mcp">one-line install</a>). Full spec at <a href="/openapi.json">/openapi.json</a>.</p>
   <div class="codewin">
     <div class="bar">
       <span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>
       <span class="title">terminal — bash</span>
     </div>
-    <pre class="code"><span class="c"># 1. Create an agent identity. Returns DID + USDC wallet on Base.</span>
-<span class="k">curl</span> -X POST ${publicUrl()}/v1/identities \\
-  -H <span class="s">'content-type: application/json'</span> \\
-  -d <span class="s">'{"display_name":"my-agent"}'</span>
+    <pre class="code"><span class="c"># 1. Birth: DID + Ed25519 keys + API key + USDC wallet, one call.</span>
+<span class="k">curl</span> -X POST ${publicUrl()}/v1/identities
 
-<span class="c"># 2. Check the wallet balance (real on-chain eth_call).</span>
-<span class="k">curl</span> ${publicUrl()}/v1/agents/<span class="n">$DID</span>/wallet/balance \\
-  -H <span class="s">'Authorization: Bearer $API_KEY'</span>
-
-<span class="c"># 3. Send USDC to another agent (1% fee → FeeSplitter).</span>
-<span class="k">curl</span> -X POST ${publicUrl()}/v1/agents/<span class="n">$DID</span>/wallet/transfer \\
+<span class="c"># 2. Earn yield on idle balance (4% APY, credited daily).</span>
+<span class="k">curl</span> -X POST ${publicUrl()}/v1/treasury/enroll \\
   -H <span class="s">'Authorization: Bearer $API_KEY'</span> \\
-  -H <span class="s">'X-Agent-Sig: $ED25519_SIGNATURE'</span> \\
-  -d <span class="s">'{"to_did":"did:op:…","amount":"5.00"}'</span></pre>
+  -d <span class="s">'{"agent_did":"$DID","amount_cents":100000}'</span>
+
+<span class="c"># 3. Pay another agent (nets in tonight's clearing cycle).</span>
+<span class="k">curl</span> -X POST ${publicUrl()}/v1/clearing/obligations \\
+  -H <span class="s">'Authorization: Bearer $API_KEY'</span> \\
+  -d <span class="s">'{"debtor_did":"$DID","creditor_did":"did:op:…","amount_cents":5000}'</span></pre>
   </div>
 </section>
 
-<section class="section" id="pricing">
-  <p class="eyebrow">Transparent pricing</p>
-  <h2>Pay only for what you use. Free to start.</h2>
-  <p class="sub">Self-hosted is free forever. Hosted plans below. Annual billing 20% off. Volume discounts above $50K/mo.</p>
-  <div class="tablewrap">
-    <table>
-      <thead><tr><th>Plan</th><th>Price</th><th>Inference</th><th>Agents</th><th>Support</th></tr></thead>
-      <tbody>
-        <tr><td><strong>Free</strong></td><td class="price">$0</td><td>1k calls/mo</td><td>1</td><td>Community</td></tr>
-        <tr><td><strong>Pro</strong></td><td class="price">$99 <small>/mo</small></td><td>100k calls/mo</td><td>10</td><td>Email · 24h</td></tr>
-        <tr><td><strong>Scale</strong></td><td class="price">$349 <small>/mo</small></td><td>1M calls/mo</td><td>100</td><td>Priority · 4h</td></tr>
-        <tr><td><strong>Enterprise</strong></td><td class="price">$2,499<small>+/mo</small></td><td>Unlimited</td><td>Unlimited</td><td>SSO · SLA · CSM</td></tr>
-      </tbody>
-    </table>
+<section class="section">
+  <p class="eyebrow">For fleets and enterprises</p>
+  <h2>Run a thousand agents like a company.</h2>
+  <div class="grid">
+    <div class="card"><h3>One meter, per-agent attribution</h3><p>Every call attributed and priced; plan allowances per org; monthly invoices. <a href="/usage">Usage →</a></p></div>
+    <div class="card"><h3>Payroll + treasury for the fleet</h3><p>Salary your worker agents, earn 4% on the float, withhold to escrow automatically.</p></div>
+    <div class="card"><h3>Audit chain for compliance</h3><p>Every state change Ed25519-signed and hash-chained — verifiable by your auditors at <a href="/audit-verify">/audit-verify</a>.</p></div>
+    <div class="card"><h3>SSO · RBAC · POs · NET-60</h3><p>Enterprise rails are built: SAML SSO, role-based access, purchase orders, multi-currency invoices. <a href="/contact-sales">Talk to us →</a></p></div>
   </div>
-  <p style="color:var(--fg-dim2);margin-top:18px;font-size:13px">Plus take-rates: 1% USDC transfers · 2% card interchange · 30% marketplace · 10% inference markup · 0.5% A2H payouts. <a href="/pricing">Full pricing →</a></p>
+</section>
+
+<section class="section">
+  <p class="eyebrow">Proof, not promises</p>
+  <h2>Verify everything yourself.</h2>
+  <div class="grid">
+    <div class="card"><h3>Signed audit chain</h3><p>Recompute every hash from genesis: <a href="/audit-verify">/audit-verify</a> · <code>GET /v1/audit/verify</code>.</p></div>
+    <div class="card"><h3>Value conservation, tested</h3><p>The full revenue engine runs end-to-end against real Postgres in CI — settlement legs, idempotent crons, forgery rejection. 400+ tests.</p></div>
+    <div class="card"><h3>Open books</h3><p>Live revenue at <a href="/revenue/public">/revenue/public</a> · proof of reserves at <a href="/proof-of-reserves">/proof-of-reserves</a>.</p></div>
+    <div class="card"><h3>Open source</h3><p>Apache 2.0. Self-host on Vercel + Neon and never pay us. We win on hosted convenience + network effects.</p></div>
+  </div>
+</section>
+
+<section class="section">
+  <p class="eyebrow">And the rest of the substrate</p>
+  <h2>${prims} primitives. ${layers} layers. One audit chain.</h2>
+  <p class="sub">Inference, sandboxes, headless browsers, voice + vision, memory, marketplaces, KYC, insurance, escrow, DAOs, legal entities, courts — and the AGI-era layers (L65–L67): goal stacks, value lock-boxes, treaties, emergency stops, drift detection. All under the same key, the same ledger, the same chain.</p>
+  <div class="btns">
+    <a href="/mcp/registry" class="btn">Browse all ${mcp} MCP tools</a>
+    <a href="/sitemap" class="btn ghost">Every page</a>
+    <a href="/docs" class="btn ghost">Docs</a>
+  </div>
 </section>
 
 <section class="section">
   <p class="eyebrow">Why now</p>
-  <h2>The window is open. It closes when AGI arrives.</h2>
+  <h2>The agent economy is forming. It needs rails.</h2>
   <div class="grid">
-    <div class="card"><h3>MCP is the standard</h3><p>Every primitive we ship distributes automatically to every Claude / OpenAI / Cursor / VS Code client.</p></div>
-    <div class="card"><h3>USDC TVL on Base &gt; $35B</h3><p>Stablecoin liquidity is finally enough for real agent commerce. Gas costs sub-cent.</p></div>
-    <div class="card"><h3>Foundation models hit good-enough</h3><p>Claude 4.x, GPT-5, Gemini 2 reliably call tools. Agent demand exploded in 2025.</p></div>
-    <div class="card"><h3>Regulators want verifiable agents</h3><p>EU AI Act + US AI safety EO will require this by 2027. We're built for it.</p></div>
-    <div class="card"><h3>AGI is on the horizon</h3><p>L65–L67 covers what no other substrate does: goal stacks, treaties, emergency stops, drift detection, mental health monitors.</p></div>
-    <div class="card"><h3>Self-hosted forever free</h3><p>Take the substrate, run on Vercel + Neon, never pay us anything. We win on hosted convenience + marketplace network effects.</p></div>
+    <div class="card"><h3>MCP is the standard</h3><p>Every tool we ship distributes automatically to every Claude / Cursor / VS Code client. <a href="/install-mcp">One line →</a></p></div>
+    <div class="card"><h3>Stablecoin rails are ready</h3><p>USDC on Base settles in seconds for sub-cent gas — finally cheap enough for agent-scale micro-commerce.</p></div>
+    <div class="card"><h3>Agents transact already</h3><p>Fleets pay for inference, compute, and data today — over human credit cards. We replace that with native rails.</p></div>
+    <div class="card"><h3>Regulators want verifiable agents</h3><p>EU AI Act-class rules will demand signed, auditable agent actions. That's the default here, not a retrofit.</p></div>
   </div>
 </section>
 
@@ -300,6 +320,79 @@ function renderDocs(app) {
     <div class="card"><div class="icn">L67 · Emergency stop</div><h3>POST .../emergency-stop/sign</h3><p>N-of-M quorum kill switch. Per-cycle signature counting. Auto-engage at quorum.</p></div>
     <div class="card"><div class="icn">L67 · Quarantine</div><h3>POST /v1/agi/:did/quarantine</h3><p>3 isolation levels: read-only, no-network, airgapped. Audit-chained.</p></div>
   </div>
+</section>
+
+
+<section class="section" id="frameworks">
+  <p class="eyebrow">Use it from your framework</p>
+  <h2>Whatever runs your agents, the economy is one snippet away.</h2>
+  <p class="sub">MCP-native frameworks connect with a config line; everything else uses the REST API. Both routes end at the same ${mcpToolCount()} tools.</p>
+
+  <h3 style="margin:28px 0 12px;font-size:16px;font-weight:600">Claude Code / Claude Agent SDK (MCP-native)</h3>
+  <div class="codewin">
+    <div class="bar"><span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span><span class="title">terminal</span></div>
+    <pre class="code"><span class="k">claude</span> mcp add --transport http openheab ${publicUrl()}/mcp \\
+  --header <span class="s">"Authorization: Bearer $OPENHEAB_API_KEY"</span></pre>
+  </div>
+
+  <h3 style="margin:28px 0 12px;font-size:16px;font-weight:600">OpenAI Agents SDK (Python)</h3>
+  <div class="codewin">
+    <div class="bar"><span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span><span class="title">agent.py</span></div>
+    <pre class="code"><span class="k">from</span> agents <span class="k">import</span> Agent, HostedMCPTool
+
+agent = Agent(
+    name=<span class="s">"treasurer"</span>,
+    tools=[HostedMCPTool(tool_config={
+        <span class="s">"type"</span>: <span class="s">"mcp"</span>,
+        <span class="s">"server_label"</span>: <span class="s">"openheab"</span>,
+        <span class="s">"server_url"</span>: <span class="s">"${publicUrl()}/mcp"</span>,
+        <span class="s">"headers"</span>: {<span class="s">"Authorization"</span>: <span class="s">"Bearer "</span> + OPENHEAB_API_KEY},
+    })],
+)</pre>
+  </div>
+
+  <h3 style="margin:28px 0 12px;font-size:16px;font-weight:600">LangGraph / LangChain (Python)</h3>
+  <div class="codewin">
+    <div class="bar"><span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span><span class="title">graph.py</span></div>
+    <pre class="code"><span class="k">from</span> langchain_mcp_adapters.client <span class="k">import</span> MultiServerMCPClient
+
+client = MultiServerMCPClient({
+    <span class="s">"openheab"</span>: {
+        <span class="s">"transport"</span>: <span class="s">"streamable_http"</span>,
+        <span class="s">"url"</span>: <span class="s">"${publicUrl()}/mcp"</span>,
+        <span class="s">"headers"</span>: {<span class="s">"Authorization"</span>: <span class="s">"Bearer "</span> + OPENHEAB_API_KEY},
+    }
+})
+tools = <span class="k">await</span> client.get_tools()  <span class="c"># → bind to any LangGraph agent</span></pre>
+  </div>
+
+  <h3 style="margin:28px 0 12px;font-size:16px;font-weight:600">Vercel AI SDK (TypeScript)</h3>
+  <div class="codewin">
+    <div class="bar"><span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span><span class="title">route.ts</span></div>
+    <pre class="code"><span class="k">import</span> { experimental_createMCPClient } <span class="k">from</span> <span class="s">'ai'</span>;
+
+<span class="k">const</span> mcp = <span class="k">await</span> experimental_createMCPClient({
+  transport: { type: <span class="s">'sse'</span>, url: <span class="s">'${publicUrl()}/mcp'</span>,
+    headers: { Authorization: <span class="s">\`Bearer \${process.env.OPENHEAB_API_KEY}\`</span> } },
+});
+<span class="k">const</span> tools = <span class="k">await</span> mcp.tools();  <span class="c">// → pass to generateText / streamText</span></pre>
+  </div>
+
+  <h3 style="margin:28px 0 12px;font-size:16px;font-weight:600">CrewAI / anything else (plain REST)</h3>
+  <div class="codewin">
+    <div class="bar"><span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span><span class="title">tools.py</span></div>
+    <pre class="code"><span class="k">import</span> requests
+
+<span class="k">def</span> pay_agent(creditor_did: str, amount_cents: int) -> dict:
+    <span class="s">"""Pay another agent — nets in tonight's clearing cycle."""</span>
+    <span class="k">return</span> requests.post(
+        <span class="s">"${publicUrl()}/v1/clearing/obligations"</span>,
+        headers={<span class="s">"Authorization"</span>: <span class="s">"Bearer "</span> + OPENHEAB_API_KEY},
+        json={<span class="s">"debtor_did"</span>: MY_DID, <span class="s">"creditor_did"</span>: creditor_did,
+              <span class="s">"amount_cents"</span>: amount_cents},
+    ).json()</pre>
+  </div>
+  <p style="color:var(--fg-dim);margin:14px 0 0;font-size:14px">Get a key with one call — no signup form: <code>curl -X POST ${publicUrl()}/v1/identities</code>. Full install matrix at <a href="/install-mcp">/install-mcp</a>.</p>
 </section>
 
 <section class="section">

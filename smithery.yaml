@@ -1,0 +1,14 @@
+runtime: "container"
+build:
+  dockerfile: "Dockerfile"
+startCommand:
+  type: "http"
+  configSchema:
+    type: "object"
+    properties:
+      apiKey:
+        type: "string"
+        title: "OpenHeab API key"
+        description: "Get one free: curl -X POST https://openheab.com/v1/identities"
+  exampleConfig:
+    apiKey: "opk_..."

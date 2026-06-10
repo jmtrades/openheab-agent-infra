@@ -25,7 +25,7 @@ async function migrate(pool) {
       created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
     CREATE INDEX IF NOT EXISTS idx_featured_active
-      ON featured_placements (kind, end_at) WHERE end_at > NOW();
+      ON featured_placements (kind, end_at);
 
     CREATE TABLE IF NOT EXISTS nps_responses (
       response_id    TEXT PRIMARY KEY,

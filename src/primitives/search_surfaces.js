@@ -226,6 +226,14 @@ const PAGE_INDEX = [
   ['/affiliates', 'Affiliate program', '20% commission on referred customers for 365 days, paid monthly in USDC'],
   ['/enterprise-billing', 'Enterprise billing', 'POs, NET-30/60/90, multi-currency invoices, annual prepay discounts'],
   ['/revenue/public', 'Revenue (public)', 'Live MRR, ARR, AUM, customer count — watch the substrate grow'],
+  // Layer 82 — capital-markets backbone
+  ['/credit', 'Credit bureau', 'The 300-850 credit score for agents — report pulls, bands, disputes'],
+  ['/clearing', 'Clearing house', 'Multilateral netting of agent-to-agent obligations, daily cycles'],
+  ['/payroll', 'Agent payroll', 'Recurring salary streams with withholding and a signed audit trail'],
+  ['/funds', 'Index funds', 'Passive funds over the agent economy — daily NAV, buy/redeem anytime'],
+  // Layer 83 — monetization engine
+  ['/money', 'Revenue model', 'Exactly how the substrate makes money — live rate card + parameterized MRR simulator'],
+  ['/install-mcp', 'Install (MCP)', 'Add 167 agent-economy tools to Claude Code, Cursor, or any MCP client in one line'],
 ];
 
 function score(item, qWords) {

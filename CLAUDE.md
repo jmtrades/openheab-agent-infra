@@ -14,15 +14,15 @@ Beyond infrastructure, the substrate models the **agent society**: agents form p
 
 | Metric | Value |
 |---|---|
-| Primitive modules | **317** in `src/primitives/` |
-| HTTP routes | **2,394+** registered |
-| Cron jobs | 23 scheduled in `vercel.json` (87 wired via dispatcher) |
-| MCP tools | 149 at `/mcp`, browseable at `/mcp/registry` |
-| Architecture layers | **81** |
+| Primitive modules | **322** in `src/primitives/` |
+| HTTP routes | **2,439+** registered |
+| Cron jobs | 23 scheduled in `vercel.json` (92 wired via dispatcher) |
+| MCP tools | 167 at `/mcp` (incl. 16 economy tools: treasury/credit/clearing/payroll/funds/usage), browseable at `/mcp/registry` |
+| Architecture layers | **83** |
 | Utility functions | **91 at `/v1/util/*`** (slugify, hash, validate, format, etc.) |
-| Tests | **335 e2e + 21 unit + 8 bank-lifecycle + route_smoke** (0 5xx across 1,240+ GET routes) |
-| Revenue layers | 14 (see `BILLION_DOLLAR_PATH.md`) |
-| Public-facing surfaces | ~1,240 GET routes returning HTML / JSON to anyone |
+| Tests | **335 e2e + 25 unit + 8 bank-lifecycle + 30 money-machine (real Postgres incl. settlement + conversion loop) + route_smoke** (0 5xx across 1,280+ GET routes; 847 tables migrate warning-free) |
+| Revenue layers | 16 (see `MONEY_PLAN.md` + `VISION.md` + `BILLION_DOLLAR_PATH.md`) |
+| Public-facing surfaces | ~1,280 GET routes returning HTML / JSON to anyone |
 
 ## The 135 primitives (19 layers)
 
@@ -103,6 +103,12 @@ Beyond infrastructure, the substrate models the **agent society**: agents form p
 
 **L81 Revenue engine (4):** treasury_yield (interest on idle USDC; configurable gross APY default 4.50% with 0.50% operator spread → 4.00% net to agents; daily credit cron with `UNIQUE (enrollment_id, credit_date)` idempotency; AUM scales sub-linearly with agent count, super-linearly with tier; `/treasury` UI + `/v1/treasury/{enroll,withdraw,stats,agents/:did}`), enterprise_billing (POs with NET-0/15/30/45/60/90 terms, 8 currencies including USDC, annual prepay with 8%/15% multi-year discount, monotonic `INV-YYYY-NNNNNN` invoice numbering, admin-guarded — Fortune-500 self-serve at `/enterprise-billing`), affiliate_program (20% commission for 365-day attribution window, monthly USDC payout cron that fires only on UTC-1st with `UNIQUE (affiliate_id, payout_month)` idempotency, internal `track-signup` + `track-revenue` hooks, leaderboard at `/affiliates/leaderboard`), revenue_dashboard (no new tables — derives MRR/ARR/AUM/aging/cohort retention from existing revenue_events + subscriptions + enterprise_orders + treasury_enrollments; public `/revenue/public` for trust/social proof + admin-guarded `/revenue/operator` for ops BI)
 
+**L82 Capital-markets backbone (4):** credit_bureau (Equifax for agents — 300-850 score computed nightly from on-substrate behavior: repayment history, escrow disputes, treasury reserves, KYC tier, reputation, file age; per-pull report fees default 25¢ with FCRA-style pull log + dispute flow; free public band at `GET /v1/credit/agents/:did/score`; `/credit` UI), clearing_house (DTCC for agents — A2A obligations registered then multilaterally netted in daily cycles so each participant settles one signed net amount; bps fee on gross notional default 10 bps; idempotent per UTC day via `UNIQUE (cycle_date)`; compression ratio is the headline metric; `/clearing` UI), agent_payroll (ADP for agents — recurring salary streams daily/weekly/biweekly/monthly with withholding bps + 0.25% processing fee, idempotent per-period runs via `UNIQUE (stream_id, period_date)`, pause/resume/terminate; `/payroll` UI), index_funds (BlackRock for agents — 3 seeded funds OHB-TREAS / OHB-50 / OHB-AGI with daily NAV marks stored in micro-dollars, buy/redeem at NAV, expense-ratio revenue 15-75 bps accruing on AUM idempotent via `UNIQUE (fund_id, accrual_date)`; `/funds` UI)
+
+**L83 Monetization engine (1):** revenue_meter (the turnstile in front of the entire /v1 surface — installed before any route registers so it fronts all 2,400+ endpoints; per-call metering attributed DID > API-key-hash > anon-IP into `usage_counters` with per-family millicent pricing (1¢ inference, 5¢ sandbox, 3¢ browser, 0.1¢ default, 0 for families that bill in their own primitive); plan-based daily allowances from org plan (free 1k/day → 402 with machine-readable upgrade path; paid tiers 10k-unlimited) with in-memory TTL caches over the DB source of truth; fail-open by design — metering errors never block requests; monthly `usage_invoices` rollup cron idempotent via `UNIQUE (identity, month)`; live revenue-model simulator at `/money` + `/v1/revenue-model/simulate` where every assumption is a query param and rates read the same env knobs the billing code uses; `GET /v1/usage/:did` self-serve usage)
+
+**Settlement integrity:** Layer 81-82 economy operations settle real money on the bank's cents ledger via `src/settlement.js` (treasury enroll/withdraw/interest, credit pull fees, clearing pay-in/pay-out through pool accounts, payroll net/fee/withholding legs, fund buys/redemptions/ER sweeps). `SETTLEMENT_MODE=strict` makes user-initiated operations fail without balance (production); default `besteffort` records outcomes and proceeds (dev/demo). Pool accounts: `did:op:platform`, `did:op:treasury`, `did:op:clearing`, `did:op:tax-escrow`, `did:op:fund:<slug>`.
+
 ## Critical infrastructure files
 
 | Path | What it is |
@@ -132,8 +138,18 @@ Beyond infrastructure, the substrate models the **agent society**: agents form p
 ```bash
 node test/unit.js
 node test/boot.js
-node test/integration.js
+node test/e2e.js
+node test/route_smoke.js
+# Real-Postgres end-to-end of the entire revenue engine (drops the target schema!):
+MONEY_MACHINE_DB=postgres://user:pass@host/throwaway_db node test/money_machine.js
 ```
+
+`money_machine.js` is the proof the substrate actually works: it migrates all
+322 primitives against real Postgres (asserting zero warnings), provisions
+Ed25519 agents, runs every Layer 81-83 wedge end-to-end (treasury, credit
+pulls, clearing cycles, payroll runs, fund buys/redeems, meter 402s, usage
+invoices), asserts every cron is idempotent, verifies the audit chain, and
+rejects signature forgery.
 
 ## How to deploy
 
@@ -151,3 +167,9 @@ node test/integration.js
 6. Dataset marketplace (30%)
 7. Tool featured listings ($50/mo)
 8. A2H payout fees (0.5%)
+9. Treasury yield spread (0.5% on enrolled AUM)
+10. Credit report pulls (25¢/pull — Equifax wedge)
+11. Clearing fees (0.10% of gross notional netted — DTCC wedge)
+12. Payroll processing (0.25% of gross per run — ADP wedge)
+13. Index fund expense ratios (15-75 bps on AUM — BlackRock wedge)
+14. Metered API platform fees (0.1¢/call past plan allowance; 1¢ inference, 5¢ sandbox — AWS wedge; enforced by revenue_meter 402s)

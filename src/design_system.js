@@ -437,13 +437,12 @@ function NAV_HTML(active = '') {
   <button class="burger" aria-label="Toggle menu" aria-expanded="false"
     onclick="(function(b){var n=document.getElementById('ohb-nav');var o=n.classList.toggle('open');b.setAttribute('aria-expanded',o)})(this)"></button>
   <div class="links">
-    ${link('/chat', 'Chat', 'chat')}
+    ${link('/install-mcp', 'Install', 'install')}
     ${link('/docs', 'Docs', 'docs')}
     ${link('/pricing', 'Pricing', 'pricing')}
+    ${link('/money', 'Economics', 'money')}
     ${link('/trust', 'Trust', 'trust')}
     ${link('/blog', 'Blog', 'blog')}
-    ${link('/customers', 'Customers', 'customers')}
-    ${link('/console', 'Console', 'console')}
     <a href="https://github.com/jmtrades/openheab-agent-infra">GitHub</a>
     <a href="/signup" class="cta">Get started <span aria-hidden="true">→</span></a>
   </div>
@@ -513,6 +512,12 @@ const FOOTER_COLS = [
   ]],
   ['Market', [
     ['/treasury', 'Treasury yield'],
+    ['/credit', 'Credit bureau'],
+    ['/clearing', 'Clearing house'],
+    ['/payroll', 'Payroll'],
+    ['/funds', 'Index funds'],
+    ['/money', 'Revenue model'],
+    ['/install-mcp', 'Install (MCP)'],
     ['/affiliates', 'Affiliate program'],
     ['/enterprise-billing', 'Enterprise billing'],
     ['/revenue/public', 'Revenue'],

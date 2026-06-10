@@ -8,16 +8,16 @@ const crypto = require('crypto');
 
 async function migrate(pool) {
   await pool.query(`
-    CREATE TABLE IF NOT EXISTS uptime_checks (
+    CREATE TABLE IF NOT EXISTS status_page_checks (
       check_id        TEXT PRIMARY KEY,
       component       TEXT NOT NULL,
       status          TEXT NOT NULL,
       latency_ms      INTEGER,
       checked_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
-    CREATE INDEX IF NOT EXISTS idx_uptime_component_time ON uptime_checks (component, checked_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_status_page_component_time ON status_page_checks (component, checked_at DESC);
 
-    CREATE TABLE IF NOT EXISTS uptime_incidents (
+    CREATE TABLE IF NOT EXISTS status_page_incidents (
       incident_id     TEXT PRIMARY KEY,
       title           TEXT NOT NULL,
       status          TEXT NOT NULL DEFAULT 'investigating',
@@ -27,7 +27,7 @@ async function migrate(pool) {
       resolved_at     TIMESTAMPTZ,
       updates         JSONB NOT NULL DEFAULT '[]'::jsonb
     );
-    CREATE INDEX IF NOT EXISTS idx_uptime_incidents_active ON uptime_incidents (started_at DESC) WHERE resolved_at IS NULL;
+    CREATE INDEX IF NOT EXISTS idx_status_page_inc_active ON status_page_incidents (started_at DESC) WHERE resolved_at IS NULL;
   `);
 }
 
@@ -52,7 +52,7 @@ function isAdmin(req) {
 
 async function recordCheck(pool, component, status, latencyMs) {
   await pool.query(
-    `INSERT INTO uptime_checks (check_id, component, status, latency_ms) VALUES ($1, $2, $3, $4)`,
+    `INSERT INTO status_page_checks (check_id, component, status, latency_ms) VALUES ($1, $2, $3, $4)`,
     [newId('chk'), component, status, latencyMs]
   ).catch(() => {});
 }
@@ -65,7 +65,7 @@ async function gatherStatus(pool) {
     const total = await pool.query(
       `SELECT COUNT(*)::int AS n, COUNT(*) FILTER (WHERE status='ok')::int AS ok,
               AVG(latency_ms)::int AS avg_latency
-       FROM uptime_checks WHERE component=$1 AND checked_at > NOW() - INTERVAL '24 hours'`,
+       FROM status_page_checks WHERE component=$1 AND checked_at > NOW() - INTERVAL '24 hours'`,
       [c.id]
     ).catch(() => ({ rows: [{ n: 0, ok: 0, avg_latency: 0 }] }));
     const row = total.rows[0] || { n: 0, ok: 0, avg_latency: 0 };
@@ -83,14 +83,14 @@ async function gatherStatus(pool) {
 
   // Active incidents
   const active = await pool.query(
-    `SELECT incident_id, title, status, severity, component, started_at FROM uptime_incidents WHERE resolved_at IS NULL ORDER BY started_at DESC LIMIT 20`
+    `SELECT incident_id, title, status, severity, component, started_at FROM status_page_incidents WHERE resolved_at IS NULL ORDER BY started_at DESC LIMIT 20`
   ).catch(() => ({ rows: [] }));
   data.incidents.active = active.rows;
   if (active.rows.length > 0) data.overall = 'incident';
 
   // Resolved incidents (last 30 days)
   const recent = await pool.query(
-    `SELECT incident_id, title, status, severity, component, started_at, resolved_at FROM uptime_incidents WHERE resolved_at IS NOT NULL AND resolved_at > NOW() - INTERVAL '30 days' ORDER BY resolved_at DESC LIMIT 20`
+    `SELECT incident_id, title, status, severity, component, started_at, resolved_at FROM status_page_incidents WHERE resolved_at IS NOT NULL AND resolved_at > NOW() - INTERVAL '30 days' ORDER BY resolved_at DESC LIMIT 20`
   ).catch(() => ({ rows: [] }));
   data.incidents.recent = recent.rows;
 
@@ -253,7 +253,7 @@ function registerStatusUptimeRoutes(app, pool, verifyAgentAuth, auditChain) {
     if (!title) return res.status(400).json({ error: 'title_required' });
     const id = newId('inc');
     await pool.query(
-      `INSERT INTO uptime_incidents (incident_id, title, severity, component, status) VALUES ($1,$2,$3,$4,$5)`,
+      `INSERT INTO status_page_incidents (incident_id, title, severity, component, status) VALUES ($1,$2,$3,$4,$5)`,
       [id, title, severity || 'minor', component || null, status || 'investigating']
     );
     if (auditChain) await auditChain.append({ event_type: 'uptime.incident_declared', incident_id: id, title, severity, component }).catch(() => {});
@@ -263,7 +263,7 @@ function registerStatusUptimeRoutes(app, pool, verifyAgentAuth, auditChain) {
   // Admin: resolve an incident
   app.post('/v1/_admin/uptime/incidents/:id/resolve', express.json(), async (req, res) => {
     if (!isAdmin(req)) return res.status(401).json({ error: 'admin_required' });
-    await pool.query(`UPDATE uptime_incidents SET resolved_at=NOW(), status='resolved' WHERE incident_id=$1 AND resolved_at IS NULL`, [req.params.id]).catch(() => {});
+    await pool.query(`UPDATE status_page_incidents SET resolved_at=NOW(), status='resolved' WHERE incident_id=$1 AND resolved_at IS NULL`, [req.params.id]).catch(() => {});
     if (auditChain) await auditChain.append({ event_type: 'uptime.incident_resolved', incident_id: req.params.id }).catch(() => {});
     res.json({ resolved: true });
   });

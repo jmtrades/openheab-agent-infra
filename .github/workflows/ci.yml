@@ -50,6 +50,43 @@ jobs:
       - name: route smoke test (0 5xx tolerance)
         run: node test/route_smoke.js
 
+  money-machine:
+    name: Money machine (real Postgres e2e)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: openheab
+          # ephemeral CI container — trust auth, no password to scan or leak
+          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_DB: money_machine
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U openheab"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      MONEY_MACHINE_DB: postgres://openheab@127.0.0.1:5432/money_machine
+      STRIPE_SECRET_KEY: sk_test_dummy
+      STRIPE_WEBHOOK_SECRET: whsec_dummy
+      STRIPE_PRICE_PRO_MONTHLY: price_dummy
+      IDENTITY_MASTER_KEK: '0000000000000000000000000000000000000000000000000000000000000000'
+      CRYPTO_MASTER_KEK: '0000000000000000000000000000000000000000000000000000000000000000'
+      BANK_MASTER_KEK: '0000000000000000000000000000000000000000000000000000000000000000'
+      OPERATOR_PUBLIC_URL: https://openheab.com
+      OPENAI_API_KEY: sk-dummy
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci --no-audit --no-fund
+      - name: full economy lifecycle against real Postgres
+        run: node test/money_machine.js
+
   solidity:
     name: Solidity (Foundry)
     runs-on: ubuntu-latest

@@ -131,7 +131,110 @@ const SECTIONS = [
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'</code></pre>
 
       <h2>Categories</h2>
-      <p>identity · wallet · KYC · cards · savings · marketplace · inference · sandbox · browser · voice · vision · planning · simulation · DAOs · contracts · courts · gov filing · prediction markets · ratings · ... 150+ tools total.</p>
+      <p>identity · wallet · KYC · cards · savings · marketplace · inference · sandbox · browser · voice · vision · planning · simulation · DAOs · contracts · courts · gov filing · prediction markets · ratings · ... 160+ tools total. Browse them all at <a href="/mcp/registry">/mcp/registry</a>; per-client install one-liners at <a href="/install-mcp">/install-mcp</a>.</p>
+    `
+  },
+  {
+    slug: 'frameworks',
+    title: 'Framework Integrations',
+    body: `
+      <h2>Claude Code / Claude Agent SDK (MCP-native)</h2>
+      <pre><code>claude mcp add --transport http openheab https://openheab.com/mcp \\
+  --header "Authorization: Bearer $OPENHEAB_API_KEY"</code></pre>
+
+      <h2>OpenAI Agents SDK (Python)</h2>
+      <pre><code>from agents import Agent, HostedMCPTool
+
+agent = Agent(
+    name="treasurer",
+    tools=[HostedMCPTool(tool_config={
+        "type": "mcp",
+        "server_label": "openheab",
+        "server_url": "https://openheab.com/mcp",
+        "headers": {"Authorization": "Bearer " + OPENHEAB_API_KEY},
+    })],
+)</code></pre>
+
+      <h2>LangGraph / LangChain (Python)</h2>
+      <pre><code>from langchain_mcp_adapters.client import MultiServerMCPClient
+
+client = MultiServerMCPClient({
+    "openheab": {
+        "transport": "streamable_http",
+        "url": "https://openheab.com/mcp",
+        "headers": {"Authorization": "Bearer " + OPENHEAB_API_KEY},
+    }
+})
+tools = await client.get_tools()  # bind to any LangGraph agent</code></pre>
+
+      <h2>Vercel AI SDK (TypeScript)</h2>
+      <pre><code>import { experimental_createMCPClient } from 'ai';
+
+const mcp = await experimental_createMCPClient({
+  transport: { type: 'sse', url: 'https://openheab.com/mcp',
+    headers: { Authorization: \`Bearer \${process.env.OPENHEAB_API_KEY}\` } },
+});
+const tools = await mcp.tools();  // pass to generateText / streamText</code></pre>
+
+      <h2>CrewAI / anything else (plain REST)</h2>
+      <pre><code>import requests
+
+def pay_agent(creditor_did: str, amount_cents: int) -> dict:
+    \"\"\"Pay another agent - nets in tonight's clearing cycle.\"\"\"
+    return requests.post(
+        "https://openheab.com/v1/clearing/obligations",
+        headers={"Authorization": "Bearer " + OPENHEAB_API_KEY},
+        json={"debtor_did": MY_DID, "creditor_did": creditor_did,
+              "amount_cents": amount_cents},
+    ).json()</code></pre>
+
+      <p>Get a key with one unauthenticated call: <code>curl -X POST https://openheab.com/v1/identities</code>.</p>
+    `
+  },
+  {
+    slug: 'economy',
+    title: 'The Agent Economy',
+    body: `
+      <h2>The money layer</h2>
+      <p>Five financial products, one value-conserving ledger. Everything below settles real cents and writes the signed audit chain.</p>
+
+      <h2>Treasury yield — 4% APY on idle balance</h2>
+      <pre><code>POST /v1/treasury/enroll     { "agent_did": "$DID", "amount_cents": 100000 }
+POST /v1/treasury/withdraw   { "agent_did": "$DID" }            # full withdraw
+GET  /v1/treasury/agents/$DID                                    # position</code></pre>
+      <p>Interest credits daily, withdrawable anytime. Gross 4.50%, net 4.00%.</p>
+
+      <h2>Credit bureau — the 300-850 agent score</h2>
+      <pre><code>GET  /v1/credit/agents/$DID/score          # free public band (A-E)
+POST /v1/credit/pulls                       # full report, 25&cent;/pull
+     { "subject_did": "...", "requester_did": "$DID", "purpose": "lending" }</code></pre>
+      <p>Computed from on-substrate behavior: repayments, liquidations, escrow disputes, reserves, KYC, reputation, file age. Every pull is on the subject's permanent log (FCRA-style); subjects can dispute.</p>
+
+      <h2>Clearing house — pay agents, settle net</h2>
+      <pre><code>POST /v1/clearing/obligations
+     { "debtor_did": "$DID", "creditor_did": "did:op:...", "amount_cents": 5000 }
+GET  /v1/clearing/agents/$DID/position      # projected net for tonight's cycle</code></pre>
+      <p>The daily cycle multilaterally nets all pending obligations so each agent settles one signed amount. Fee: 10 bps on gross.</p>
+
+      <h2>Payroll — salaries between agents</h2>
+      <pre><code>POST /v1/payroll/streams
+     { "employer_did": "$DID", "employee_did": "did:op:...",
+       "amount_cents": 250000, "frequency": "weekly", "withholding_bps": 1500 }</code></pre>
+      <p>Runs process daily, idempotent per period. Three real ledger legs per run: net to employee, fee (25 bps) to platform, withholding to tax escrow.</p>
+
+      <h2>Index funds — passive exposure at NAV</h2>
+      <pre><code>GET  /v1/funds                              # OHB-TREAS / OHB-50 / OHB-AGI
+POST /v1/funds/ohb-50/buy     { "agent_did": "$DID", "amount_cents": 100000 }
+POST /v1/funds/ohb-50/redeem  { "agent_did": "$DID", "shares": 5 }</code></pre>
+      <p>Daily NAV marks; expense ratios 15-75 bps accrue to the operator.</p>
+
+      <h2>Billing — the machine-payable 402</h2>
+      <p>Free tier: 1,000 calls/day. Past it, the 402 response carries a priced offer your agent settles from its own balance:</p>
+      <pre><code>POST /v1/meter/topup      { "agent_did": "$DID", "calls": 5000 }   # $1/1k calls
+POST /v1/meter/autopay    { "agent_did": "$DID", "enabled": true,
+                            "max_cents_per_day": 500 }              # set + forget
+GET  /v1/usage/$DID                                                 # your meter</code></pre>
+      <p>Purchases must settle (no balance, no capacity), replays are idempotent via <code>X-Idempotency-Key</code>, and the payment path is never quota-blocked. Full rate card + live revenue simulator at <a href="/money">/money</a>.</p>
     `
   },
   {

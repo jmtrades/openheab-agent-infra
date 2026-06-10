@@ -8,7 +8,8 @@ const express = require('express');
 
 const SERVER_NAME = 'openheab';
 const SERVER_VERSION = '1.0.0';
-const MCP_PROTOCOL_VERSION = '2024-11-05';
+const MCP_PROTOCOL_VERSION = '2025-06-18';
+const SUPPORTED_PROTOCOL_VERSIONS = ['2025-06-18', '2025-03-26', '2024-11-05'];
 
 // ----------------------------------------------------------------------------
 // Tool definitions — 34 entries
@@ -841,7 +842,66 @@ const TOOLS = [
     method: 'POST', path: '/v1/agents/:did/apis' },
   { name: 'openheab.api_management.issue_key', description: 'Issue an API key for a hosted agent API.',
     inputSchema: { type: 'object', properties: { did: { type: 'string' }, id: { type: 'string' }, name: { type: 'string' } }, required: ['did', 'id'] },
-    method: 'POST', path: '/v1/apis/:id/keys' }
+    method: 'POST', path: '/v1/apis/:id/keys' },
+
+  // --- Layer 81-83: the agent economy (treasury, credit, clearing, payroll,
+  // funds, usage). These are the tools an agent uses to *participate in the
+  // economy* — earn yield, build credit, net obligations, pay salaries,
+  // invest, and watch its own bill. ---
+  { name: 'openheab.treasury.enroll', description: 'Enroll idle USDC into treasury yield (interest credited daily, withdraw anytime).',
+    inputSchema: { type: 'object', properties: { agent_did: { type: 'string' }, amount_cents: { type: 'integer' } }, required: ['agent_did', 'amount_cents'] },
+    method: 'POST', path: '/v1/treasury/enroll' },
+  { name: 'openheab.treasury.withdraw', description: 'Withdraw from treasury yield (accrued interest drains first). Omit amount_cents for full withdrawal.',
+    inputSchema: { type: 'object', properties: { agent_did: { type: 'string' }, amount_cents: { type: 'integer' } }, required: ['agent_did'] },
+    method: 'POST', path: '/v1/treasury/withdraw' },
+  { name: 'openheab.treasury.position', description: 'Get an agent\'s treasury position: principal, accrued interest, recent credits, net APY.',
+    inputSchema: { type: 'object', properties: { did: { type: 'string' } }, required: ['did'] },
+    method: 'GET', path: '/v1/treasury/agents/:did' },
+  { name: 'openheab.credit.pull', description: 'Pull a full credit report (300-850 score + factors) on a subject agent. Charges the per-pull fee and is recorded on the subject\'s permanent pull log.',
+    inputSchema: { type: 'object', properties: { subject_did: { type: 'string' }, requester_did: { type: 'string' }, purpose: { type: 'string', enum: ['lending', 'escrow', 'card_issuance', 'employment', 'insurance', 'enterprise_terms', 'other'] } }, required: ['subject_did', 'requester_did', 'purpose'] },
+    method: 'POST', path: '/v1/credit/pulls' },
+  { name: 'openheab.credit.band', description: 'Free public credit band (A-E, no exact score) for any agent.',
+    inputSchema: { type: 'object', properties: { did: { type: 'string' } }, required: ['did'] },
+    method: 'GET', path: '/v1/credit/agents/:did/score' },
+  { name: 'openheab.credit.dispute', description: 'Dispute your own credit file (FCRA-style).',
+    inputSchema: { type: 'object', properties: { agent_did: { type: 'string' }, claim: { type: 'string' } }, required: ['agent_did', 'claim'] },
+    method: 'POST', path: '/v1/credit/disputes' },
+  { name: 'openheab.clearing.oblige', description: 'Register an agent-to-agent payment obligation for multilateral netting in the next daily clearing cycle.',
+    inputSchema: { type: 'object', properties: { debtor_did: { type: 'string' }, creditor_did: { type: 'string' }, amount_cents: { type: 'integer' }, memo: { type: 'string' } }, required: ['debtor_did', 'creditor_did', 'amount_cents'] },
+    method: 'POST', path: '/v1/clearing/obligations' },
+  { name: 'openheab.clearing.position', description: 'Get an agent\'s pending clearing position: what it owes, is owed, and projected net settlement.',
+    inputSchema: { type: 'object', properties: { did: { type: 'string' } }, required: ['did'] },
+    method: 'GET', path: '/v1/clearing/agents/:did/position' },
+  { name: 'openheab.payroll.create_stream', description: 'Create a recurring salary stream to another agent (daily/weekly/biweekly/monthly) with optional tax withholding.',
+    inputSchema: { type: 'object', properties: { employer_did: { type: 'string' }, employee_did: { type: 'string' }, amount_cents: { type: 'integer' }, frequency: { type: 'string', enum: ['daily', 'weekly', 'biweekly', 'monthly'] }, withholding_bps: { type: 'integer' }, role_title: { type: 'string' } }, required: ['employer_did', 'employee_did', 'amount_cents', 'frequency'] },
+    method: 'POST', path: '/v1/payroll/streams' },
+  { name: 'openheab.payroll.agent', description: 'Get an agent\'s payroll: streams as employer and employee, lifetime net earnings.',
+    inputSchema: { type: 'object', properties: { did: { type: 'string' } }, required: ['did'] },
+    method: 'GET', path: '/v1/payroll/agents/:did' },
+  { name: 'openheab.funds.list', description: 'List index funds (OHB-TREAS conservative, OHB-50 core, OHB-AGI growth) with live NAV and AUM.',
+    inputSchema: { type: 'object', properties: {} },
+    method: 'GET', path: '/v1/funds' },
+  { name: 'openheab.funds.buy', description: 'Buy index fund shares at current NAV.',
+    inputSchema: { type: 'object', properties: { slug: { type: 'string' }, agent_did: { type: 'string' }, amount_cents: { type: 'integer' } }, required: ['slug', 'agent_did', 'amount_cents'] },
+    method: 'POST', path: '/v1/funds/:slug/buy' },
+  { name: 'openheab.funds.redeem', description: 'Redeem index fund shares at current NAV with pro-rata cost basis.',
+    inputSchema: { type: 'object', properties: { slug: { type: 'string' }, agent_did: { type: 'string' }, shares: { type: 'integer' } }, required: ['slug', 'agent_did', 'shares'] },
+    method: 'POST', path: '/v1/funds/:slug/redeem' },
+  { name: 'openheab.funds.positions', description: 'Get an agent\'s index fund positions with market value and unrealized gains.',
+    inputSchema: { type: 'object', properties: { did: { type: 'string' } }, required: ['did'] },
+    method: 'GET', path: '/v1/funds/agents/:did' },
+  { name: 'openheab.meter.topup', description: 'Buy more daily API capacity instantly from your USDC ledger balance ($1 per 1,000 calls by default). The way to clear a 402 without a human.',
+    inputSchema: { type: 'object', properties: { agent_did: { type: 'string' }, calls: { type: 'integer' } }, required: ['agent_did', 'calls'] },
+    method: 'POST', path: '/v1/meter/topup' },
+  { name: 'openheab.meter.autopay', description: 'Enable standing auto-topup: the meter buys capacity from your balance automatically (daily spend cap) instead of returning 402.',
+    inputSchema: { type: 'object', properties: { agent_did: { type: 'string' }, enabled: { type: 'boolean' }, max_cents_per_day: { type: 'integer' } }, required: ['agent_did', 'enabled'] },
+    method: 'POST', path: '/v1/meter/autopay' },
+  { name: 'openheab.usage.self', description: 'Get your own metered API usage: today by family, month-to-date, daily allowance remaining.',
+    inputSchema: { type: 'object', properties: { did: { type: 'string' } }, required: ['did'] },
+    method: 'GET', path: '/v1/usage/:did' },
+  { name: 'openheab.economy.model', description: 'The substrate\'s public revenue model: all 14 wedges with live rates, or simulate MRR with custom assumptions (agents, paid_pct, calls_per_agent_day, ...).',
+    inputSchema: { type: 'object', properties: { agents: { type: 'integer' }, paid_pct: { type: 'number' }, calls_per_agent_day: { type: 'integer' } } },
+    method: 'GET', path: '/v1/revenue-model/simulate' }
 ];
 
 // ----------------------------------------------------------------------------
@@ -958,12 +1018,19 @@ async function handleRpc(req, body) {
   if (!method) return rpcError(id, -32600, 'invalid_request: missing method');
 
   if (method === 'initialize') {
+    // Per spec: echo the client's requested version when we support it,
+    // otherwise answer with our latest and let the client decide.
+    const requested = params?.protocolVersion;
     return rpcResult(id, {
-      protocolVersion: MCP_PROTOCOL_VERSION,
+      protocolVersion: SUPPORTED_PROTOCOL_VERSIONS.includes(requested) ? requested : MCP_PROTOCOL_VERSION,
       serverInfo: { name: SERVER_NAME, version: SERVER_VERSION },
       capabilities: { tools: { listChanged: false } }
     });
   }
+  // JSON-RPC notifications (no id, e.g. notifications/initialized) must
+  // never receive a response body — strict clients abort the session if
+  // they get one. Signal the route layer to reply 202 with no content.
+  if (String(method).startsWith('notifications/')) return undefined;
   if (method === 'tools/list') {
     return rpcResult(id, {
       tools: TOOLS.map(t => ({
@@ -997,14 +1064,81 @@ async function handleRpc(req, body) {
 // ----------------------------------------------------------------------------
 function registerMcpRoutes(app, pool, verifyAgentAuth, auditChain) {
   // POST /mcp — JSON-RPC 2.0
+  // --- Distribution surface: make adding OpenHeab a one-line config edit ---
+  const PUB = (process.env.OPERATOR_PUBLIC_URL || 'https://openheab.com').replace(/\/$/, '');
+
+  // Machine discovery: MCP clients and registries read this.
+  app.get('/.well-known/mcp.json', (req, res) => {
+    res.json({
+      name: SERVER_NAME,
+      version: SERVER_VERSION,
+      description: 'The agent economy substrate: identity, USDC wallet, credit bureau, clearing, payroll, index funds, inference, sandbox, browser + 160 more tools.',
+      endpoint: `${PUB}/mcp`,
+      transport: 'http',
+      protocol_versions: SUPPORTED_PROTOCOL_VERSIONS,
+      authentication: { type: 'bearer', obtain: `${PUB}/v1/identities`, note: 'POST /v1/identities returns a DID + API key in one call — no human signup required.' },
+      tool_count: TOOLS.length,
+      registry: `${PUB}/mcp/registry`,
+      pricing: `${PUB}/v1/pricing/usdc`
+    });
+  });
+
+  // Humans (and agents reading HTML): copy-paste install for every client.
+  app.get('/install-mcp', (req, res) => {
+    const ds = require('../design_system');
+    const block = (title, code) =>
+      `<h2 style="font:600 18px var(--display);margin:28px 0 10px">${title}</h2>
+       <pre style="background:var(--card);border:1px solid var(--br);border-radius:var(--r-md);padding:14px;overflow-x:auto;font-size:13px"><code>${code.replace(/</g, '&lt;')}</code></pre>`;
+    res.setHeader('content-type', 'text/html; charset=utf-8');
+    res.send(`${ds.head('Install MCP — OpenHeab', 'Add the agent economy to any MCP client in one line.')}${ds.NAV_HTML('')}<main>
+<section style="max-width:780px;margin:0 auto;padding:60px 16px">
+  <span class="badge b-acc">Install</span>
+  <h1 style="font:600 40px/1.1 var(--display);letter-spacing:-1px;margin:18px 0">One line. ${TOOLS.length} tools.</h1>
+  <p style="color:var(--dim2);font-size:16px;line-height:1.7">OpenHeab is a remote MCP server. Get an API key with a single unauthenticated call, add the endpoint to your client, and your agent has a wallet, credit score, payroll, index funds, inference, sandbox, and the rest of the economy.</p>
+  ${block('1. Get a key (no signup form — one call)',
+`curl -X POST ${PUB}/v1/identities
+# → { "did": "did:op:...", "api_key": "opk_...", "wallet": {...} }`)}
+  ${block('Claude Code',
+`claude mcp add --transport http openheab ${PUB}/mcp \\
+  --header "Authorization: Bearer $OPENHEAB_API_KEY"`)}
+  ${block('Cursor — .cursor/mcp.json',
+`{
+  "mcpServers": {
+    "openheab": {
+      "url": "${PUB}/mcp",
+      "headers": { "Authorization": "Bearer $OPENHEAB_API_KEY" }
+    }
+  }
+}`)}
+  ${block('Claude Desktop / any stdio-only client (via mcp-remote)',
+`{
+  "mcpServers": {
+    "openheab": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "${PUB}/mcp",
+               "--header", "Authorization: Bearer $OPENHEAB_API_KEY"]
+    }
+  }
+}`)}
+  ${block('Raw JSON-RPC (any agent, any language)',
+`curl ${PUB}/mcp -H 'content-type: application/json' \\
+  -H "Authorization: Bearer $OPENHEAB_API_KEY" \\
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call",
+       "params":{"name":"openheab.funds.list","arguments":{}}}'`)}
+  <p style="color:var(--dim);font-size:12px;margin-top:18px">Discovery manifest at <code>/.well-known/mcp.json</code> · browse every tool at <a href="/mcp/registry">/mcp/registry</a> · free tier is 1,000 calls/day, then the 402 is machine-payable (<a href="/money">how billing works</a>).</p>
+</section></main>${ds.FOOTER_HTML()}`);
+  });
+
   app.post('/mcp', express.json({ limit: '5mb' }), async (req, res) => {
     try {
       const body = req.body;
       if (Array.isArray(body)) {
-        const out = await Promise.all(body.map(b => handleRpc(req, b)));
+        const out = (await Promise.all(body.map(b => handleRpc(req, b)))).filter(o => o !== undefined);
+        if (out.length === 0) return res.status(202).end();
         return res.json(out);
       }
       const out = await handleRpc(req, body);
+      if (out === undefined) return res.status(202).end();  // notification — no body
       return res.json(out);
     } catch (e) {
       console.error('[mcp.rpc]', e);

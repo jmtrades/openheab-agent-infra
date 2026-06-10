@@ -260,7 +260,7 @@ function disclosurePage() {
 }
 
 function hallOfFamePage() {
-  return shell('Security Hall of Fame', 'Researchers who've made OpenHeab safer.', `
+  return shell('Security Hall of Fame', "Researchers who've made OpenHeab safer.", `
 <section style="max-width:720px;margin:0 auto;padding:60px 0;text-align:center">
   <span class="badge b-acc">Hall of Fame</span>
   <h1 style="font:600 40px/1.1 var(--display);letter-spacing:-1px;margin:18px 0">Security Hall of Fame.</h1>

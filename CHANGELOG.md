@@ -3,6 +3,332 @@
 All notable changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versions follow [SemVer 2.0.0](https://semver.org/).
 
+## [0.10.0] — 2026-06-10
+
+The durability + funnel-depth release: the real-Postgres proof is locked into
+CI, and the docs now close the loop GTM_PLAN opened.
+
+### Added — CI money-machine job
+
+`.github/workflows/ci.yml` gains a job with a `postgres:16` service container
+running `test/money_machine.js` on every push/PR — the 30-test economy
+lifecycle (zero-warning migration of 847 tables, settlement integrity, value
+conservation, conversion loop, audit verification, forgery rejection) is now
+a permanent gate instead of a one-time local proof.
+
+### Added — docs: Framework Integrations + The Agent Economy
+
+Two new sections on the *served* `/docs` (docs_page — the landing.js
+renderDocs was discovered to be shadowed and is now a fallback only):
+- **Framework Integrations** — copy-paste connections for Claude Code,
+  OpenAI Agents SDK (HostedMCPTool), LangGraph (langchain-mcp-adapters),
+  Vercel AI SDK (experimental_createMCPClient), and plain-REST CrewAI —
+  the Tier-2 GTM channel GTM_PLAN.md called out as the gap.
+- **The Agent Economy** — the money layer end-to-end: treasury, credit
+  bureau, clearing, payroll, funds, and the machine-payable 402 billing
+  flow with topup/autopay. Verified serving live at `/docs/frameworks` +
+  `/docs/economy`.
+
+### Fixed — machine-facing JSON root
+
+`GET /` (JSON) reported 67 layers / 149 tools; now live values (83 / 167)
+plus `install_mcp`, `mcp_manifest_wellknown`, and `revenue_model` pointers —
+agents crawling the root now find the money layer and the install path.
+
+## [0.9.0] — 2026-06-10
+
+The product release. The front door now sells what the substrate actually is,
+and the complete product design is written down.
+
+### Changed — homepage rebuilt around the money story
+
+The old hero sold "the agent society" (concerts, diaries, diplomacy) —
+fascinating, not a buying trigger — with stale hardcoded stats (67 layers,
+149 tools) and CTAs pointing at a chat demo. The new narrative, in the order
+a visitor asks questions: **The financial system for AI agents** (hero with
+live stats) → the six money-layer products (bank/treasury/credit/clearing/
+payroll/funds, each with its link) → **billing built for software** (the
+actual machine-payable 402 JSON, rendered — differentiation nobody else
+shows) → three-call quickstart (birth → yield → pay) → fleets/enterprise →
+**proof, not promises** (audit verify, value-conservation tests, open books,
+open source) → breadth strip (322 primitives incl. L65–L67) → why now.
+Counts are live (`TOOLS.length`, primitive registry), not hardcoded.
+
+### Changed — top nav curated
+
+Six links that match the funnel: Install · Docs · Pricing · Economics ·
+Trust · Blog (+ GitHub, CTA). Chat/Customers/Console moved to footer-only.
+
+### Added — PRODUCT.md
+
+The master product design: positioning (lead with money, breadth is the
+moat not the pitch), four personas with first-ten-minutes journeys and the
+rule that every persona reaches value with zero human contact,
+the information architecture for all ~1,280 pages, five design principles
+(agent as first-class user; one ledger/chain/identity; show the books;
+fail open on metering, fail closed on money; idempotent everything),
+the traction mechanism behind every major surface, and the build-out
+sequence from launch to the compounding phase.
+
+## [0.8.0] — 2026-06-10
+
+The distribution release. Acquisition is now a config line, and the playbook
+for filling the funnel is written down.
+
+### Fixed — MCP protocol compliance (the acquisition gate)
+
+Real MCP clients (Claude Code, Claude Desktop, Cursor) could not reliably
+connect: the server pinned `protocolVersion: 2024-11-05` instead of echoing
+the client's requested version, and answered `notifications/initialized`
+with a JSON-RPC *error response* — responding to a notification at all
+violates JSON-RPC and aborts strict clients. Now: version echo across
+2025-06-18/2025-03-26/2024-11-05, and notifications return HTTP 202 with no
+body. Verified live with the exact initialize → initialized → tools/list
+sequence clients send.
+
+### Added — distribution surface
+
+- **`/install-mcp`** — per-client one-liners: Claude Code (`claude mcp add`),
+  Cursor mcp.json, Claude Desktop via mcp-remote, raw JSON-RPC. Key
+  acquisition page; in sitemap + footer.
+- **`/.well-known/mcp.json`** — machine discovery manifest (endpoint,
+  transport, auth bootstrap via `POST /v1/identities`, tool count).
+- **`smithery.yaml`** — Smithery registry listing config.
+- **`GTM_PLAN.md`** — the client-acquisition playbook: channels ranked by
+  CAC (MCP registries → agent-crawl discovery → launch posts → affiliates →
+  framework docs → fleet outbound → platform partnerships), launch-week
+  scripts, 90-day weekly cadence, and the one early metric (Weekly Active
+  Funded Agents).
+
+## [0.7.0] — 2026-06-10
+
+The conversion release. The 402 is now machine-payable: the single mechanism
+that turns usage into revenue with zero humans in the loop.
+
+### Added — pay-as-you-go metering (the AWS model)
+
+- **`POST /v1/meter/topup`** — an over-cap agent buys capacity from its own
+  USDC ledger balance ($1/1,000 calls via `METER_TOPUP_CENTS_PER_1K`), wall
+  lifts instantly. Purchases must actually settle — no balance, no capacity —
+  and are idempotent via `X-Idempotency-Key` (replays never double-charge).
+- **`POST /v1/meter/autopay`** — standing auto-topup: opt in once with a
+  daily spend cap and the meter buys increments automatically instead of
+  returning 402. Revenue flows without further decisions.
+- **The 402 carries the offer** — price, endpoint, and ready-to-send body
+  (x402 pattern), plus the autopay alternative. `/v1/meter/*` and
+  `/v1/usage/*` are exempt from enforcement so an over-cap agent can always
+  pay the wall (deadlock caught in design review).
+- **Billing attribution fix** — Bearer API keys now resolve to their owning
+  DID (cached) so one agent's usage, quota, topups, and invoices land on a
+  single identity instead of fragmenting across key hashes.
+- 2 new MCP tools: `openheab.meter.topup`, `openheab.meter.autopay` (167).
+- 4 new conversion-loop tests (money_machine 26 → 30): over-cap agent pays
+  and the wall lifts; replays idempotent; unfunded purchase refused;
+  autopay buys automatically.
+
+## [0.6.0] — 2026-06-10
+
+The settlement-integrity release. The economy's books are no longer parallel
+bookkeeping — Layer 81-82 operations now settle real money on the bank's
+cents ledger, and value conservation is proven by test.
+
+### Added — src/settlement.js + ledger wiring in 5 primitives
+
+- **settlement.js** — shared helper moving real ledger money via the bank's
+  `handleTransfer`. Two modes (`SETTLEMENT_MODE` env, read per call):
+  `besteffort` (default — attempt, record outcome, proceed; right for
+  dev/demo with empty wallets) and `strict` (user-initiated operations must
+  settle or fail; right for production). Crons are always besteffort: one
+  broke employer can't halt the payroll cycle for everyone.
+- **treasury_yield** — enroll moves agent → treasury pool; withdraw and
+  daily interest move pool → agent. Outcomes recorded per enrollment/credit.
+- **credit_bureau** — the 25¢ pull fee settles requester → platform
+  (402 in strict mode if it can't). Score factors now read the *real*
+  tables: `lending_repayments`, `lending_liquidations` (via positions),
+  `escrows.disputed_at`, `kyc_verifications.result='clear'` — previously
+  three factors silently read non-existent tables and scored 0.
+- **clearing_house** — DTCC mechanics on the ledger: payers fund the
+  clearing pool, the pool pays receivers; per-leg outcomes recorded on
+  each settlement row.
+- **agent_payroll** — every run moves three real legs: net → employee,
+  fee → platform, withholding → tax escrow pool; per-run `ledger` status.
+- **index_funds** — buys debit the buyer into the fund's pool account
+  (strict: 402 without balance), redemptions pay out of it, and the daily
+  expense-ratio fee sweeps pool → platform.
+
+### Added — 5 settlement-integrity tests (money_machine 21 → 26)
+
+Strict-mode proofs against real Postgres: a credit pull moves exactly 25¢
+of real balance; a fund buy debits the buyer and funds the pool; an
+unfunded agent gets 402; a payroll run settles all three legs and the
+employer pays exactly gross; and **total system balance is unchanged by
+settlement** — nothing created, nothing destroyed.
+
+## [0.5.0] — 2026-06-10
+
+The agent-native release. The customers are AI agents — so the economy is now
+fully operable by an agent with no human in the loop, end to end, verified
+live.
+
+### Added — 16 economy MCP tools (149 → 165)
+
+The entire Layer 81-83 money layer is now callable by any MCP-speaking agent
+at `/mcp`: `openheab.treasury.{enroll,withdraw,position}`,
+`openheab.credit.{pull,band,dispute}`, `openheab.clearing.{oblige,position}`,
+`openheab.payroll.{create_stream,agent}`,
+`openheab.funds.{list,buy,redeem,positions}`, `openheab.usage.self`, and
+`openheab.economy.model` (the public revenue simulator as a tool). Verified
+end-to-end over JSON-RPC against a live server.
+
+### Added — reference-agents/citizen-agent
+
+The pitch, executable: a zero-dependency Node script that runs a full
+economic life against any deployment in under ten seconds — two agents
+self-onboard via `POST /v1/identities` (DID + Ed25519 keys + API key + USDC
+wallet, one call), the employer pulls the worker's credit report, hires it
+with a weekly salary stream + withholding, both register clearing
+obligations, the worker enrolls savings in treasury yield, buys index fund
+shares at NAV, then reads its own books (credit band, positions, salary,
+metered usage). Every request signed with the agent's own key; the file
+doubles as the smallest correct client implementation of the substrate's
+signature scheme. Verified against a live server + real Postgres.
+
+### Changed
+
+- `VISION.md` + `CLAUDE.md` — agent-operable economy narrative, 165 MCP tools.
+
+## [0.4.1] — 2026-06-09
+
+The it-actually-works release. First full verification of the substrate
+against real PostgreSQL 16 — which surfaced and fixed 6 latent migration bugs
+the mock-pool tests could never catch, then proved the entire revenue engine
+end-to-end with a new 21-test lifecycle suite.
+
+### Fixed — 6 real-database migration bugs
+
+Because each primitive's migration runs as one multi-statement query, a single
+failing statement silently aborted everything after it — leaving 14 tables
+uncreated in production and several features querying schemas that didn't
+exist:
+
+- **bank_chain** — its on-chain `bank_transactions` (keyed by `tx_hash`, with
+  `from_did`/`to_did`) collided with bank's cents-ledger table of the same
+  name and was never created. Renamed to `chain_transactions`; `kyc_advanced`
+  source-of-funds checks (which expected the chain schema) now point at it.
+- **evals** — benchmark `eval_runs` collided with eval's QA-suite `eval_runs`.
+  Renamed to `benchmark_runs`; leaderboards and seed benchmarks now persist.
+- **workflow_builder** — its `workflow_runs` collided with workflows'.
+  Renamed to `workflow_builder_runs`; the `/queues` ops dashboard's
+  queued-run counter (which matched the builder's status vocabulary) updated.
+- **status_uptime** — `uptime_checks` + `uptime_incidents` collided with
+  monitoring's same-named tables (different schemas). Renamed to
+  `status_page_checks`/`status_page_incidents`; `zero_config_self_run`
+  auto-incidents and the `feeds_and_probes` incident feed (both of which
+  expected the status-page schema and were silently broken) updated.
+- **cost** — `date_trunc('month', timestamptz)` is STABLE, not IMMUTABLE;
+  the expression index aborted the cost migration. Removed (covered by the
+  plain `(agent_did, created_at)` index).
+- **revenue_engine** — `WHERE end_at > NOW()` in an index predicate is not
+  IMMUTABLE; aborted the migration. Now a plain `(kind, end_at)` index.
+
+All 322 primitive migrations now complete with **zero warnings**, creating
+**847 tables** (14 more than before the fixes).
+
+### Added — test/money_machine.js (21 tests, real Postgres)
+
+Hermetic end-to-end proof of the money machine: drops + remigrates the schema
+(asserting zero warnings), provisions real Ed25519 agents, signs every request
+the way `verifyAgentAuth` verifies, and walks the full economy: treasury
+enroll → interest cron; paid credit pull → FCRA pull log; clearing obligations
+→ multilateral netting with exact compression math; payroll stream → run with
+exact gross/withheld/fee/net; fund buy → NAV accrual → redeem with pro-rata
+basis; meter counters → 402 over allowance (anonymous never blocked) →
+monthly invoice rollup. Asserts every cron is idempotent on rerun, every
+wedge recorded operator revenue, the audit chain verifies end-to-end, and
+signature forgery / DID impersonation is rejected with 401.
+`npm run test:money` (skips cleanly when no database is configured).
+
+## [0.4.0] — 2026-06-09
+
+The monetization release. Usage now meets a price: the substrate's 14 revenue
+wedges gain an enforcement layer, a billing pipeline, and a live, code-true
+revenue model. 322 primitives, 2,437+ routes, 83 layers, 92 crons.
+
+### Added — Layer 83: monetization engine (1 primitive)
+
+- **revenue_meter** — the turnstile in front of the entire `/v1` surface,
+  installed before any route registers:
+  - **Meter:** every API call attributed (DID > API-key-hash > anon-IP) and
+    counted into per-day, per-family `usage_counters` with millicent pricing
+    (1¢ inference, 5¢ sandbox, 3¢ browser, 0.1¢ default; 0 for families that
+    bill inside their own primitive — nothing double-billed).
+  - **Enforce:** plan-based daily allowances resolved from the agent's org
+    plan (free 1k calls/day → HTTP 402 with a machine-readable upgrade path;
+    paid tiers 10k → unlimited). Anonymous traffic is never blocked here.
+    Fail-open: metering errors never break a request.
+  - **Bill:** monthly `usage_invoices` rollup cron, idempotent per
+    (identity, month), UTC-1st gated.
+  - **Model:** `/money` (HTML) + `/v1/revenue-model` + `/v1/revenue-model/simulate`
+    (JSON) — the full 14-wedge rate card and a parameterized MRR simulator
+    whose rates read the same env knobs the billing code uses, so the model
+    cannot drift from the implementation. Self-serve usage at `GET /v1/usage/:did`.
+
+### Added — docs + tests
+
+- **MONEY_PLAN.md** — exactly who pays, what, when: 5 customer waves, the
+  full rate card, unit economics at 4 scales ($121.8k MRR @ 10k agents →
+  $1.46B ARR @ 10M, simulator-verified), funnel targets, 90-day sequence.
+- 4 new unit tests pinning the simulator math (deterministic, sums correct,
+  junk-param safe, 14 wedges with formulas). 25 unit tests total.
+
+### Changed
+
+- `VISION.md` — 14 wedges, Layer 83 narrative, MONEY_PLAN pointer.
+- `CLAUDE.md` — metrics refresh (322 primitives / 2,437+ routes / 83 layers).
+- `/money` added to PAGE_INDEX (sitemap/search) and footer nav.
+
+## [0.3.0] — 2026-06-09
+
+The capital-markets release. Substrate grew to 321 primitives, 2,430+ routes,
+82 architecture layers, 91 dispatched cron jobs. Adds the four financial
+franchises every real economy monetizes at billion-dollar scale, rebuilt
+agent-native, plus the unifying `VISION.md`.
+
+### Added — Layer 82: capital-markets backbone (4 primitives)
+
+- **credit_bureau** — the Equifax of the agent economy. 300-850 score computed
+  from on-substrate behavior (repayment history, defaults, escrow disputes,
+  treasury reserves, KYC tier, reputation, file age). Per-pull report fees
+  (default 25¢) with an FCRA-style permanent pull log and a dispute flow.
+  Free public band at `GET /v1/credit/agents/:did/score`; nightly idempotent
+  recompute cron; `/credit` UI.
+- **clearing_house** — the DTCC of the agent economy. A2A obligations are
+  registered through the day, then multilaterally netted in a daily cycle so
+  each participant settles one signed net amount instead of every gross leg.
+  10 bps fee on gross notional; cycle idempotent per UTC day via
+  `UNIQUE (cycle_date)`; compression % surfaced at `/v1/clearing/stats`;
+  `/clearing` UI.
+- **agent_payroll** — the ADP of the agent economy. Recurring salary streams
+  (daily/weekly/biweekly/monthly) with per-stream withholding bps and a 0.25%
+  processing fee. Runs are idempotent per period via
+  `UNIQUE (stream_id, period_date)`; pause/resume/terminate lifecycle;
+  lifetime earnings at `GET /v1/payroll/agents/:did`; `/payroll` UI.
+- **index_funds** — the BlackRock of the agent economy. Three seeded funds
+  (OHB-TREAS conservative, OHB-50 core, OHB-AGI growth) with daily NAV marks
+  stored in micro-dollars, buy/redeem at NAV, pro-rata cost-basis tracking,
+  and 15-75 bps expense ratios accruing daily as operator revenue
+  (idempotent via `UNIQUE (fund_id, accrual_date)`); `/funds` UI.
+
+### Added — docs
+
+- **VISION.md** — the unifying narrative: 82 layers as the operating system
+  of the agent economy, the 13 coded revenue wedges, and how they compound.
+
+### Changed
+
+- `CLAUDE.md` metrics refreshed (321 primitives / 2,430+ routes / 82 layers /
+  91 crons) and revenue stream list expanded to 13 coded wedges.
+
 ## [0.2.0] — 2026-05-15
 
 The Anthropic-launch-readiness release. Substrate grew from 42 → 231 primitives,

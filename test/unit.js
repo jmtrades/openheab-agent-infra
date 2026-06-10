@@ -193,6 +193,40 @@ test('registerCron + listCrons round-trips', () => {
   assert.strictEqual(found.handler, handler);
 });
 
+// revenue meter — the money math must be exact and deterministic
+console.log('\n== revenue meter ==');
+test('simulate is deterministic and sums by_wedge into mrr_cents', () => {
+  const { simulate } = require('../src/primitives/revenue_meter');
+  const a = simulate({ agents: '10000' });
+  const b = simulate({ agents: '10000' });
+  assert.deepStrictEqual(a, b);
+  const sum = a.by_wedge.reduce((acc, w) => acc + w.mrr_cents, 0);
+  assert.strictEqual(sum, a.mrr_cents);
+  assert.strictEqual(a.arr_cents, a.mrr_cents * 12);
+  assert.ok(a.mrr_cents > 0);
+});
+test('simulate scales roughly linearly with agent count', () => {
+  const { simulate } = require('../src/primitives/revenue_meter');
+  const small = simulate({ agents: '1000' });
+  const big = simulate({ agents: '100000' });
+  assert.ok(big.mrr_cents > small.mrr_cents * 50, 'a 100x population should yield far more than 50x revenue');
+});
+test('simulate ignores junk params and clamps negatives to defaults', () => {
+  const { simulate } = require('../src/primitives/revenue_meter');
+  const dflt = simulate({});
+  const junk = simulate({ agents: 'NaN', paid_pct: '-5' });
+  assert.strictEqual(junk.assumptions.agents, dflt.assumptions.agents);
+  assert.strictEqual(junk.assumptions.paid_pct, dflt.assumptions.paid_pct);
+});
+test('wedges expose all 14 revenue streams with formulas', () => {
+  const { wedges } = require('../src/primitives/revenue_meter');
+  const w = wedges();
+  assert.strictEqual(w.length, 14);
+  for (const x of w) {
+    assert.ok(x.id && x.rate && x.formula, `wedge ${x.id} must carry rate + formula`);
+  }
+});
+
 setTimeout(() => {
   console.log(`\n${passed} passed, ${failed} failed`);
   process.exit(failed > 0 ? 1 : 0);

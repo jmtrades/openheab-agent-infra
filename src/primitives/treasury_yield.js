@@ -25,6 +25,7 @@ const { z } = require('zod');
 const ds = require('../design_system');
 const { registerCron } = require('../cron_auth');
 const { safeTokenCompare } = require('../safe_compare');
+const { settle, settleOrReject, POOLS } = require('../settlement');
 
 function escapeHtml(s) {
   return String(s == null ? '' : s).replace(/[&<>"']/g, c =>
@@ -67,10 +68,12 @@ async function migrate(pool) {
       UNIQUE (enrollment_id, credit_date)
     );
     CREATE INDEX IF NOT EXISTS idx_treasury_credits ON treasury_interest_credits (agent_did, credited_at DESC);
+    ALTER TABLE treasury_enrollments ADD COLUMN IF NOT EXISTS ledger TEXT;
+    ALTER TABLE treasury_interest_credits ADD COLUMN IF NOT EXISTS ledger TEXT;
   `).catch(() => {});
 }
 
-function registerTreasuryYieldRoutes(app, pool, verifyAgentAuth, auditChain) {
+function registerTreasuryYieldRoutes(app, pool, verifyAgentAuth, auditChain, bank) {
   const express = require('express');
 
   app.post('/v1/treasury/enroll', express.json(), async (req, res) => {
@@ -82,6 +85,11 @@ function registerTreasuryYieldRoutes(app, pool, verifyAgentAuth, auditChain) {
     const auth = await verifyAgentAuth(req, b.data.agent_did);
     if (!auth.valid) return res.status(401).json({ error: { message: auth.error || 'agent_signature_required' } });
     const enrollment_id = 'tr_' + crypto.randomBytes(10).toString('hex');
+    const led = await settleOrReject(bank, pool, auditChain, {
+      from: b.data.agent_did, to: POOLS.treasury, amount_cents: b.data.amount_cents,
+      memo: 'treasury_enroll', idem: enrollment_id
+    });
+    if (led.reject) return res.status(400).json({ error: { message: 'settlement_failed', reason: led.reason } });
     try {
       await pool.query(
         `INSERT INTO treasury_enrollments (enrollment_id, agent_did, principal_cents)
@@ -92,7 +100,9 @@ function registerTreasuryYieldRoutes(app, pool, verifyAgentAuth, auditChain) {
         [enrollment_id, b.data.agent_did, b.data.amount_cents]
       );
       if (auditChain) await auditChain.append({ event_type: 'treasury.enrolled', enrollment_id, agent_did: b.data.agent_did, amount_cents: b.data.amount_cents, net_apy_bps: NET_APY_BPS }).catch(() => {});
-      res.status(201).json({ enrollment_id, principal_cents: b.data.amount_cents, net_apy_bps: NET_APY_BPS });
+      await pool.query(`UPDATE treasury_enrollments SET ledger=$1 WHERE agent_did=$2`,
+        [led.settled ? 'settled:' + led.txn_id : 'unsettled:' + led.reason, b.data.agent_did]).catch(() => {});
+      res.status(201).json({ enrollment_id, principal_cents: b.data.amount_cents, net_apy_bps: NET_APY_BPS, ledger: led.settled ? 'settled' : `unsettled (${led.reason})` });
     } catch (e) { res.status(500).json({ error: { message: e.message } }); }
   });
 
@@ -121,8 +131,12 @@ function registerTreasuryYieldRoutes(app, pool, verifyAgentAuth, auditChain) {
         WHERE enrollment_id = $3`,
       [fromAccrued, fromPrincipal, en.enrollment_id]
     );
-    if (auditChain) await auditChain.append({ event_type: 'treasury.withdrawn', enrollment_id: en.enrollment_id, agent_did: b.data.agent_did, amount_cents: requested }).catch(() => {});
-    res.json({ withdrawn_cents: requested, from_accrued_cents: fromAccrued, from_principal_cents: fromPrincipal });
+    const led = await settle(bank, pool, auditChain, {
+      from: POOLS.treasury, to: b.data.agent_did, amount_cents: requested,
+      memo: 'treasury_withdraw', idem: 'trw_' + en.enrollment_id + '_' + Date.now()
+    });
+    if (auditChain) await auditChain.append({ event_type: 'treasury.withdrawn', enrollment_id: en.enrollment_id, agent_did: b.data.agent_did, amount_cents: requested, ledger_settled: led.settled }).catch(() => {});
+    res.json({ withdrawn_cents: requested, from_accrued_cents: fromAccrued, from_principal_cents: fromPrincipal, ledger: led.settled ? 'settled' : `unsettled (${led.reason})` });
   });
 
   // Daily interest credit — fires via dispatcher. Idempotent on (enrollment_id, credit_date)
@@ -150,6 +164,12 @@ function registerTreasuryYieldRoutes(app, pool, verifyAgentAuth, auditChain) {
           `UPDATE treasury_enrollments SET accrued_cents = accrued_cents + $1 WHERE enrollment_id = $2`,
           [interest, e.enrollment_id]
         ).catch(() => {});
+        const led = await settle(bank, pool, auditChain, {
+          from: POOLS.treasury, to: e.agent_did, amount_cents: interest,
+          memo: 'treasury_interest', idem: credit_id
+        });
+        await pool.query(`UPDATE treasury_interest_credits SET ledger=$1 WHERE credit_id=$2`,
+          [led.settled ? 'settled:' + led.txn_id : 'unsettled:' + led.reason, credit_id]).catch(() => {});
         credited++;
       }
     }

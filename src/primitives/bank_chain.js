@@ -273,7 +273,7 @@ async function migrate(pool) {
     );
     CREATE INDEX IF NOT EXISTS idx_bank_wallets_address ON bank_wallets (address);
 
-    CREATE TABLE IF NOT EXISTS bank_transactions (
+    CREATE TABLE IF NOT EXISTS chain_transactions (
       tx_hash          TEXT PRIMARY KEY,
       from_did         TEXT,
       to_did           TEXT,
@@ -292,10 +292,10 @@ async function migrate(pool) {
       created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       confirmed_at     TIMESTAMPTZ
     );
-    CREATE INDEX IF NOT EXISTS idx_bank_tx_from ON bank_transactions (from_did, created_at DESC);
-    CREATE INDEX IF NOT EXISTS idx_bank_tx_to   ON bank_transactions (to_did, created_at DESC);
-    CREATE UNIQUE INDEX IF NOT EXISTS idx_bank_tx_idem
-      ON bank_transactions (from_did, idempotency_key)
+    CREATE INDEX IF NOT EXISTS idx_chain_tx_from ON chain_transactions (from_did, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_chain_tx_to   ON chain_transactions (to_did, created_at DESC);
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_chain_tx_idem
+      ON chain_transactions (from_did, idempotency_key)
       WHERE idempotency_key IS NOT NULL;
   `);
 }
@@ -365,7 +365,7 @@ function registerBankChainRoutes(app, pool, verifyAgentAuth, auditChain) {
     if (idemKey) {
       const existing = await pool.query(
         `SELECT tx_hash, gross_amount, net_amount, fee_amount, status, chain
-         FROM bank_transactions WHERE from_did = $1 AND idempotency_key = $2`,
+         FROM chain_transactions WHERE from_did = $1 AND idempotency_key = $2`,
         [did, idemKey]
       ).catch(() => ({ rows: [] }));
       if (existing.rows[0]) {
@@ -434,7 +434,7 @@ function registerBankChainRoutes(app, pool, verifyAgentAuth, auditChain) {
     });
 
     await pool.query(
-      `INSERT INTO bank_transactions
+      `INSERT INTO chain_transactions
         (tx_hash, from_did, to_did, from_address, to_address,
          gross_amount, net_amount, fee_amount, chain, asset,
          status, reason, idempotency_key, audit_hash, created_at, confirmed_at)
@@ -473,7 +473,7 @@ function registerBankChainRoutes(app, pool, verifyAgentAuth, auditChain) {
       `SELECT tx_hash, from_did, to_did, from_address, to_address,
               gross_amount, net_amount, fee_amount, chain, asset,
               status, reason, block_number, created_at, confirmed_at
-       FROM bank_transactions
+       FROM chain_transactions
        WHERE from_did = $1 OR to_did = $1
        ORDER BY created_at DESC
        LIMIT $2 OFFSET $3`,

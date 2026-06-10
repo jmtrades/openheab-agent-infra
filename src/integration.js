@@ -357,7 +357,23 @@ const PRIMITIVE_NAMES = [
   //                         monthly USDC payout cron → viral growth
   //   revenue_dashboard   : public /revenue/public (watch us grow) + operator
   //                         /revenue/operator full BI (MRR/ARR/cohorts/AR aging)
-  'treasury_yield', 'enterprise_billing', 'affiliate_program', 'revenue_dashboard'
+  'treasury_yield', 'enterprise_billing', 'affiliate_program', 'revenue_dashboard',
+  // Layer 82 — capital-markets backbone. The four billion-dollar financial
+  // franchises every real economy grows, rebuilt agent-native:
+  //   credit_bureau  : Equifax — 300-850 score from on-substrate behavior;
+  //                    per-pull report fees; FCRA-style pull log + disputes
+  //   clearing_house : DTCC — multilateral netting of A2A obligations;
+  //                    daily cycles; bps fee on gross notional
+  //   agent_payroll  : ADP — recurring salary streams with withholding +
+  //                    processing fee; idempotent per-period runs
+  //   index_funds    : BlackRock — passive funds over the agent economy;
+  //                    daily NAV marks; expense-ratio revenue on AUM
+  'credit_bureau', 'clearing_house', 'agent_payroll', 'index_funds',
+  // Layer 83 — monetization engine. The turnstile in front of all 2,400+
+  // routes: per-call metering with family pricing, plan-based daily
+  // allowances (402 over cap), monthly usage invoices, and the live
+  // revenue-model simulator at /money + /v1/revenue-model.
+  'revenue_meter'
 ];
 
 // Lazy loader — gracefully skips primitives that aren't on disk yet
@@ -752,7 +768,14 @@ const REGISTER_OVERRIDES = {
   treasury_yield: 'registerTreasuryYieldRoutes',
   enterprise_billing: 'registerEnterpriseBillingRoutes',
   affiliate_program: 'registerAffiliateProgramRoutes',
-  revenue_dashboard: 'registerRevenueDashboardRoutes'
+  revenue_dashboard: 'registerRevenueDashboardRoutes',
+  // Layer 82 — capital-markets backbone (credit, clearing, payroll, funds)
+  credit_bureau: 'registerCreditBureauRoutes',
+  clearing_house: 'registerClearingHouseRoutes',
+  agent_payroll: 'registerAgentPayrollRoutes',
+  index_funds: 'registerIndexFundsRoutes',
+  // Layer 83 — monetization engine (meter, quotas, invoices, revenue model)
+  revenue_meter: 'registerRevenueMeterRoutes'
 };
 
 async function migrateAll(pool) {
@@ -1007,6 +1030,13 @@ function registerAllRoutes(app, pool) {
   const stripe = makeStripeClient();
   const twilio = makeTwilioClient();
 
+  // The revenue meter must front every /v1 route, so it installs before
+  // anything registers. Fail-open: a metering error never blocks a request.
+  if (primitives.revenue_meter && typeof primitives.revenue_meter.installRevenueMeter === 'function') {
+    try { primitives.revenue_meter.installRevenueMeter(app, pool, primitives.bank, auditChain); }
+    catch (e) { console.warn(`[meter] install failed: ${e.message}`); }
+  }
+
   registerIdentityBootstrap(app, pool, auditChain);
 
   // Register all available primitives via the override map
@@ -1042,6 +1072,12 @@ function registerAllRoutes(app, pool) {
       // Layer 36: pass integration context for deep introspection
       if (name === 'production_checks' || name === 'e2e_demo' || name === 'launch_dashboard') {
         fn(app, pool, verifyAgentAuth, auditChain, { app, pool, auditChain, primitives, crons: [] });
+        registered++; continue;
+      }
+      // Layers 81-82: the economy primitives settle real money on the bank's
+      // cents ledger (besteffort by default, strict via SETTLEMENT_MODE)
+      if (['treasury_yield', 'credit_bureau', 'clearing_house', 'agent_payroll', 'index_funds', 'revenue_meter'].includes(name)) {
+        fn(app, pool, verifyAgentAuth, auditChain, primitives.bank);
         registered++; continue;
       }
 
